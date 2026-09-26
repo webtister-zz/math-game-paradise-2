@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>认识人民币PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主页 ===== */
+.home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.home-title{font-size:2em;font-weight:bold;margin-bottom:8px;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.home-subtitle{font-size:1em;color:#aaa;margin-bottom:30px;text-align:center}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+.module-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.4)}
+.module-card:active{transform:scale(0.96)}
+.module-card .card-icon{font-size:2.8em;margin-bottom:8px;display:block}
+.module-card .card-title{font-size:1.15em;font-weight:bold;margin-bottom:4px}
+.module-card .card-desc{font-size:0.72em;opacity:0.8;line-height:1.4}
+.card-m1{background:linear-gradient(135deg,rgba(255,152,0,0.25),rgba(255,87,34,0.3));border-color:#FF9800}
+.card-m2{background:linear-gradient(135deg,rgba(33,150,243,0.25),rgba(25,118,210,0.3));border-color:#2196F3}
+.card-m3{background:linear-gradient(135deg,rgba(76,175,80,0.25),rgba(56,142,60,0.3));border-color:#4CAF50}
+.card-m4{background:linear-gradient(135deg,rgba(156,39,176,0.25),rgba(123,31,162,0.3));border-color:#9C27B0}
+.card-m1 .card-icon{color:#FF9800}.card-m2 .card-icon{color:#2196F3}.card-m3 .card-icon{color:#4CAF50}.card-m4 .card-icon{color:#9C27B0}
+
+/* ===== 游戏页 ===== */
+.game-page{display:none;flex-direction:column;height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 10px;gap:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.btn-back{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-back:hover{background:rgba(255,255,255,0.18)}
+.module-label{font-size:0.95em;font-weight:bold;color:#FFD700;white-space:nowrap}
+.round-info{font-size:0.8em;color:#aaa;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;min-width:55px;text-align:center;white-space:nowrap}
+.timer.urgent{color:#EF4444;animation:timerPulse 0.5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ===== 对战区域 ===== */
+.arena{display:flex;flex:1;min-height:0;gap:4px;padding:4px}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 6px;position:relative;overflow-y:auto;border-radius:12px;min-width:0}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border:2px solid rgba(255,107,107,0.3)}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border:2px solid rgba(78,205,196,0.3)}
+.player-header{display:flex;align-items:center;gap:6px;flex-shrink:0;width:100%;justify-content:center}
+.left .player-name{color:#FF6B6B;font-weight:bold;font-size:0.9em}
+.right .player-name{color:#4ECDC4;font-weight:bold;font-size:0.9em}
+.player-score{font-weight:bold;font-size:1.3em}.left .player-score{color:#FF6B6B}.right .player-score{color:#4ECDC4}
+.combo-text{font-size:0.7em;color:#FFD700;min-height:16px;flex-shrink:0;text-align:center}
+
+/* ===== 题目显示 ===== */
+.question-display{background:rgba(255,255,255,0.12);border-radius:12px;padding:10px;margin:4px 0;width:100%;text-align:center;font-size:0.9em;font-weight:bold;flex-shrink:0;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;line-height:1.4}
+.question-display .q-text{font-size:1em}
+
+/* 纸币/硬币图形(缩小版) */
+.money-graphic{position:relative;border-radius:8px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,0.3);cursor:default;display:flex;align-items:center;justify-content:center}
+.money-graphic.note{width:90%;max-width:260px;aspect-ratio:16/7;border:3px solid rgba(255,255,255,0.2)}
+.money-graphic.coin{width:70px;height:70px;border-radius:50%;border:4px solid rgba(255,255,255,0.2)}
+.money-graphic .mg-inner{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center}
+.money-graphic .mg-portrait{position:absolute;left:8%;width:22%;height:62%;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:2em;border:1px solid rgba(255,255,255,0.3)}
+.money-graphic .mg-chinese{position:absolute;right:8%;font-size:1.6em;font-weight:bold;writing-mode:vertical-rl;letter-spacing:3px}
+.money-graphic .mg-number{position:absolute;left:32%;font-size:2.5em;font-weight:900;opacity:0.3}
+.money-graphic .mg-bank{position:absolute;top:6%;width:100%;text-align:center;font-size:0.5em;letter-spacing:2px;opacity:0.7}
+.money-graphic .mg-corner{position:absolute;font-size:0.5em;font-weight:bold;opacity:0.6}
+.money-graphic .mg-corner.tl{top:5%;left:5%}
+.money-graphic .mg-corner.br{bottom:5%;right:5%}
+.money-graphic .mg-frame{position:absolute;top:3px;left:3px;right:3px;bottom:3px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;pointer-events:none}
+.money-graphic .coin-inner-ring{position:absolute;top:8px;left:8px;right:8px;bottom:8px;border-radius:50%;border:2.5px solid rgba(0,0,0,0.15);pointer-events:none}
+.money-graphic .coin-center{font-size:1.8em;z-index:1}
+
+/* 纸币配色 */
+.n100{background:linear-gradient(150deg,#e8b4b8,#d4989e,#e0a8ae,#cc8a92);color:#5e1515}
+.n50{background:linear-gradient(150deg,#b8d4c8,#96bca8,#a8c8b8,#82ac96);color:#1a4030}
+.n20{background:linear-gradient(150deg,#f0d4b8,#e8c49e,#ecccae,#dcb48a);color:#6b3000}
+.n10{background:linear-gradient(150deg,#c4dcef,#a8c8e0,#b8d2e8,#96b8d6);color:#0d2f5e}
+.n5{background:linear-gradient(150deg,#dcc8e8,#c9a8d9,#d4b8e0,#b894c9);color:#4a1a6b}
+.n1{background:linear-gradient(150deg,#d4e9c7,#b8d9a6,#c5dfb4,#a3c98f);color:#2e5a1e}
+.n100 .mg-portrait{background:rgba(94,21,21,0.15)}
+.n50 .mg-portrait{background:rgba(26,64,48,0.15)}
+.n20 .mg-portrait{background:rgba(107,48,0,0.15)}
+.n10 .mg-portrait{background:rgba(13,47,94,0.15)}
+.n5 .mg-portrait{background:rgba(74,26,107,0.15)}
+.n1 .mg-portrait{background:rgba(46,90,30,0.15)}
+
+/* 硬币配色 */
+.c1yuan{background:linear-gradient(135deg,#e8e8e8,#f5f5f5,#d5d5d5,#ececec,#d8d8d8);color:#333}
+.c5jiao{background:linear-gradient(135deg,#e8c840,#f0d870,#dab830,#eed860,#e0c440);color:#5a4200}
+.c1jiao{background:linear-gradient(135deg,#d8d8d8,#eaeaea,#c8c8c8,#e2e2e2,#d0d0d0);color:#555}
+
+/* ===== 选项按钮 ===== */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;margin:4px 0}
+.p-opt{padding:9px 5px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.82em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:40px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.feedback{font-size:0.8em;font-weight:bold;min-height:20px;text-align:center;margin:2px 0}
+
+/* ===== VS标志 ===== */
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+/* ===== 底部栏 ===== */
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:10px 22px;border-radius:20px;border:none;font-size:0.9em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:36px;margin-bottom:18px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-win{padding:12px 28px;border-radius:22px;border:none;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit}
+.btn-win.again{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.btn-win.home{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.3)}
+
+/* ===== 彩带 ===== */
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* ===== 购物物品展示 ===== */
+.item-display{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border-radius:10px;padding:6px 14px}
+.item-display .item-emoji{font-size:2em}
+.item-display .item-name{font-size:0.9em;font-weight:bold}
+.item-display .item-price{font-size:1.3em;font-weight:bold;color:#FFD700}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .arena{flex-direction:column;gap:2px}
+  .player{padding:6px 4px}
+  .player.left{border-right:none;border-bottom:2px solid rgba(255,107,107,0.3)}
+  .player.right{border-left:none;border-top:2px solid rgba(78,205,196,0.3)}
+  .question-display{font-size:0.8em;min-height:40px;padding:6px}
+  .p-opt{font-size:0.75em;padding:7px 4px;min-height:34px}
+  .vs-badge{font-size:1.3em}
+  .player-score{font-size:1.1em}
+  .win-title{font-size:1.6em}
+  .options-grid{gap:3px}
+  .money-graphic.note{max-width:200px}
+  .money-graphic.coin{width:50px;height:50px}
+  .money-graphic .mg-chinese{font-size:1.2em}
+  .money-graphic .mg-number{font-size:1.8em}
+  .money-graphic .mg-portrait{font-size:1.4em}
+  .module-grid{gap:10px}
+  .module-card{padding:18px 12px}
+  .module-card .card-icon{font-size:2.2em}
+  .module-card .card-title{font-size:1em}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 主页 ==================== -->
+<div class="home-page" id="homePage">
+  <div class="home-title">💰 认识人民币PK ⚔️</div>
+  <div class="home-subtitle">仿真纸币·硬币识别 · 两人对战 · 每题15秒</div>
+  <div class="module-grid">
+    <div class="module-card card-m1" onclick="startModule(1)">
+      <span class="card-icon">🪙</span>
+      <div class="card-title">一 · 认识纸币</div>
+      <div class="card-desc">看纸币图形<br>识别面值大小<br>100元/50元/20元...</div>
+    </div>
+    <div class="module-card card-m2" onclick="startModule(2)">
+      <span class="card-icon">🪙</span>
+      <div class="card-title">二 · 认识硬币</div>
+      <div class="card-desc">看硬币图形<br>识别硬币面值<br>1元/5角/1角</div>
+    </div>
+    <div class="module-card card-m3" onclick="startModule(3)">
+      <span class="card-icon">🛒</span>
+      <div class="card-title">三 · 模拟购物</div>
+      <div class="card-desc">看物品与价格<br>选择正确的付款组合<br>元角分综合计算</div>
+    </div>
+    <div class="module-card card-m4" onclick="startModule(4)">
+      <span class="card-icon">🧮</span>
+      <div class="card-title">四 · 单位换算</div>
+      <div class="card-desc">元角分换算<br>1元=10角=100分<br>综合换算练习</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 游戏页 ==================== -->
+<div class="game-page" id="gamePage">
+  <div class="top-bar">
+    <button class="btn-back" onclick="goHome()">← 返回</button>
+    <span class="module-label" id="moduleLabel"></span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">10</span> 关</span>
+    <span class="timer" id="timerDisplay">⏱ 15s</span>
+  </div>
+  <div class="arena" style="position:relative">
+    <!-- 红方 -->
+    <div class="player left" id="p1panel">
+      <div class="player-header">
+        <span class="player-name">🔴 红方</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div class="combo-text" id="st1"></div>
+      <div class="question-display" id="q1">准备开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+    <!-- VS -->
+    <div class="vs-badge">⚡VS⚡</div>
+    <!-- 蓝方 -->
+    <div class="player right" id="p2panel">
+      <div class="player-header">
+        <span class="player-name">🔵 蓝方</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+      <div class="combo-text" id="st2"></div>
+      <div class="question-display" id="q2">准备开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+  </div>
+</div>
+
+<!-- ==================== 结算弹窗 ==================== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="btn-win again" onclick="restartGame()">🔄 再来一局</button>
+    <button class="btn-win home" onclick="goHome()">🏠 返回主页</button>
+  </div>
+</div>
+
+<script>
+// ==================== 货币数据 ====================
+var NOTES=[
+  {v:100,u:'元',l:'100元',c:'n100',t:'note',emoji:'🏛️',chn:'壹佰圆',portrait:'👤'},
+  {v:50,u:'元',l:'50元',c:'n50',t:'note',emoji:'🏯',chn:'伍拾圆',portrait:'👤'},
+  {v:20,u:'元',l:'20元',c:'n20',t:'note',emoji:'🏔️',chn:'贰拾圆',portrait:'👤'},
+  {v:10,u:'元',l:'10元',c:'n10',t:'note',emoji:'🛶',chn:'拾圆',portrait:'👤'},
+  {v:5,u:'元',l:'5元',c:'n5',t:'note',emoji:'⛰️',chn:'伍圆',portrait:'👤'},
+  {v:1,u:'元',l:'1元',c:'n1',t:'note',emoji:'🌺',chn:'壹圆'},
+  {v:5,u:'角',l:'5角',c:'c5jiao',t:'coin',emoji:'🌸',chn:'伍角'},
+  {v:1,u:'角',l:'1角',c:'c1jiao',t:'coin',emoji:'🌿',chn:'壹角'}
+];
+
+// ==================== 题库 ====================
+var QBANKS={
+  // 模块1: 认识纸币
+  1: [
+    {type:'note',n:0,q:'这张纸币是多少钱？',o:['100元','50元','20元','10元'],a:0},
+    {type:'note',n:1,q:'这张纸币是多少钱？',o:['100元','50元','20元','5元'],a:1},
+    {type:'note',n:2,q:'这张纸币是多少钱？',o:['10元','20元','50元','5元'],a:1},
+    {type:'note',n:3,q:'这张纸币是多少钱？',o:['5元','20元','10元','50元'],a:2},
+    {type:'note',n:4,q:'这张纸币是多少钱？',o:['1元','5元','10元','20元'],a:1},
+    {type:'note',n:4,q:'这张是几元纸币？',o:['10元','5元','2元','1元'],a:1},
+    {type:'note',n:3,q:'这张是几元纸币？',o:['5元','10元','20元','50元'],a:1},
+    {type:'note',n:2,q:'这张纸币的面值是？',o:['50元','100元','20元','10元'],a:2},
+    {type:'note',n:1,q:'这张纸币的面值是？',o:['20元','100元','50元','10元'],a:2},
+    {type:'note',n:0,q:'人民币最大面额的纸币是？',o:['50元','100元','20元','10元'],a:1},
+    {type:'note',n:0,q:'这张红色纸币是多少钱？',o:['50元','100元','20元','10元'],a:1},
+    {type:'note',n:1,q:'这张绿色纸币是多少钱？',o:['20元','50元','10元','5元'],a:1},
+    {type:'note',n:2,q:'这张棕色纸币是多少钱？',o:['10元','50元','20元','5元'],a:2},
+    {type:'note',n:3,q:'这张蓝色纸币是多少钱？',o:['20元','5元','50元','10元'],a:3},
+    {type:'note',n:4,q:'这张紫色纸币是多少钱？',o:['1元','10元','5元','20元'],a:2}
+  ],
+  // 模块2: 认识硬币
+  2: [
+    {type:'coin',n:5,q:'这枚硬币是多少钱？',o:['1角','5角','1元','5元'],a:2},
+    {type:'coin',n:6,q:'这枚硬币是多少钱？',o:['1元','1角','5角','5元'],a:2},
+    {type:'coin',n:7,q:'这枚硬币是多少钱？',o:['5角','1角','1元','5分'],a:1},
+    {type:'coin',n:5,q:'1元硬币是什么颜色的？',o:['金色','银色','铜色','红色'],a:1},
+    {type:'coin',n:6,q:'5角硬币是什么颜色的？',o:['银色','金色','铜色','白色'],a:1},
+    {type:'coin',n:7,q:'这枚最小的硬币是多少钱？',o:['1元','5角','1角','1分'],a:2},
+    {type:'coin',n:5,q:'这枚银色的硬币是？',o:['5角','1角','1元','5分'],a:2},
+    {type:'coin',n:6,q:'这枚金色的硬币是？',o:['1元','5角','1角','2角'],a:1},
+    {type:'coin',n:7,q:'最小的硬币面值是？',o:['1元','5角','1角','2角'],a:2},
+    {type:'coin',n:5,q:'一枚1元硬币等于多少角？',o:['5角','1角','10角','100角'],a:2}
+  ],
+  // 模块3: 模拟购物
+  3: [
+    {type:'shop',item:{n:'铅笔',e:'✏️',p:1,u:'元'},q:'买一支铅笔需要付多少钱？',o:['1元','2元','5角','1角'],a:0},
+    {type:'shop',item:{n:'橡皮',e:'🧹',p:1,u:'元'},q:'买一块橡皮需要付多少钱？',o:['5角','1元','2元','1角'],a:1},
+    {type:'shop',item:{n:'本子',e:'📒',p:3,u:'元'},q:'买一个本子需要付多少钱？',o:['2元','5元','3元','1元'],a:2},
+    {type:'shop',item:{n:'尺子',e:'📏',p:2,u:'元'},q:'一把尺子多少钱？',o:['1元','3元','2元','5角'],a:2},
+    {type:'shop',item:{n:'糖果',e:'🍬',p:1,u:'元'},q:'一颗糖果多少钱？',o:['5角','1元','2元','1角'],a:1},
+    {type:'shop',item:{n:'面包',e:'🍞',p:6,u:'元'},q:'一个面包多少钱？',o:['5元','6元','8元','3元'],a:1},
+    {type:'shop',item:{n:'牛奶',e:'🥛',p:5,u:'元'},q:'一瓶牛奶多少钱？',o:['3元','6元','5元','8元'],a:2},
+    {type:'shop',item:{n:'苹果',e:'🍎',p:3,u:'元'},q:'一个苹果多少钱？',o:['2元','5元','3元','1元'],a:2},
+    {type:'shop',item:{n:'饼干',e:'🍪',p:4,u:'元'},q:'一包饼干多少钱？',o:['3元','5元','4元','6元'],a:2},
+    {type:'shop',item:{n:'果汁',e:'🧃',p:4,u:'元'},q:'一瓶果汁多少钱？',o:['5元','4元','3元','6元'],a:1},
+    {type:'shop',item:{n:'蜡笔',e:'🖍',p:8,u:'元'},q:'一盒蜡笔多少钱？',o:['6元','10元','8元','5元'],a:2},
+    {type:'shop',item:{n:'笔记本',e:'📓',p:6,u:'元'},q:'一本笔记本多少钱？',o:['8元','6元','5元','10元'],a:1},
+    {type:'shop',item:{n:'水杯',e:'🥤',p:7,u:'元'},q:'一个水杯多少钱？',o:['5元','8元','7元','6元'],a:2},
+    {type:'shop',item:{n:'书包',e:'🎒',p:25,u:'元'},q:'一个书包多少钱？',o:['20元','30元','25元','15元'],a:2},
+    {type:'shop',item:{n:'贴纸',e:'⭐',p:2,u:'元'},q:'一张贴纸多少钱？',o:['1元','3元','2元','5角'],a:2}
+  ],
+  // 模块4: 单位换算
+  4: [
+    {type:'text',q:'1元等于多少角？',o:['5角','10角','100角','50角'],a:1},
+    {type:'text',q:'1角等于多少分？',o:['5分','10分','100分','50分'],a:1},
+    {type:'text',q:'10分等于多少角？',o:['1角','10角','5角','2角'],a:0},
+    {type:'text',q:'100分等于多少元？',o:['10元','1元','5元','2元'],a:1},
+    {type:'text',q:'5元等于多少角？',o:['5角','50角','500角','15角'],a:1},
+    {type:'text',q:'一张10元可以换几张5元？',o:['1张','2张','3张','4张'],a:1},
+    {type:'text',q:'2元5角等于多少角？',o:['20角','25角','15角','7角'],a:1},
+    {type:'text',q:'1元减3角等于多少？',o:['7角','13角','3角','10角'],a:0},
+    {type:'text',q:'8角加7角等于多少？',o:['13角','15角','1元5角','14角'],a:1},
+    {type:'text',q:'2张5角是多少？',o:['5角','10角','1元','2元'],a:2},
+    {type:'text',q:'5元可以换几张1元？',o:['3张','4张','5张','10张'],a:2},
+    {type:'text',q:'20元可以换几张10元？',o:['1张','2张','3张','4张'],a:1},
+    {type:'text',q:'6元8角减2元5角等于？',o:['4元3角','3元3角','4元8角','5元3角'],a:0},
+    {type:'text',q:'一本笔记本5元，一个铅笔盒8元，一共？',o:['12元','13元','14元','15元'],a:1},
+    {type:'text',q:'小明有10元，买3元面包和4元牛奶，剩多少？',o:['2元','3元','4元','1元'],a:1}
+  ]
+};
+
+// ==================== 游戏状态 ====================
+var curModule=1, fQ=[], sc=[0,0], cr=0, tr=10, tm=15, ti=null, go=false, ans=[false,false];
+var sk='rmbpk_'+curModule, musicOn=true, actx=null;
+
+// ==================== DOM引用 ====================
+var $=function(id){return document.getElementById(id);};
+
+// ==================== 音效 ====================
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){
+  if(!musicOn||!actx)return;
+  try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}
+}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;$('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.05);}
+
+// ==================== 渲染货币图形 ====================
+function renderMoneyGraphic(qData){
+  if(qData.type==='note'){
+    var n=NOTES[qData.n];
+    return '<div class="money-graphic note '+n.c+'"><div class="mg-frame"></div><div class="mg-bank">中国人民银行</div><div class="mg-corner tl">'+n.l+'</div><div class="mg-portrait">'+n.emoji+'</div><div class="mg-number">'+n.v+'</div><div class="mg-chinese">'+n.chn+'</div><div class="mg-corner br">'+n.v+n.u+'</div></div>';
+  }else if(qData.type==='coin'){
+    var n=NOTES[qData.n];
+    return '<div class="money-graphic coin '+n.c+'"><div class="coin-inner-ring"></div><div class="coin-center">'+n.emoji+'</div></div>';
+  }else if(qData.type==='shop'){
+    var it=qData.item;
+    return '<div class="item-display"><span class="item-emoji">'+it.e+'</span><span class="item-name">'+it.n+'</span><span class="item-price">￥'+it.p+'.00</span></div>';
+  }
+  return '';
+}
+
+// ==================== 渲染玩家面板 ====================
+function renderPlayer(pn,qData){
+  var qText=qData.q, opts=qData.o, ansIdx=qData.a;
+  var graphicHTML=renderMoneyGraphic(qData);
+
+  var qEl=$('q'+pn);
+  if(graphicHTML){
+    qEl.innerHTML='<div class="q-text">'+qText+'</div>'+graphicHTML;
+  }else{
+    qEl.innerHTML='<div class="q-text">第'+(cr+1)+'题：'+qText+'</div>';
+  }
+
+  // 随机打乱选项顺序
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'], h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  $('op'+pn).innerHTML=h;
+  $('fb'+pn).textContent='';
+  $('st'+pn).textContent='';
+}
+
+// ==================== 玩家回答 ====================
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    $('s'+pn).textContent=sc[pn-1];
+    $('fb'+pn).innerHTML='✅ 正确！+10';
+    $('st'+pn).textContent='🔥 连击！';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    $('fb'+pn).innerHTML='❌ 答错了';
+    $('st'+pn).textContent='';
+    sfxWrong();
+    // 高亮正确答案
+    for(var i=0;i<bs.length;i++){
+      if(bs[i].getAttribute('onclick')&&bs[i].getAttribute('onclick').indexOf(','+ai+',')>=0){
+        bs[i].classList.add('correct');
+      }
+    }
+  }
+
+  // 两人都答完 → 下一关
+  if(ans[0]&&ans[1]){
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){nextRound();},1200);
+  }
+}
+
+// ==================== 时间到 ====================
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      $('fb'+p).innerHTML='⏰ 时间到！';
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},1200);
+}
+
+// ==================== 下一关 ====================
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];
+  $('rn').textContent=cr+1;
+  var q=fQ[cr];
+  renderPlayer(1,q);
+  renderPlayer(2,q);
+  tm=15;
+  $('timerDisplay').textContent='⏱ '+tm+'s';
+  $('timerDisplay').classList.remove('urgent');
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    $('timerDisplay').textContent='⏱ '+tm+'s';
+    if(tm<=5){
+      $('timerDisplay').classList.add('urgent');
+      sfxTick();
+    }
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+// ==================== 结束游戏 ====================
+function endGame(){
+  go=false;clearInterval(ti);
+  $('timerDisplay').classList.remove('urgent');
+  $('winOverlay').classList.add('show');
+  $('ws1').textContent=sc[0];$('ws2').textContent=sc[1];
+
+  if(sc[0]>sc[1]){
+    $('winTitle').innerHTML='🔴 红方获胜！';
+    $('winTitle').style.color='#FF6B6B';
+    $('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    $('winTitle').innerHTML='🔵 蓝方获胜！';
+    $('winTitle').style.color='#4ECDC4';
+    $('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  }else{
+    $('winTitle').innerHTML='🤝 平局！';
+    $('winTitle').style.color='#FFD700';
+    $('winSub').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  // 保存最高分
+  var best=parseInt(localStorage.getItem(sk)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+// ==================== 彩带 ====================
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';
+    d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+// ==================== 洗牌 ====================
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+// ==================== 模块管理 ====================
+function startModule(m){
+  initAudio();
+  curModule=m;
+  sk='rmbpk_'+m;
+  fQ=sf(QBANKS[m].slice());
+  tr=fQ.length;
+  $('tr').textContent=tr;
+  var names=['','一 · 认识纸币','二 · 认识硬币','三 · 模拟购物','四 · 单位换算'];
+  $('moduleLabel').textContent=names[m];
+  $('homePage').style.display='none';
+  $('gamePage').style.display='flex';
+  restartGame();
+}
+
+function goHome(){
+  clearInterval(ti);go=false;
+  $('gamePage').style.display='none';
+  $('homePage').style.display='flex';
+  $('winOverlay').classList.remove('show');
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});
+}
+
+// ==================== 开始/重新开始 ====================
+function startGame(){
+  initAudio();
+  $('btnStart').style.display='none';
+  fQ=sf(QBANKS[curModule].slice());
+  tr=fQ.length;$('tr').textContent=tr;
+  go=true;sc=[0,0];cr=0;ans=[false,false];
+  $('s1').textContent='0';$('s2').textContent='0';
+  $('winOverlay').classList.remove('show');
+  nextRound();
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;
+  sc=[0,0];cr=0;ans=[false,false];
+  $('s1').textContent='0';$('s2').textContent='0';
+  $('fb1').textContent='';$('fb2').textContent='';
+  $('st1').textContent='';$('st2').textContent='';
+  $('rn').textContent='1';$('timerDisplay').textContent='⏱ 15s';
+  $('timerDisplay').classList.remove('urgent');
+  $('winOverlay').classList.remove('show');
+  $('btnStart').style.display='inline-block';
+  $('q1').innerHTML='<div class="q-text">准备开始...</div>';
+  $('q2').innerHTML='<div class="q-text">准备开始...</div>';
+  $('op1').innerHTML='';$('op2').innerHTML='';
+  fQ=sf(QBANKS[curModule].slice());
+  tr=fQ.length;$('tr').textContent=tr;
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});
+}
+
+// ==================== 键盘快捷操作（可选） ====================
+document.addEventListener('keydown',function(e){
+  if(!go)return;
+  // 红方: QWER, 蓝方: UIOP
+  var map={};
+  if(!ans[0]){map['q']=[1,0];map['w']=[1,1];map['e']=[1,2];map['r']=[1,3];}
+  if(!ans[1]){map['u']=[2,0];map['i']=[2,1];map['o']=[2,2];map['p']=[2,3];}
+  var k=e.key.toLowerCase();
+  if(map[k]){
+    var pn=map[k][0], oi=map[k][1];
+    var btn=$('ob'+pn+'_'+oi);
+    if(btn&&!btn.disabled){
+      var onclick=btn.getAttribute('onclick');
+      // 从onclick解析参数
+      var m=/answer\((\d+),(\d+),(\d+)/.exec(onclick);
+      if(m)answer(parseInt(m[1]),parseInt(m[2]),parseInt(m[3]),btn);
+    }
+  }
+});
+
+// ==================== 初始化 ====================
+fQ=sf(QBANKS[1].slice());tr=fQ.length;$('tr').textContent=tr;
+</script>
+</body>
+</html>

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>统计表和条形统计图 - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:14px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1.15em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.module-tabs{display:flex;gap:5px}
+.mtab{padding:5px 12px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#ccc;font-size:0.75em;cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap}
+.mtab:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5)}
+.mtab.active{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;border-color:#FFD700;font-weight:bold}
+.timer{font-size:1.4em;font-weight:bold;color:#FFD700;min-width:55px;text-align:center}
+.round-info{font-size:0.8em;color:#aaa}
+.arena{display:flex;flex:1;height:calc(100vh - 175px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 5px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:1px;display:flex;align-items:center;gap:5px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.7em;font-weight:bold;margin:1px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.7em;color:#FFD700;min-height:16px}
+.canvas-wrap{position:relative;width:100%;max-width:480px;margin:3px 0}
+canvas{width:100%;height:auto;border-radius:12px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.12);display:block;touch-action:none}
+.feedback{font-size:0.85em;font-weight:bold;min-height:20px;text-align:center;margin:2px 0}
+.instruction{font-size:0.72em;color:#aaa;text-align:center;min-height:16px}
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:14px;padding:7px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:10px 20px;border-radius:20px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.82);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+.opt-row{display:flex;gap:5px;width:100%;margin:3px 0;flex-wrap:wrap;justify-content:center}
+.p-opt{padding:8px 12px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.82em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;min-width:55px}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:5px 3px}
+  .vs-badge{font-size:1.2em;top:50%}
+  .player-score{font-size:1.2em}
+  .win-title{font-size:1.6em}
+  .canvas-wrap{max-width:100%}
+  .top-bar h1{font-size:0.95em}
+  .mtab{padding:3px 8px;font-size:0.68em}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>📊 统计表和条形统计图 ⚔️ PK对战</h1>
+  <div class="module-tabs">
+    <button class="mtab active" onclick="switchModule(1)">模块一：类别数据→条形图</button>
+    <button class="mtab" onclick="switchModule(2)">模块二：条形图→数据分析</button>
+  </div>
+  <span class="round-info">第 <span id="rn">1</span>/5 轮</span>
+  <span class="timer">⏱ <span id="tm">20</span>s</span>
+</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="canvas-wrap"><canvas id="cv1" width="480" height="380"></canvas></div>
+    <div class="instruction" id="ins1">根据统计表回答问题</div>
+    <div class="feedback" id="fb1"></div>
+    <div class="opt-row" id="op1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="canvas-wrap"><canvas id="cv2" width="480" height="380"></canvas></div>
+    <div class="instruction" id="ins2">根据统计表回答问题</div>
+    <div class="feedback" id="fb2"></div>
+    <div class="opt-row" id="op2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.2em;padding:14px 36px">🔄 再来一局</button>
+</div>
+
+<script>
+// ==================== AUDIO ====================
+var musicOn=true,actx=null;
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.05);}
+
+// ==================== STATE ====================
+var sc=[0,0],cr=0,tr=5,tm=20,ti=null,go=false,curModule=1;
+var p1Done=false,p2Done=false;
+var sk='pk_chart_'+window.location.pathname.replace(/[\/\.\s]/g,'_').replace(/^_+|_+$/g,'');
+
+// ==================== MODULE SWITCHING ====================
+function switchModule(m){
+  if(go)return;
+  curModule=m;
+  var tabs=document.querySelectorAll('.mtab');
+  tabs.forEach(function(t){t.classList.remove('active');});
+  tabs[m-1].classList.add('active');
+  p1Done=false;p2Done=false;
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  drawPlaceholders();
+}
+
+function drawPlaceholders(){
+  for(var p=1;p<=2;p++){
+    var ctx=document.getElementById('cv'+p).getContext('2d');
+    ctx.clearRect(0,0,480,380);
+    ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.font='bold 18px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.fillText('点击"开始对战"开始',240,190);
+  }
+  document.getElementById('ins1').textContent=getModuleInstruction();
+  document.getElementById('ins2').textContent=getModuleInstruction();
+}
+
+function getModuleInstruction(){
+  if(curModule===1)return '观察统计表，回答关于条形统计图的问题';
+  return '观察条形统计图，分析数据并回答问题';
+}
+
+// ==================== GAME CONTROL ====================
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display='none';
+  go=true;sc=[0,0];cr=0;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  p1Done=false;p2Done=false;
+  document.getElementById('rn').textContent=cr+1;
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('ins1').textContent=getModuleInstruction();
+  document.getElementById('ins2').textContent=getModuleInstruction();
+  tm=20;
+  document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent=tm;
+    if(tm<=5)sfxTick();
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+  if(curModule===1)initModule1();
+  else initModule2();
+}
+
+function timeUp(){
+  if(curModule===1)timeUpGeneric();
+  else timeUpGeneric();
+}
+
+function timeUpGeneric(){
+  for(var p=1;p<=2;p++){
+    var idx=p-1;
+    if(!(idx===0?p1Done:p2Done)){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到!';
+      if(p===1)p1Done=true;else p2Done=true;
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},1400);
+}
+
+function resolveRound(){
+  clearInterval(ti);
+  cr++;
+  setTimeout(function(){nextRound();},1400);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  }else{
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best)localStorage.setItem(sk,mx);
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;
+  sc=[0,0];cr=0;p1Done=false;p2Done=false;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent='20';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  drawPlaceholders();
+  var cf=document.querySelectorAll('.confetti');
+  cf.forEach(function(c){c.remove();});
+}
+
+// ==================== MODULE 1: 类别型数据 → 条形统计图 ====================
+// Each round: show a statistical table → ask about bar chart construction
+// Question types: 一格代表几 / XX画几格 / 哪个最多 / 哪个最少
+
+var m1Data=[];
+var m1Correct=[];   // correct answer index for each player
+var m1Unit=[];       // unit per grid for each player
+var _m1CI=[[],[]];  // correct option index per player
+
+function initModule1(){
+  generateM1Round();
+  drawM1Both();
+  generateM1Options();
+}
+
+function generateM1Round(){
+  // Generate categorical datasets for each player
+  var themes=[
+    {cats:['苹果','香蕉','橘子','葡萄','西瓜'], unit:1, max:10},
+    {cats:['语文','数学','英语','科学','美术'], unit:2, max:20},
+    {cats:['跳绳','跑步','跳远','投掷','仰卧'], unit:1, max:12},
+    {cats:['小猫','小狗','兔子','金鱼','仓鼠'], unit:2, max:16},
+    {cats:['周一','周二','周三','周四','周五'], unit:1, max:8},
+    {cats:['红色','蓝色','绿色','黄色','紫色'], unit:1, max:10},
+    {cats:['米饭','面条','饺子','馒头','包子'], unit:2, max:14},
+    {cats:['足球','篮球','排球','乒乓','羽毛'], unit:1, max:12}
+  ];
+
+  for(var p=0;p<2;p++){
+    var t=themes[Math.floor(Math.random()*themes.length)];
+    // Different theme per player
+    if(p===1){
+      do{t=themes[Math.floor(Math.random()*themes.length)];}while(t.cats[0]===m1Data[0]&&m1Data[0]&&t.cats[0]===m1Data[0].cats[0]);
+    }
+    var vals=[];
+    for(var i=0;i<5;i++)vals.push(Math.floor(Math.random()*(t.max/t.unit-1)+1)*t.unit);
+    m1Data[p]={cats:t.cats.slice(0,5), vals:vals, unit:t.unit, max:t.max};
+  }
+
+  // Pick question type for this round
+  var qTypes=['unit','height','max','min','sum'];
+  var qType=qTypes[cr%5];
+
+  for(var p=0;p<2;p++){
+    var d=m1Data[p];
+    var correct,question;
+    switch(qType){
+      case 'unit':
+        question='一格代表几个？';
+        correct=d.unit;
+        break;
+      case 'height':
+        var idx=Math.floor(Math.random()*5);
+        question='根据表格，'+d.cats[idx]+'的条形要画几格？';
+        correct=d.vals[idx]/d.unit;
+        break;
+      case 'max':
+        question='哪个类别数量最多？';
+        var mi=0;
+        for(var i=1;i<5;i++){if(d.vals[i]>d.vals[mi])mi=i;}
+        correct=d.cats[mi];
+        break;
+      case 'min':
+        question='哪个类别数量最少？';
+        var mi2=0;
+        for(var i=1;i<5;i++){if(d.vals[i]<d.vals[mi2])mi2=i;}
+        correct=d.cats[mi2];
+        break;
+      case 'sum':
+        var s=0;for(var i=0;i<5;i++)s+=d.vals[i];
+        question='所有类别一共有多少个？';
+        correct=s;
+        break;
+    }
+    m1Correct[p]={q:question, a:correct, type:qType};
+  }
+}
+
+function generateM1Options(){
+  for(var p=1;p<=2;p++){
+    var d=m1Data[p-1];
+    var c=m1Correct[p-1];
+    var correct=c.a;
+    var wrongs=[];
+    var type=c.type;
+
+    if(type==='unit'){
+      wrongs.push(correct===1?2:1);
+      wrongs.push(correct===5?10:5);
+      wrongs.push(correct+1);
+    }else if(type==='height'){
+      wrongs.push(correct+1);
+      wrongs.push(correct-1>0?correct-1:correct+2);
+      wrongs.push(Math.ceil(correct/2));
+    }else if(type==='max'||type==='min'){
+      var others=[];
+      for(var i=0;i<5;i++){if(d.cats[i]!==correct)others.push(d.cats[i]);}
+      wrongs=others.slice(0,3);
+    }else if(type==='sum'){
+      wrongs.push(correct+d.unit);
+      wrongs.push(correct-d.unit);
+      wrongs.push(correct+d.unit*2);
+    }
+
+    // Ensure unique
+    var seen2={};var uw=[];
+    for(var i=0;i<wrongs.length;i++){
+      if(wrongs[i]!==correct&&!seen2[wrongs[i]]){seen2[wrongs[i]]=true;uw.push(wrongs[i]);}
+    }
+    wrongs=uw.slice(0,3);
+    while(wrongs.length<3){
+      var rv;
+      if(typeof correct==='number')rv=correct+wrongs.length*2+1;
+      else rv=d.cats[Math.floor(Math.random()*5)];
+      if(rv!==correct&&wrongs.indexOf(rv)<0)wrongs.push(rv);
+    }
+    var opts=[correct].concat(wrongs);
+    for(var i=opts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=opts[i];opts[i]=opts[j];opts[j]=t;}
+    var ci=opts.indexOf(correct);
+    _m1CI[p-1]=ci;
+    var labels=['A','B','C','D'];
+    var h='';
+    for(var i=0;i<4;i++){
+      var label=typeof opts[i]==='number'?(opts[i]+(type==='unit'||type==='height'?'格':type==='sum'?'个':'')):opts[i];
+      h+='<button class="p-opt" onclick="answerGeneric('+p+','+i+','+ci+',this)">'+labels[i]+'. '+label+'</button>';
+    }
+    document.getElementById('op'+p).innerHTML=h;
+  }
+}
+
+function drawM1Both(){
+  for(var p=1;p<=2;p++)drawM1Canvas(p);
+}
+
+function drawM1Canvas(pn){
+  var cv=document.getElementById('cv'+pn);
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  var d=m1Data[pn-1];
+  var c=m1Correct[pn-1];
+  var mx=W-70,my=H-65,lx=65,ly=35;
+
+  // Title
+  ctx.fillStyle='#fff';
+  ctx.font='bold 15px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  ctx.fillText(c.q, W/2, 22);
+
+  // ---- Draw Statistical Table (top portion) ----
+  var tableY=38,colW=70,rowH=22;
+  var n=5;
+  var tx=lx+15;
+
+  // Table header
+  ctx.fillStyle='rgba(255,215,0,0.2)';
+  ctx.fillRect(tx,tableY,colW*2,rowH);
+  ctx.strokeStyle='rgba(255,255,255,0.5)';
+  ctx.strokeRect(tx,tableY,colW,rowH);
+  ctx.strokeRect(tx+colW,tableY,colW,rowH);
+  ctx.fillStyle='#FFD700';
+  ctx.font='bold 13px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  ctx.fillText('类别',tx+colW/2,tableY+15);
+  ctx.fillText('数量',tx+colW+colW/2,tableY+15);
+
+  for(var i=0;i<n;i++){
+    var ry=tableY+rowH+i*rowH;
+    ctx.fillStyle=i%2===0?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)';
+    ctx.fillRect(tx,ry,colW*2,rowH);
+    ctx.strokeStyle='rgba(255,255,255,0.25)';
+    ctx.strokeRect(tx,ry,colW,rowH);
+    ctx.strokeRect(tx+colW,ry,colW,rowH);
+    ctx.fillStyle='#fff';
+    ctx.font='12px "Microsoft YaHei"';
+    ctx.fillText(d.cats[i],tx+colW/2,ry+15);
+    ctx.fillText(d.vals[i],tx+colW+colW/2,ry+15);
+  }
+
+  // ---- Draw Bar Chart axes (bottom portion) ----
+  var chartTop=tableY+(n+1)*rowH+15;
+  var chartBottom=H-20;
+  var chartLeft=lx+20;
+  var chartRight=W-25;
+  var chartH=chartBottom-chartTop;
+  var chartW=chartRight-chartLeft;
+
+  // Y-axis
+  ctx.beginPath();
+  ctx.moveTo(chartLeft,chartTop);
+  ctx.lineTo(chartLeft,chartBottom);
+  ctx.lineTo(chartRight,chartBottom);
+  ctx.strokeStyle='rgba(255,255,255,0.7)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // Grid lines and Y-axis labels
+  var nGrids=Math.ceil(d.max/d.unit)+1;
+  var gridH=chartH/(nGrids-1);
+  for(var i=0;i<nGrids;i++){
+    var gy=chartBottom-i*gridH;
+    // Grid line
+    ctx.beginPath();
+    ctx.moveTo(chartLeft,gy);
+    ctx.lineTo(chartRight,gy);
+    ctx.strokeStyle='rgba(255,255,255,0.12)';
+    ctx.lineWidth=1;
+    ctx.setLineDash([3,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Y label
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.font='11px "Microsoft YaHei"';
+    ctx.textAlign='right';
+    ctx.fillText(i*d.unit,chartLeft-8,gy+4);
+  }
+
+  // "一格代表X" annotation
+  ctx.fillStyle='#FFD700';
+  ctx.font='bold 13px "Microsoft YaHei"';
+  ctx.textAlign='left';
+  ctx.fillText('一格代表 '+d.unit,chartLeft+5,chartTop-8);
+
+  // X-axis labels (categories)
+  var barW=chartW/(n*2);
+  for(var i=0;i<n;i++){
+    var bx=chartLeft+(i*2+1)*barW;
+    ctx.fillStyle='#fff';
+    ctx.font='11px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.fillText(d.cats[i],bx,chartBottom+14);
+  }
+
+  // Draw bars
+  var barColors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7'];
+  for(var i=0;i<n;i++){
+    var barH2=(d.vals[i]/d.unit)*gridH;
+    var bx=chartLeft+(i*2+0.4)*barW;
+    var bw=barW*1.2;
+    ctx.fillStyle=barColors[i];
+    ctx.fillRect(bx,chartBottom-barH2,bw,barH2);
+    // Value on top
+    ctx.fillStyle='#fff';
+    ctx.font='bold 11px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.fillText(d.vals[i],bx+bw/2,chartBottom-barH2-6);
+  }
+
+  // Instruction at bottom
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.font='12px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  if(c.type==='unit')ctx.fillText('提示：看Y轴刻度，一格代表多少？',W/2,H-5);
+  else if(c.type==='height')ctx.fillText('提示：用数量除以一格代表的数值',W/2,H-5);
+  else if(c.type==='max'||c.type==='min')ctx.fillText('提示：比较表格或条形图的高低',W/2,H-5);
+  else ctx.fillText('提示：把表格中所有数量相加',W/2,H-5);
+}
+
+// ==================== MODULE 2: 条形统计图 → 数据分析 ====================
+var m2Data=[];
+var m2Correct=[];
+var _m2CI=[[],[]];
+
+function initModule2(){
+  generateM2Round();
+  drawM2Both();
+  generateM2Options();
+}
+
+function generateM2Round(){
+  var themes=[
+    {cats:['小华','小明','小红','小刚','小丽'], unit:'成绩（分）', range:[60,100]},
+    {cats:['一月','二月','三月','四月','五月'], unit:'销量（件）', range:[20,80]},
+    {cats:['一班','二班','三班','四班','五班'], unit:'人数（人）', range:[25,55]},
+    {cats:['北京','上海','广州','深圳','杭州'], unit:'温度（°C）', range:[15,38]},
+    {cats:['第1组','第2组','第3组','第4组','第5组'], unit:'得分（分）', range:[50,100]},
+    {cats:['童话','科幻','历史','漫画','名著'], unit:'借阅量（本）', range:[10,50]}
+  ];
+
+  for(var p=0;p<2;p++){
+    var t=themes[Math.floor(Math.random()*themes.length)];
+    if(p===1){
+      do{t=themes[Math.floor(Math.random()*themes.length)];}while(t.cats[0]===m2Data[0]&&m2Data[0]&&t.cats[0]===m2Data[0].cats[0]);
+    }
+    var vals=[];
+    for(var i=0;i<5;i++)vals.push(Math.floor(Math.random()*(t.range[1]-t.range[0])/5+1)*5+t.range[0]-5);
+    // Ensure all unique-ish
+    for(var i=0;i<5;i++){while(vals.filter(function(x){return x===vals[i];}).length>1)vals[i]+=5;}
+    vals.sort(function(a,b){return b-a;}); // sorted descending for visual clarity
+    m2Data[p]={cats:t.cats.slice(0,5), vals:vals, unit:t.unit};
+  }
+
+  var qTypes=['read','rank','morethan','range','sum2'];
+  var qType=qTypes[cr%5];
+
+  for(var p=0;p<2;p++){
+    var d=m2Data[p];
+    var correct,question;
+    switch(qType){
+      case 'read':
+        var idx=Math.floor(Math.random()*5);
+        question=d.cats[idx]+'的数值是多少？';
+        correct=d.vals[idx];
+        break;
+      case 'rank':
+        var idx2=Math.floor(Math.random()*5);
+        question='从高到低排列，'+d.cats[idx2]+'排第几位？';
+        correct=d.vals.indexOf(d.vals[idx2])+1;
+        break;
+      case 'morethan':
+        var idx3=Math.floor(Math.random()*5);
+        var thresh=d.vals[idx3];
+        var cnt=0;for(var i=0;i<5;i++){if(d.vals[i]>thresh)cnt++;}
+        question='比'+d.cats[idx3]+'高的有几个？';
+        correct=cnt;
+        break;
+      case 'range':
+        question='最高和最低相差多少？';
+        correct=d.vals[0]-d.vals[4];
+        break;
+      case 'sum2':
+        var s2=0;for(var i=0;i<5;i++)s2+=d.vals[i];
+        question='所有数据的总和是多少？';
+        correct=s2;
+        break;
+    }
+    m2Correct[p]={q:question, a:correct, type:qType};
+  }
+}
+
+function generateM2Options(){
+  for(var p=1;p<=2;p++){
+    var d=m2Data[p-1];
+    var c=m2Correct[p-1];
+    var correct=c.a;
+    var wrongs=[];
+
+    if(c.type==='read'){
+      wrongs.push(correct+5);
+      wrongs.push(correct-5);
+      wrongs.push(correct+10);
+    }else if(c.type==='rank'){
+      wrongs.push(correct===1?2:correct-1);
+      wrongs.push(correct===5?4:correct+1);
+      wrongs.push(correct===1?3:(correct-2>0?correct-2:correct+2));
+    }else if(c.type==='morethan'){
+      wrongs.push(correct+1);
+      wrongs.push(Math.max(0,correct-1));
+      wrongs.push(correct+2>4?correct-2:correct+2);
+    }else if(c.type==='range'||c.type==='sum2'){
+      wrongs.push(correct+5);
+      wrongs.push(correct-5>0?correct-5:correct+10);
+      wrongs.push(correct+10);
+    }
+
+    var seen2={};var uw=[];
+    for(var i=0;i<wrongs.length;i++){
+      if(wrongs[i]!==correct&&!seen2[wrongs[i]]){seen2[wrongs[i]]=true;uw.push(wrongs[i]);}
+    }
+    wrongs=uw.slice(0,3);
+    while(wrongs.length<3){
+      var rv=correct+wrongs.length*3+Math.floor(Math.random()*5);
+      if(rv!==correct&&wrongs.indexOf(rv)<0)wrongs.push(rv);
+    }
+    var opts=[correct].concat(wrongs);
+    for(var i=opts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=opts[i];opts[i]=opts[j];opts[j]=t;}
+    var ci=opts.indexOf(correct);
+    _m2CI[p-1]=ci;
+    var labels=['A','B','C','D'];
+    var h='';
+    for(var i=0;i<4;i++)h+='<button class="p-opt" onclick="answerM2('+p+','+i+','+ci+',this)">'+labels[i]+'. '+opts[i]+'</button>';
+    document.getElementById('op'+p).innerHTML=h;
+  }
+}
+
+function drawM2Both(){
+  for(var p=1;p<=2;p++)drawM2Canvas(p);
+}
+
+function drawM2Canvas(pn){
+  var cv=document.getElementById('cv'+pn);
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  var d=m2Data[pn-1];
+  var c=m2Correct[pn-1];
+  var n=5;
+
+  // Title
+  ctx.fillStyle='#fff';
+  ctx.font='bold 15px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  ctx.fillText(c.q, W/2, 22);
+
+  // Chart area
+  var lx=65,rx=W-25,ty=35,by=H-45;
+  var cw=rx-lx,ch=by-ty;
+
+  // Find scale
+  var maxV=Math.max.apply(null,d.vals);
+  var minV=Math.min.apply(null,d.vals);
+  var gridUnit=5;
+  if(maxV>80)gridUnit=10;
+  if(maxV>200)gridUnit=20;
+  var nGrids=Math.ceil(maxV/gridUnit)+1;
+  var gridH=ch/(nGrids-1);
+
+  // Axes
+  ctx.beginPath();
+  ctx.moveTo(lx,ty);
+  ctx.lineTo(lx,by);
+  ctx.lineTo(rx,by);
+  ctx.strokeStyle='rgba(255,255,255,0.7)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // Grid lines and Y labels
+  for(var i=0;i<nGrids;i++){
+    var gy=by-i*gridH;
+    ctx.beginPath();
+    ctx.moveTo(lx,gy);
+    ctx.lineTo(rx,gy);
+    ctx.strokeStyle='rgba(255,255,255,0.1)';
+    ctx.lineWidth=1;
+    ctx.setLineDash([3,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,0.55)';
+    ctx.font='11px "Microsoft YaHei"';
+    ctx.textAlign='right';
+    ctx.fillText(i*gridUnit,lx-8,gy+4);
+  }
+
+  // Unit annotation
+  ctx.fillStyle='#FFD700';
+  ctx.font='bold 12px "Microsoft YaHei"';
+  ctx.textAlign='left';
+  ctx.fillText('一格代表 '+gridUnit+' '+d.unit.replace(/（.*）/,''),lx+3,ty-10);
+
+  // Bars
+  var barColors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7'];
+  var barW=cw/(n*2);
+  for(var i=0;i<n;i++){
+    var barH2=(d.vals[i]/gridUnit)*gridH;
+    var bx=lx+(i*2+0.4)*barW;
+    var bw=barW*1.2;
+    ctx.fillStyle=barColors[i];
+    ctx.fillRect(bx,by-barH2,bw,barH2);
+
+    // Value on top of bar
+    ctx.fillStyle='#fff';
+    ctx.font='bold 12px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.fillText(d.vals[i],bx+bw/2,by-barH2-7);
+
+    // Category label below
+    ctx.fillStyle='#fff';
+    ctx.font='11px "Microsoft YaHei"';
+    ctx.fillText(d.cats[i],bx+bw/2,by+16);
+  }
+
+  // Instruction at bottom
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  ctx.font='12px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  if(c.type==='read')ctx.fillText('提示：看条形顶端对应的Y轴刻度',W/2,H-8);
+  else if(c.type==='rank')ctx.fillText('提示：从最高的开始数，看排在第几个',W/2,H-8);
+  else if(c.type==='morethan')ctx.fillText('提示：数一数比目标高的条形有几个',W/2,H-8);
+  else if(c.type==='range')ctx.fillText('提示：用最大数据减去最小数据',W/2,H-8);
+  else ctx.fillText('提示：把所有数据加起来',W/2,H-8);
+}
+
+// ==================== ANSWER HANDLERS ====================
+function answerGeneric(pn,oi,ai,btn){
+  if(!go||curModule!==1)return;
+  if(pn===1&&p1Done)return;
+  if(pn===2&&p2Done)return;
+  if(pn===1)p1Done=true;else p2Done=true;
+
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确! +10';
+    document.getElementById('st'+pn).textContent='🔥 答对了!';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 错误!';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){if(i===ai)bs[i].classList.add('correct');}
+  }
+  if(p1Done&&p2Done)resolveRound();
+}
+
+function answerM2(pn,oi,ai,btn){
+  if(!go||curModule!==2)return;
+  if(pn===1&&p1Done)return;
+  if(pn===2&&p2Done)return;
+  if(pn===1)p1Done=true;else p2Done=true;
+
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确! +10';
+    document.getElementById('st'+pn).textContent='🔥 答对了!';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 错误!';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){if(i===ai)bs[i].classList.add('correct');}
+  }
+  if(p1Done&&p2Done)resolveRound();
+}
+
+// ==================== INITIALIZATION ====================
+window.addEventListener('DOMContentLoaded',function(){drawPlaceholders();});
+window.addEventListener('load',function(){initAudio();});
+</script>
+</body>
+</html>

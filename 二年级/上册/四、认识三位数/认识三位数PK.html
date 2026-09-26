@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>认识三位数 - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ========== HOME SCREEN ========== */
+.home-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;gap:20px}
+.home-title{font-size:2.2em;font-weight:bold;text-align:center;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite}
+@keyframes shimmer{0%{background-position:0 0}100%{background-position:200% 0}}
+.home-subtitle{font-size:1em;color:#aaa;text-align:center;margin-top:-10px}
+.module-cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:900px;width:100%}
+.m-card{flex:1;min-width:220px;max-width:280px;padding:30px 20px;border-radius:20px;cursor:pointer;text-align:center;transition:all 0.3s;position:relative;overflow:hidden;border:2px solid rgba(255,255,255,0.1)}
+.m-card:hover{transform:translateY(-8px);box-shadow:0 16px 40px rgba(0,0,0,0.4)}
+.m-card:active{transform:scale(0.95)}
+.m-card.m1{background:linear-gradient(135deg,rgba(76,175,80,0.25),rgba(76,175,80,0.05));border-color:rgba(76,175,80,0.4)}
+.m-card.m2{background:linear-gradient(135deg,rgba(33,150,243,0.25),rgba(33,150,243,0.05));border-color:rgba(33,150,243,0.4)}
+.m-card.m3{background:linear-gradient(135deg,rgba(255,152,0,0.25),rgba(255,152,0,0.05));border-color:rgba(255,152,0,0.4)}
+.m-card .m-icon{font-size:3.5em;margin-bottom:12px}
+.m-card .m-title{font-size:1.4em;font-weight:bold;margin-bottom:8px}
+.m-card.m1 .m-title{color:#66BB6A}
+.m-card.m2 .m-title{color:#42A5F5}
+.m-card.m3 .m-title{color:#FFA726}
+.m-card .m-desc{font-size:0.85em;color:#aaa;line-height:1.5}
+.m-card .m-badge{position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:12px;font-size:0.7em;color:#FFD700}
+
+/* ========== GAME SCREEN ========== */
+.game-screen{display:none;flex-direction:column;height:100vh}
+
+/* Module banner */
+.mod-banner{text-align:center;padding:5px 12px;background:rgba(0,0,0,0.3);font-size:0.8em;color:#FFD700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.4s;flex-shrink:0}
+.mod-banner.m1{background:linear-gradient(90deg,rgba(76,175,80,0.2),rgba(0,0,0,0.3),rgba(76,175,80,0.2))}
+.mod-banner.m2{background:linear-gradient(90deg,rgba(33,150,243,0.2),rgba(0,0,0,0.3),rgba(33,150,243,0.2))}
+.mod-banner.m3{background:linear-gradient(90deg,rgba(255,152,0,0.2),rgba(0,0,0,0.3),rgba(255,152,0,0.2))}
+.mod-banner .mod-label{font-size:0.75em;opacity:0.7}
+.progress-dots{display:flex;gap:4px;align-items:center}
+.progress-dots .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s}
+.progress-dots .dot.done{background:#10B981}
+.progress-dots .dot.cur{background:#FFD700;box-shadow:0 0 6px rgba(255,215,0,0.6)}
+
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:16px;background:rgba(0,0,0,0.4);flex-shrink:0}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:60px;text-align:center;transition:color 0.3s}
+.timer.urgent{color:#FF5252;animation:blink 0.5s infinite}
+@keyframes blink{50%{opacity:0.4}}
+.round-info{font-size:0.85em;color:#aaa}
+
+/* Visual display area */
+.visual-display{background:rgba(255,255,255,0.05);border-radius:14px;margin:8px 12px;padding:12px;text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;flex-shrink:0;border:1px solid rgba(255,255,255,0.08);position:relative;overflow-x:auto}
+.visual-label{position:absolute;top:4px;left:10px;font-size:0.65em;color:rgba(255,255,255,0.4);letter-spacing:1px}
+
+/* Base-10 blocks */
+.blk-hundred{display:inline-grid;grid-template-columns:repeat(10,1fr);gap:1px;padding:4px;background:rgba(255,107,107,0.15);border-radius:6px;margin:3px}
+.blk-hundred .cell{width:14px;height:14px;background:linear-gradient(135deg,#FF6B6B,#e55a5a);border-radius:2px}
+.blk-ten{display:inline-flex;gap:1px;padding:4px 6px;background:rgba(33,150,243,0.15);border-radius:6px;margin:3px;align-items:center}
+.blk-ten .cell{width:14px;height:28px;background:linear-gradient(135deg,#42A5F5,#1e88e5);border-radius:2px}
+.blk-one{display:inline-block;width:14px;height:14px;background:linear-gradient(135deg,#66BB6A,#43a047);border-radius:2px;margin:1px}
+.blk-group{display:inline-flex;flex-direction:column;align-items:center;gap:2px;margin:0 4px}
+.blk-group .blk-label{font-size:0.6em;color:#aaa}
+
+/* Abacus */
+.abacus-frame{display:inline-flex;gap:10px;padding:10px 14px 6px;background:rgba(139,90,43,0.3);border-radius:12px;border:3px solid #8B5A2B;align-items:stretch}
+.abacus-col{display:flex;flex-direction:column;align-items:center;width:34px;position:relative}
+.abacus-col::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:3px;background:rgba(139,90,43,0.4);transform:translateX(-50%);border-radius:1px;z-index:0}
+.abacus-beam{width:100%;height:5px;background:#8B5A2B;border-radius:2px;flex-shrink:0;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.abacus-upper{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:36px;z-index:1;padding:2px 0}
+.abacus-lower{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:76px;z-index:1;padding:2px 0}
+.abacus-bead{width:26px;height:14px;border-radius:7px;background:linear-gradient(180deg,#e8e8e8,#b0b0b0);box-shadow:0 2px 3px rgba(0,0,0,0.3);transition:all 0.3s;flex-shrink:0}
+.abacus-bead.active{background:linear-gradient(180deg,#FFD700,#E65100);box-shadow:0 2px 6px rgba(255,152,0,0.6)}
+.abacus-col-label{font-size:0.6em;color:#aaa;margin-top:3px}
+
+/* Counter (计数器) */
+.counter-frame{display:inline-flex;gap:4px;padding:6px;background:rgba(255,255,255,0.05);border-radius:12px;border:2px solid rgba(255,255,255,0.15)}
+.counter-col{display:flex;flex-direction:column;align-items:center;width:56px}
+.counter-label{font-size:0.7em;color:rgba(255,255,255,0.5);padding:4px 0;background:rgba(0,0,0,0.25);width:100%;text-align:center;border-radius:6px 6px 0 0;font-weight:bold}
+.counter-digit{font-size:1.8em;font-weight:bold;color:#FFD700;padding:6px 0;background:rgba(0,0,0,0.35);width:100%;text-align:center;border-radius:0 0 6px 6px;border-top:2px solid rgba(255,255,255,0.12);min-height:44px;line-height:44px}
+.counter-digit.empty{color:rgba(255,255,255,0.15)}
+
+/* Stick bundles (小棒) */
+.stick-area{display:inline-flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:6px;padding:4px}
+.stick-bundle{display:inline-flex;flex-direction:column;align-items:center;position:relative;margin:2px 4px}
+.stick-bundle .sticks-row{display:flex;gap:1px;padding:3px 5px 10px;position:relative}
+.stick-bundle .stk{width:3px;height:38px;background:linear-gradient(180deg,#DEB887 30%,#C4956A 60%,#A0724A);border-radius:1px}
+.stick-bundle .band{position:absolute;left:0;right:0;height:7px;background:rgba(200,40,40,0.85);border-radius:3px;top:10px;z-index:2}
+.stick-bundle .bundle-label{font-size:0.6em;color:#FFD700;margin-top:2px}
+.stick-singles{display:inline-flex;flex-wrap:wrap;gap:2px;align-items:flex-end;padding:2px;max-width:70px;justify-content:center}
+.stick-single{width:3px;height:38px;background:linear-gradient(180deg,#DEB887 30%,#C4956A 60%,#A0724A);border-radius:1px}
+.stick-label{font-size:0.6em;color:#aaa;margin-top:2px;text-align:center}
+.stick-group-wrap{display:inline-flex;flex-direction:column;align-items:center;margin:2px}
+.stick-hundred{display:inline-flex;flex-direction:column;align-items:center;padding:4px 6px;background:rgba(255,107,107,0.1);border-radius:8px;border:1px dashed rgba(255,107,107,0.3)}
+.stick-hundred .inner-sticks{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:100px}
+.stick-hundred .hundred-label{font-size:0.6em;color:#FF6B6B;margin-top:3px}
+
+/* Comparison display */
+.compare-display{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center}
+.compare-num{font-size:2.5em;font-weight:bold;padding:8px 20px;border-radius:14px}
+.compare-num.cn-left{background:rgba(255,107,107,0.2);color:#FF6B6B}
+.compare-num.cn-right{background:rgba(78,205,196,0.2);color:#4ECDC4}
+.compare-num.cn-100{background:rgba(255,215,0,0.2);color:#FFD700}
+.compare-vs{font-size:1.2em;color:#aaa;font-weight:bold}
+.compare-blocks{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+
+/* Grid of squares (for showing 100) */
+.sq-grid{display:inline-grid;grid-template-columns:repeat(10,1fr);gap:2px;padding:6px;background:rgba(255,255,255,0.05);border-radius:8px}
+.sq-grid .sq{width:16px;height:16px;background:linear-gradient(135deg,#FFD700,#FF9800);border-radius:3px}
+.sq-grid.small .sq{width:10px;height:10px;gap:1px}
+
+/* Arena */
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.8em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.75em;color:#FFD700;min-height:18px}
+.first-badge{font-size:0.7em;color:#FFD700;min-height:16px;animation:pulse 0.6s}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.question-box{background:rgba(255,255,255,0.1);border-radius:12px;padding:10px 8px;margin:4px 0;width:100%;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:0.95em;line-height:1.4}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;margin:4px 0}
+.p-opt{padding:10px 5px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:42px;display:flex;align-items:center;justify-content:center;word-break:break-all}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.03)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.p-opt.speed-bonus{box-shadow:0 0 16px rgba(255,215,0,0.6)}
+.left .p-opt.correct{box-shadow:0 0 16px rgba(255,107,107,0.5)}
+.right .p-opt.correct{box-shadow:0 0 16px rgba(78,205,196,0.5)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.feedback{font-size:0.8em;font-weight:bold;min-height:20px;text-align:center;margin:2px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:10px 20px;border-radius:20px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.home-btn{background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#fff}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+/* Module transition overlay */
+.mod-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:90;display:none;align-items:center;justify-content:center;flex-direction:column}
+.mod-overlay.show{display:flex;animation:fadeIn 0.4s}
+.mod-overlay .mod-big-icon{font-size:4.5em;animation:bounceIn 0.6s}
+.mod-overlay .mod-title{font-size:1.8em;font-weight:bold;margin:12px 0;color:#FFD700;animation:bounceIn 0.7s}
+.mod-overlay .mod-desc{font-size:0.9em;color:#ccc;margin-bottom:16px;animation:bounceIn 0.9s;text-align:center;line-height:1.6;padding:0 20px;max-width:400px}
+.mod-overlay .mod-tip{font-size:0.75em;color:#888;animation:bounceIn 1.1s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+
+/* Win overlay */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:32px;margin-bottom:16px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+.win-stars{font-size:2em;margin:8px 0}
+.ctrl-btn.win-btn{font-size:1.1em;padding:14px 32px}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* Responsive */
+@media(max-width:600px){
+  .home-title{font-size:1.5em}
+  .module-cards{flex-direction:column;align-items:center;gap:12px}
+  .m-card{max-width:100%;min-width:auto;width:100%;padding:20px 16px}
+  .m-card .m-icon{font-size:2.5em}
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:6px 5px}
+  .question-box{font-size:0.85em;min-height:36px;padding:8px 6px}
+  .p-opt{font-size:0.75em;padding:8px 4px;min-height:36px}
+  .vs-badge{font-size:1.4em}
+  .player-score{font-size:1.3em}
+  .visual-display{min-height:70px;padding:8px}
+  .blk-hundred .cell{width:10px;height:10px}
+  .blk-ten .cell{width:10px;height:20px}
+  .blk-one{width:10px;height:10px}
+  .abacus-frame{gap:6px;padding:6px 8px}
+  .abacus-col{width:24px}
+  .abacus-bead{width:18px;height:10px;border-radius:5px}
+  .abacus-upper{height:24px}
+  .abacus-lower{height:52px}
+  .abacus-beam{height:3px}
+  .sq-grid .sq{width:11px;height:11px}
+  .sq-grid.small .sq{width:7px;height:7px}
+  .compare-num{font-size:1.6em;padding:6px 14px}
+  .win-title{font-size:1.5em}
+  .options-grid{gap:4px}
+  .counter-col{width:42px}
+  .counter-digit{font-size:1.3em;min-height:32px;line-height:32px}
+  .counter-label{font-size:0.6em}
+  .stick-bundle .stk{height:28px;width:2px}
+  .stick-single{height:28px;width:2px}
+  .stick-bundle .band{height:5px;top:8px}
+  .stick-hundred .inner-sticks{max-width:70px}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== HOME SCREEN ==================== -->
+<div class="home-screen" id="homeScreen">
+  <div class="home-title">🧮 认识三位数</div>
+  <div class="home-subtitle">苏教版 · 二年级上册 · 双人对战</div>
+  <div class="module-cards">
+    <div class="m-card m1" onclick="enterModule(1)">
+      <div class="m-badge">模块一</div>
+      <div class="m-icon">🌾</div>
+      <div class="m-title">认识 100</div>
+      <div class="m-desc">实物感知 · 小方块 · 计数器<br>感受100的数量 · 比较大小</div>
+    </div>
+    <div class="m-card m2" onclick="enterModule(2)">
+      <div class="m-badge">模块二</div>
+      <div class="m-icon">🏗️</div>
+      <div class="m-title">认识三位数</div>
+      <div class="m-desc">百位·十位·个位<br>读写大于100的三位数</div>
+    </div>
+    <div class="m-card m3" onclick="enterModule(3)">
+      <div class="m-badge">模块三</div>
+      <div class="m-icon">🧮</div>
+      <div class="m-title">拨算盘</div>
+      <div class="m-desc">上珠代表5 · 下珠代表1<br>看算盘读数字</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== GAME SCREEN ==================== -->
+<div class="game-screen" id="gameScreen">
+  <div class="mod-banner" id="modBanner">
+    <span class="mod-label">当前模块</span>
+    <span id="modBannerText">模块一：认识100</span>
+    <div class="progress-dots" id="progressDots"></div>
+  </div>
+  <div class="top-bar">
+    <h1 id="gameTitle">认识三位数 ⚔️ PK对战</h1>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="rt">10</span> 题</span>
+    <span class="timer">⏱ <span id="tm">15</span>s</span>
+  </div>
+
+  <!-- Shared visual display -->
+  <div class="visual-display" id="visualDisplay"></div>
+
+  <div class="arena">
+    <div class="player left" id="p1">
+      <div class="player-name">🔴 红方</div>
+      <div class="player-score" id="s1">0</div>
+      <div class="streak" id="st1"></div>
+      <div class="first-badge" id="fbBadge1"></div>
+      <div class="question-box" id="q1">选择模块开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="p2">
+      <div class="player-name">🔵 蓝方</div>
+      <div class="player-score" id="s2">0</div>
+      <div class="streak" id="st2"></div>
+      <div class="first-badge" id="fbBadge2"></div>
+      <div class="question-box" id="q2">选择模块开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="ctrl-btn home-btn" onclick="goHome()">🏠 主页</button>
+    <button class="ctrl-btn start" id="btnStart" onclick="startModule()">⚔️ 开始对战</button>
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn restart" onclick="restartModule()">🔄 重来</button>
+  </div>
+</div>
+
+<!-- ==================== MODULE TRANSITION ==================== -->
+<div class="mod-overlay" id="modOverlay">
+  <div class="mod-big-icon" id="modIcon"></div>
+  <div class="mod-title" id="modTitle"></div>
+  <div class="mod-desc" id="modDesc"></div>
+  <div class="mod-tip">3秒后自动开始...</div>
+</div>
+
+<!-- ==================== WIN OVERLAY ==================== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-stars" id="winStars"></div>
+  <button class="ctrl-btn win-btn restart" onclick="restartModule()" style="margin:6px">🔄 再来一局</button>
+  <button class="ctrl-btn win-btn home-btn" onclick="goHome()" style="margin:6px">🏠 返回主页</button>
+</div>
+
+<script>
+// ==================== AUDIO ====================
+var musicOn=true,actx=null;
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.12,'square',0.08);setTimeout(function(){playTone(659,0.12,'square',0.08);},90);setTimeout(function(){playTone(784,0.18,'square',0.08);},180);}
+function sfxWrong(){playTone(200,0.25,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<6;i++){setTimeout(function(){playTone(400+Math.random()*500,0.18,'square',0.07);},i*130);}}
+function sfxTick(){playTone(800,0.04,'sine',0.04);}
+function sfxClick(){playTone(660,0.06,'sine',0.05);}
+function sfxTransition(){playTone(330,0.15,'sine',0.06);setTimeout(function(){playTone(440,0.15,'sine',0.06);},120);setTimeout(function(){playTone(550,0.2,'sine',0.07);},240);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.05);}
+
+// ==================== GAME STATE ====================
+var curModule=0, sc=[0,0], cr=0, tr=10, tm=15, ti=null, go=false, ans=[false,false];
+var Q=[], firstAns=-1;
+var MODULES={
+  1:{name:'模块一：认识100',icon:'🌾',desc:'小方块·整捆小棒·计数器·感受100的数量·比较大小',cls:'m1',color:'#66BB6A'},
+  2:{name:'模块二：认识三位数',icon:'🏗️',desc:'方块·小棒·计数器·读写大于100的三位数·比较大小',cls:'m2',color:'#42A5F5'},
+  3:{name:'模块三：拨算盘',icon:'🧮',desc:'上珠一颗代表5，下珠四颗各代表1，看算盘读出数字',cls:'m3',color:'#FFA726'}
+};
+
+// ==================== VISUAL RENDERERS ====================
+
+// Render base-10 blocks (hundreds, tens, ones)
+function renderBlocks(h,t,o,small){
+  var size=small?'small':'';
+  var html='';
+  // Hundreds
+  for(var i=0;i<h;i++){
+    html+='<div class="blk-group"><div class="blk-hundred">';
+    for(var r=0;r<10;r++){for(var c=0;c<10;c++){html+='<div class="cell"></div>';}}
+    html+='</div><span class="blk-label">100</span></div>';
+  }
+  // Tens
+  for(var i=0;i<t;i++){
+    html+='<div class="blk-group"><div class="blk-ten">';
+    for(var c=0;c<10;c++){html+='<div class="cell"></div>';}
+    html+='</div><span class="blk-label">10</span></div>';
+  }
+  // Ones
+  if(o>0){
+    html+='<div class="blk-group"><div style="display:flex;flex-wrap:wrap;gap:1px;justify-content:center;max-width:80px">';
+    for(var i=0;i<o;i++){html+='<div class="blk-one"></div>';}
+    html+='</div><span class="blk-label">1</span></div>';
+  }
+  return html;
+}
+
+// Render 10x10 grid of squares (for showing 100)
+function renderGrid100(rows,cols,highlight){
+  var h='<div class="sq-grid">';
+  for(var i=0;i<rows*cols;i++){
+    var hl=highlight&&i<highlight?'style="background:linear-gradient(135deg,#FFD700,#FF6B6B)"':'';
+    h+='<div class="sq" '+hl+'></div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// Render abacus showing a 3-digit number
+function renderAbacus(num){
+  var hd=Math.floor(num/100)%10;
+  var td=Math.floor(num/10)%10;
+  var od=num%10;
+  var cols=[
+    {label:'百位',val:hd},
+    {label:'十位',val:td},
+    {label:'个位',val:od}
+  ];
+  var html='<div class="abacus-frame">';
+  for(var i=0;i<cols.length;i++){
+    var v=cols[i].val;
+    var upperActive=v>=5;
+    var lowerCount=v%5;
+    html+='<div class="abacus-col">';
+    // Upper section: bead starts at TOP (away from beam), moves to BOTTOM (near beam) when active
+    html+='<div class="abacus-upper">';
+    html+='<div class="abacus-bead'+(upperActive?' active':'')+'" style="'+(upperActive?'margin-top:auto':'')+'"></div>';
+    html+='</div>';
+    // Beam
+    html+='<div class="abacus-beam"></div>';
+    // Lower section: beads start at TOP (near beam), inactive ones pushed to BOTTOM
+    html+='<div class="abacus-lower">';
+    for(var j=0;j<4;j++){
+      var isActive=j<lowerCount;
+      var style='';
+      if(!isActive && j===lowerCount) style='margin-top:auto';
+      html+='<div class="abacus-bead'+(isActive?' active':'')+'" style="'+style+'"></div>';
+    }
+    html+='</div>';
+    html+='<div class="abacus-col-label">'+cols[i].label+'</div>';
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+// Render number comparison
+function renderCompare(num1,num2,showBlocks){
+  var h='<div class="compare-display">';
+  if(showBlocks){
+    h+='<div class="compare-blocks">';
+    h+=renderBlocks(0,Math.floor(num1/10),num1%10,true);
+    h+='</div>';
+    h+='<span class="compare-vs">VS</span>';
+    h+='<div class="compare-blocks">';
+    if(num2===100){
+      h+=renderBlocks(1,0,0,true);
+    }else{
+      h+=renderBlocks(0,Math.floor(num2/10),num2%10,true);
+    }
+    h+='</div>';
+  }else{
+    h+='<span class="compare-num cn-left">'+num1+'</span>';
+    h+='<span class="compare-vs">⚡VS</span>';
+    h+='<span class="compare-num cn-right">'+num2+'</span>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// Render counter (计数器) showing a number with place value columns
+function renderCounter(num,highlightCol){
+  var hd=Math.floor(num/100)%10;
+  var td=Math.floor(num/10)%10;
+  var od=num%10;
+  var showH=num>=100;
+  var cols=[
+    {label:'百位',val:showH?hd:-1},
+    {label:'十位',val:td},
+    {label:'个位',val:od}
+  ];
+  var html='<div class="counter-frame">';
+  for(var i=0;i<cols.length;i++){
+    var c=cols[i];
+    var isHL=highlightCol===i;
+    html+='<div class="counter-col" style="'+(isHL?'box-shadow:0 0 12px rgba(255,215,0,0.5);border-radius:6px':'')+'">';
+    html+='<div class="counter-label">'+c.label+'</div>';
+    if(c.val>=0){
+      html+='<div class="counter-digit" style="'+(isHL?'color:#fff;font-size:2em':'')+'">'+c.val+'</div>';
+    }else{
+      html+='<div class="counter-digit empty">-</div>';
+    }
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+// Render stick bundles (小棒) - hundreds as big bundles, tens as small bundles, ones as singles
+function renderSticks(h,t,o){
+  var html='<div class="stick-area">';
+  // Hundreds: show as groups of 10 small bundles
+  for(var i=0;i<h;i++){
+    html+='<div class="stick-hundred">';
+    html+='<div class="inner-sticks">';
+    // Show 10 mini bundles
+    for(var b=0;b<10;b++){
+      html+='<div class="stick-bundle" style="margin:1px;transform:scale(0.55)">';
+      html+='<div class="sticks-row">';
+      for(var s=0;s<10;s++){html+='<div class="stk" style="height:24px"></div>';}
+      html+='</div>';
+      html+='<div class="band" style="height:4px;top:6px"></div>';
+      html+='</div>';
+    }
+    html+='</div>';
+    html+='<div class="hundred-label">100根</div>';
+    html+='</div>';
+  }
+  // Tens: small bundles
+  for(var i=0;i<t;i++){
+    html+='<div class="stick-group-wrap">';
+    html+='<div class="stick-bundle">';
+    html+='<div class="sticks-row">';
+    for(var s=0;s<10;s++){html+='<div class="stk"></div>';}
+    html+='</div>';
+    html+='<div class="band"></div>';
+    html+='</div>';
+    html+='<div class="bundle-label">10根</div>';
+    html+='</div>';
+  }
+  // Ones: single sticks
+  if(o>0){
+    html+='<div class="stick-group-wrap">';
+    html+='<div class="stick-singles">';
+    for(var i=0;i<o;i++){html+='<div class="stick-single"></div>';}
+    html+='</div>';
+    html+='<div class="stick-label">'+o+'根</div>';
+    html+='</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+// ==================== QUESTION BANKS ====================
+
+function buildM1Questions(){
+  var qs=[];
+  // === PART 1: 实物感知 — 小方块感受100 ===
+  qs.push({v:'grid100',q:'数一数，这个大正方形由多少个小方块组成？',o:['10个','50个','90个','100个'],a:3,gridR:10,gridC:10});
+  qs.push({v:'grid100',q:'每行有10个小方块，10行一共有多少个？',o:['20个','100个','80个','50个'],a:1,gridR:10,gridC:10});
+  qs.push({v:'grid100',q:'图中共有几个小方块？10个十是多少？',o:['10','50','100','90'],a:2,gridR:10,gridC:10});
+
+  // === PART 2: 小棒 — 整捆和单根 ===
+  qs.push({v:'sticks',q:'图中有几捆小棒？每捆10根，一共多少根？',o:['10根','50根','100根','90根'],a:2,sticks:[0,10,0]});
+  qs.push({v:'sticks',q:'9捆小棒再加1捆，一共几捆？多少根？',o:['9捆90根','10捆100根','11捆110根','10捆90根'],a:1,sticks:[0,9,0],extra:'+1捆'});
+  qs.push({v:'sticks',q:'图中有几捆小棒和几根单根？一共几根？',o:['4捆6根=46根','5捆5根=55根','6捆4根=64根','4捆5根=45根'],a:0,sticks:[0,4,6]});
+
+  // === PART 3: 计数器 ===
+  qs.push({v:'counter',q:'计数器上表示的数是多少？',o:['10','100','99','90'],a:1,counterNum:100});
+  qs.push({v:'counter',q:'计数器十位是9，个位是9，这个数比100？',o:['大','小','相等','无法判断'],a:1,counterNum:99});
+  qs.push({v:'counter',q:'计数器上百位拨1颗珠，表示多少？',o:['1','10','100','1000'],a:2,counterNum:100,highlightCol:0});
+
+  // === PART 4: 方块 — 认识100 ===
+  qs.push({v:'blocks',q:'图中表示的数字是多少？',o:['10','50','100','99'],a:2,blocks:[1,0,0]});
+  qs.push({v:'blocks',q:'一个百格板表示100，图中表示的是？',o:['100','10个十','10个一','以上都对'],a:3,blocks:[1,0,0]});
+  qs.push({v:'blocks',q:'9个十条和10个一，合起来是多少？',o:['90','99','100','110'],a:2,blocks:[0,9,10]});
+
+  // === PART 5: 比较 — 两位数和100比大小 ===
+  qs.push({v:'blocks_compare',q:'左边表示的数（小方块）比100大还是小？',o:['比100大','比100小','等于100','不确定'],a:1,blocks:[0,4,5],compareNum:100});
+  qs.push({v:'blocks_compare',q:'左边表示的数比100大还是小？',o:['比100大','比100小','等于100','不确定'],a:1,blocks:[0,9,8],compareNum:100});
+  qs.push({v:'sticks_compare',q:'左边小棒表示的数比100？',o:['大','小','相等','不确定'],a:1,sticksLeft:[0,7,3],compareNum:100});
+  qs.push({v:'compare',q:'65和100比较，正确的是？',o:['65>100','65=100','65<100','65=99'],a:2,num1:65,num2:100});
+  qs.push({v:'compare',q:'99和100比较？',o:['99>100','99=100','99<100','无法比较'],a:2,num1:99,num2:100});
+  qs.push({v:'compare',q:'100和100比较？',o:['100>100','100=100','100<100','无法比较'],a:1,num1:100,num2:100});
+  qs.push({v:'counter_compare',q:'计数器上的数比100？',o:['大','小','相等','不确定'],a:1,counterNum:87,compareNum:100});
+  qs.push({v:'counter_compare',q:'计数器上的数比100？',o:['大','小','相等','不确定'],a:2,counterNum:100,compareNum:100});
+
+  // === PART 6: 综合 ===
+  qs.push({v:'number',q:'10个十是多少？',o:['10','50','100','1000'],a:2,num:100});
+  qs.push({v:'number',q:'99再添上1是多少？',o:['98','99','100','101'],a:2,num:100});
+  qs.push({v:'number',q:'100去掉1是多少？',o:['99','100','101','90'],a:0,num:99});
+
+  return qs;
+}
+
+function buildM2Questions(){
+  var qs=[];
+  // === PART 1: 方块认识三位数 ===
+  qs.push({v:'blocks',q:'观察方块图，这个数是多少？',o:['234','324','243','342'],a:0,blocks:[2,3,4]});
+  qs.push({v:'blocks',q:'观察方块图，这个数是多少？',o:['156','165','516','561'],a:0,blocks:[1,5,6]});
+  qs.push({v:'blocks',q:'这个数由几个百、几个十、几个一组成？',o:['1百4十2一','4百2十1一','2百4十1一','1百2十4一'],a:0,blocks:[1,4,2]});
+  qs.push({v:'blocks',q:'观察方块图，这个数是？',o:['305','350','530','503'],a:0,blocks:[3,0,5]});
+
+  // === PART 2: 小棒认识三位数 ===
+  qs.push({v:'sticks',q:'图中小棒表示的数是多少？',o:['234','324','243','342'],a:0,sticks:[2,3,4]});
+  qs.push({v:'sticks',q:'图中小棒表示的数是多少？',o:['152','125','215','512'],a:0,sticks:[1,5,2]});
+  qs.push({v:'sticks',q:'2个百+3个十+0个一，小棒图应该有几捆？',o:['2大捆3小捆0根','2大捆0小捆3根','3大捆2小捆0根','2大捆30小捆'],a:0,sticks:[2,3,0]});
+
+  // === PART 3: 计数器认识三位数 ===
+  qs.push({v:'counter',q:'计数器上表示的数是多少？',o:['352','325','532','235'],a:0,counterNum:352});
+  qs.push({v:'counter',q:'计数器上表示的数是多少？',o:['460','406','640','604'],a:0,counterNum:460});
+  qs.push({v:'counter',q:'计数器上表示的数是多少？',o:['108','180','801','810'],a:0,counterNum:108});
+  qs.push({v:'counter',q:'计数器上表示的数是多少？',o:['700','70','7','770'],a:0,counterNum:700});
+  qs.push({v:'counter',q:'计数器上百位是3，十位是0，个位是5，这个数是？',o:['350','305','530','35'],a:1,counterNum:305,highlightCol:1});
+
+  // === PART 4: 数的读写 ===
+  qs.push({v:'number',q:'352 读作什么？',o:['三百五十二','三五百二','三十五二','三百五十'],a:0,num:352});
+  qs.push({v:'number',q:'四百零六 写作？',o:['460','406','466','4006'],a:1,num:406});
+  qs.push({v:'number',q:'7个百、0个十、3个一组成的数是？',o:['730','73','703','370'],a:2,num:703});
+  qs.push({v:'number',q:'500 + 30 + 8 = ？',o:['538','583','835','358'],a:0,num:538});
+
+  // === PART 5: 数的组成 ===
+  qs.push({v:'number',q:'568中，数字5在什么位上？',o:['个位','十位','百位','千位'],a:2,num:568});
+  qs.push({v:'number',q:'730中，数字3表示什么？',o:['3个一','3个十','3个百','30个百'],a:1,num:730});
+  qs.push({v:'number',q:'一个数的百位是4，个位是9，十位是0，这个数是？',o:['490','409','940','49'],a:1,num:409});
+
+  // === PART 6: 比较三位数 ===
+  qs.push({v:'compare3',q:'352 和 289 哪个更大？',o:['352 > 289','352 < 289','352 = 289','无法比较'],a:0,num1:352,num2:289});
+  qs.push({v:'compare3',q:'470 和 407 比较？',o:['470 < 407','470 = 407','470 > 407','一样大'],a:2,num1:470,num2:407});
+  qs.push({v:'counter_compare',q:'左边计数器上的数，比右边计数器上的数？',o:['大','小','相等','不确定'],a:0,counterNum:532,compareNum:289});
+
+  // === PART 7: 数的顺序和大小 ===
+  qs.push({v:'number',q:'最小的三位数是多少？',o:['99','100','101','111'],a:1,num:100});
+  qs.push({v:'number',q:'最大的三位数是多少？',o:['900','990','999','1000'],a:2,num:999});
+  qs.push({v:'number',q:'比199大1的数是？',o:['198','200','199','201'],a:1,num:200});
+  qs.push({v:'number',q:'用4、0、8组成的最大三位数是？',o:['408','480','840','804'],a:2,num:840});
+  qs.push({v:'number',q:'按顺序：597、598、599、□，□里应该填？',o:['600','500','601','599'],a:0,num:600});
+
+  return qs;
+}
+
+function buildM3Questions(){
+  var qs=[];
+  // Read abacus
+  var nums=[123,256,340,405,152,521,630,704,315,163,450,207,531,342,108];
+  for(var i=0;i<nums.length;i++){
+    var n=nums[i];
+    var h=Math.floor(n/100)%10, t=Math.floor(n/10)%10, o=n%10;
+    // Generate wrong options
+    var wrongs=generateAbacusWrongs(n);
+    var opts=shuffleArr([String(n)].concat(wrongs));
+    qs.push({
+      v:'abacus_read',
+      q:'看算盘，读出这个数字：',
+      o:opts,
+      a:opts.indexOf(String(n)),
+      abacusNum:n,
+      explain:h+'个百 + '+t+'个十 + '+o+'个一 = '+n
+    });
+  }
+  // Place value questions about abacus
+  qs.push({v:'abacus_read',q:'算盘上，百位有几个上珠？',o:['1个','2个','0个','3个'],a:0,abacusNum:567,explain:'百位是5，上珠1个(代表5)，下珠0个'});
+  qs.push({v:'abacus_read',q:'算盘上，个位下珠拨了几颗？',o:['3颗','4颗','2颗','1颗'],a:0,abacusNum:563,explain:'个位是3，上珠0(不够5)，下珠拨了3颗'});
+  return qs;
+}
+
+function generateAbacusWrongs(correct){
+  var w=[];
+  var digits=[];
+  var h=Math.floor(correct/100),t=Math.floor(correct/10)%10,o=correct%10;
+  // Generate wrong numbers by modifying one digit
+  var mods=[
+    [(h+1)%10*100+t*10+o, (h+9)%10*100+t*10+o],
+    [h*100+((t+1)%10)*10+o, h*100+((t+9)%10)*10+o],
+    [h*100+t*10+(o+1)%10, h*100+t*10+(o+9)%10]
+  ];
+  for(var i=0;i<mods.length;i++){
+    for(var j=0;j<mods[i].length;j++){
+      var v=mods[i][j];
+      if(v!==correct&&v>=100&&v<=999&&w.indexOf(String(v))<0){
+        w.push(String(v));
+      }
+    }
+  }
+  while(w.length<3){
+    var rn=100+Math.floor(Math.random()*900);
+    if(rn!==correct&&w.indexOf(String(rn))<0)w.push(String(rn));
+  }
+  return w.slice(0,3);
+}
+
+function shuffleArr(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+// ==================== RENDER QUESTION ====================
+function renderVisual(q){
+  var vd=document.getElementById('visualDisplay');
+  var h='<div class="visual-label">观察区</div>';
+  var vt=q.v||'';
+  if(vt==='grid100'){
+    h+=renderGrid100(q.gridR||10,q.gridC||10);
+  }else if(vt==='blocks'){
+    h+=renderBlocks(q.blocks[0],q.blocks[1],q.blocks[2]);
+  }else if(vt==='blocks_compare'){
+    h+=renderCompare(q.blocks[0]*100+q.blocks[1]*10+q.blocks[2],q.compareNum||100,true);
+  }else if(vt==='compare'||vt==='compare3'){
+    h+=renderCompare(q.num1,q.num2,false);
+  }else if(vt==='number'){
+    h+='<span style="font-size:2.8em;font-weight:bold;color:#FFD700;letter-spacing:8px">'+q.num+'</span>';
+    if(q.num>=100){
+      var hh=Math.floor(q.num/100),tt=Math.floor(q.num/10)%10,oo=q.num%10;
+      h+='<div style="width:100%;text-align:center;font-size:0.7em;color:#aaa;margin-top:4px">';
+      h+=hh+'个百 + '+tt+'个十 + '+oo+'个一';
+      h+='</div>';
+    }
+  }else if(vt==='abacus_read'){
+    h+=renderAbacus(q.abacusNum);
+  }else if(vt==='counter'){
+    h+=renderCounter(q.counterNum,q.highlightCol);
+  }else if(vt==='counter_compare'){
+    h+='<div class="compare-display">';
+    h+='<div style="transform:scale(0.85)">'+renderCounter(q.counterNum)+'</div>';
+    h+='<span class="compare-vs">⚡VS</span>';
+    h+='<span class="compare-num cn-right">'+q.compareNum+'</span>';
+    h+='</div>';
+  }else if(vt==='sticks'){
+    h+=renderSticks(q.sticks[0],q.sticks[1],q.sticks[2]);
+  }else if(vt==='sticks_compare'){
+    h+='<div class="compare-display">';
+    h+='<div class="compare-blocks">'+renderSticks(q.sticksLeft[0],q.sticksLeft[1],q.sticksLeft[2])+'</div>';
+    h+='<span class="compare-vs">⚡VS</span>';
+    h+='<span class="compare-num cn-right">'+q.compareNum+'</span>';
+    h+='</div>';
+  }
+  vd.innerHTML=h;
+}
+
+// ==================== GAME LOGIC ====================
+function enterModule(m){
+  initAudio();sfxClick();
+  curModule=m;
+  var mod=MODULES[m];
+  document.getElementById('homeScreen').style.display='none';
+  document.getElementById('gameScreen').style.display='flex';
+  document.getElementById('modBanner').className='mod-banner '+mod.cls;
+  document.getElementById('modBannerText').textContent=mod.name;
+  document.getElementById('gameTitle').textContent=mod.name+' ⚔️ PK对战';
+
+  // Setup questions
+  if(m===1)Q=buildM1Questions();
+  else if(m===2)Q=buildM2Questions();
+  else Q=buildM3Questions();
+  tr=Math.min(Q.length,12);
+
+  // Show transition
+  var ov=document.getElementById('modOverlay');
+  document.getElementById('modIcon').textContent=mod.icon;
+  document.getElementById('modTitle').textContent=mod.name;
+  document.getElementById('modDesc').textContent=mod.desc;
+  ov.classList.add('show');
+  sfxTransition();
+
+  // Build progress dots
+  var pd=document.getElementById('progressDots');
+  pd.innerHTML='';
+  for(var i=0;i<tr;i++){pd.innerHTML+='<div class="dot'+(i===0?' cur':'')+'"></div>';}
+
+  document.getElementById('rt').textContent=tr;
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent='15';
+  document.getElementById('q1').textContent='准备...';
+  document.getElementById('q2').textContent='准备...';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('fbBadge1').textContent='';
+  document.getElementById('fbBadge2').textContent='';
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('visualDisplay').innerHTML='<span style="color:#888">按"开始对战"进入游戏</span>';
+  sc=[0,0];cr=0;go=false;ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+
+  setTimeout(function(){
+    ov.classList.remove('show');
+  },2200);
+}
+
+function startModule(){
+  initAudio();sfxClick();
+  document.getElementById('btnStart').style.display='none';
+  go=true;sc=[0,0];cr=0;ans=[false,false];firstAns=-1;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  Q=shuffleArr(Q);
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];firstAns=-1;
+  document.getElementById('rn').textContent=cr+1;
+  var q=Q[cr];
+  renderVisual(q);
+  var qText=q.q||'';
+  var opts=q.o||[];
+  var aidx=q.a!==undefined?q.a:0;
+
+  // Both players get same question, but independently answer
+  renderPlayerOpts(1,qText,opts,aidx);
+  renderPlayerOpts(2,qText,opts,aidx);
+
+  var timePerQ=q.time||15;
+  tm=timePerQ;
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('tm').parentElement.classList.remove('urgent');
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent=tm;
+    if(tm<=5){document.getElementById('tm').parentElement.classList.add('urgent');sfxTick();}
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+
+  // Update progress dots
+  var dots=document.querySelectorAll('#progressDots .dot');
+  dots.forEach(function(d,i){
+    d.className='dot'+(i<cr?' done':i===cr?' cur':'');
+  });
+}
+
+function renderPlayerOpts(pn,qText,opts,aidx){
+  document.getElementById('q'+pn).textContent='第'+(cr+1)+'题：'+qText;
+  document.getElementById('q'+pn).style.display='';
+  var ix=[0,1,2,3];
+  // Shuffle options for each player independently
+  ix=shuffleArr(ix);
+  var lb=['A','B','C','D'];
+  var mappedA=-1;
+  var h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    if(oi===aidx)mappedA=i;
+    h+='<button class="p-opt" data-correct="'+(oi===aidx?'1':'0')+'" onclick="answer('+pn+','+i+','+(oi===aidx)+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('op'+pn).style.display='';
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('st'+pn).textContent='';
+  document.getElementById('fbBadge'+pn).textContent='';
+}
+
+function answer(pn,selectedIdx,isCorrect,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  if(isCorrect){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    // First answer bonus
+    if(firstAns===-1){
+      firstAns=pn;
+      sc[pn-1]+=3;
+      document.getElementById('fbBadge'+pn).textContent='⚡抢先+3';
+    }
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    sfxWrong();
+    // Mark correct answer
+    for(var i=0;i<bs.length;i++){
+      if(bs[i].getAttribute('data-correct')==='1'){
+        bs[i].classList.add('correct');
+      }
+    }
+  }
+
+  // Check if both answered
+  if(ans[0]&&ans[1]){
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){nextRound();},1500);
+  }
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+      // Show correct answer
+      for(var i=0;i<bs.length;i++){
+        if(bs[i].getAttribute('data-correct')==='1'){
+          bs[i].classList.add('correct');
+        }
+      }
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},1500);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  var stars='';
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    stars='⭐⭐⭐';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    stars='⭐⭐⭐';
+    sfxWin();
+  }else{
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分';
+    stars='⭐';
+    playTone(523,0.3,'sine',0.08);
+  }
+  document.getElementById('winStars').textContent=stars;
+  spawnConfetti();
+  // Save best
+  var sk='pk_recognize_3digit_m'+curModule;
+  var best=parseInt(localStorage.getItem(sk)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<50;i++){
+    var d=document.createElement('div');
+    d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';
+    d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.2+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},3800);
+  }
+}
+
+function restartModule(){
+  clearInterval(ti);go=false;
+  sc=[0,0];cr=0;ans=[false,false];firstAns=-1;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent='15';
+  document.getElementById('tm').parentElement.classList.remove('urgent');
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('q1').textContent='准备...';
+  document.getElementById('q2').textContent='准备...';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('fbBadge1').textContent='';
+  document.getElementById('fbBadge2').textContent='';
+  document.getElementById('visualDisplay').innerHTML='<span style="color:#888">按"开始对战"进入游戏</span>';
+  // Rebuild questions
+  if(curModule===1)Q=buildM1Questions();
+  else if(curModule===2)Q=buildM2Questions();
+  else Q=buildM3Questions();
+  tr=Math.min(Q.length,12);
+  document.getElementById('rt').textContent=tr;
+  var pd=document.getElementById('progressDots');
+  pd.innerHTML='';
+  for(var i=0;i<tr;i++){pd.innerHTML+='<div class="dot'+(i===0?' cur':'')+'"></div>';}
+  var cf=document.querySelectorAll('.confetti');
+  cf.forEach(function(c){c.remove();});
+}
+
+function goHome(){
+  clearInterval(ti);go=false;
+  document.getElementById('gameScreen').style.display='none';
+  document.getElementById('homeScreen').style.display='flex';
+  document.getElementById('winOverlay').classList.remove('show');
+  curModule=0;
+  var cf=document.querySelectorAll('.confetti');
+  cf.forEach(function(c){c.remove();});
+}
+</script>
+</body>
+</html>

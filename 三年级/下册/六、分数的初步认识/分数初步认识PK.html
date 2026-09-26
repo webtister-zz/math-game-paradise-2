@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>分数的初步认识 PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:linear-gradient(180deg,#0f0c29,#1a1a2e,#16213e);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;overflow-y:auto}
+.menu-screen.hide{display:none}
+.menu-hero{text-align:center;margin-bottom:15px}
+.menu-hero .icon{font-size:3em;display:block;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.menu-hero h1{font-size:1.5em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite;margin:4px 0}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.menu-hero .sub{color:rgba(255,255,255,0.5);font-size:0.8em}
+.menu-cards{display:flex;gap:8px;max-width:900px;width:100%;flex-wrap:wrap;justify-content:center}
+.menu-card{flex:1;min-width:105px;max-width:125px;padding:12px 7px;border-radius:14px;cursor:pointer;transition:all 0.3s;text-align:center;border:2px solid transparent}
+.menu-card:hover{transform:translateY(-5px)}
+.menu-card .card-icon{font-size:2em;display:block;margin-bottom:3px}
+.menu-card .card-title{font-size:0.85em;font-weight:bold;margin-bottom:2px}
+.menu-card .card-desc{font-size:0.62em;color:rgba(255,255,255,0.5);line-height:1.3}
+.menu-card.m1{background:linear-gradient(180deg,rgba(255,107,107,0.18),rgba(255,107,107,0.04));border-color:rgba(255,107,107,0.3)}
+.menu-card.m1:hover{border-color:rgba(255,107,107,0.6);box-shadow:0 10px 30px rgba(255,107,107,0.18)}
+.menu-card.m1 .card-title{color:#FF8A80}
+.menu-card.m2{background:linear-gradient(180deg,rgba(255,152,0,0.18),rgba(255,152,0,0.04));border-color:rgba(255,152,0,0.3)}
+.menu-card.m2:hover{border-color:rgba(255,152,0,0.6);box-shadow:0 10px 30px rgba(255,152,0,0.18)}
+.menu-card.m2 .card-title{color:#FFB74D}
+.menu-card.m3{background:linear-gradient(180deg,rgba(76,175,80,0.18),rgba(76,175,80,0.04));border-color:rgba(76,175,80,0.3)}
+.menu-card.m3:hover{border-color:rgba(76,175,80,0.6);box-shadow:0 10px 30px rgba(76,175,80,0.18)}
+.menu-card.m3 .card-title{color:#81C784}
+.menu-card.m4{background:linear-gradient(180deg,rgba(33,150,243,0.18),rgba(33,150,243,0.04));border-color:rgba(33,150,243,0.3)}
+.menu-card.m4:hover{border-color:rgba(33,150,243,0.6);box-shadow:0 10px 30px rgba(33,150,243,0.18)}
+.menu-card.m4 .card-title{color:#64B5F6}
+.menu-card.m5{background:linear-gradient(180deg,rgba(156,39,176,0.18),rgba(156,39,176,0.04));border-color:rgba(156,39,176,0.3)}
+.menu-card.m5:hover{border-color:rgba(156,39,176,0.6);box-shadow:0 10px 30px rgba(156,39,176,0.18)}
+.menu-card.m5 .card-title{color:#CE93D8}
+.menu-card.m6{background:linear-gradient(180deg,rgba(0,188,212,0.18),rgba(0,188,212,0.04));border-color:rgba(0,188,212,0.3)}
+.menu-card.m6:hover{border-color:rgba(0,188,212,0.6);box-shadow:0 10px 30px rgba(0,188,212,0.18)}
+.menu-card.m6 .card-title{color:#4DD0E1}
+.menu-card.m7{background:linear-gradient(180deg,rgba(255,87,34,0.18),rgba(255,87,34,0.04));border-color:rgba(255,87,34,0.3)}
+.menu-card.m7:hover{border-color:rgba(255,87,34,0.6);box-shadow:0 10px 30px rgba(255,87,34,0.18)}
+.menu-card.m7 .card-title{color:#FF8A65}
+.menu-card.m8{background:linear-gradient(180deg,rgba(139,195,74,0.18),rgba(139,195,74,0.04));border-color:rgba(139,195,74,0.3)}
+.menu-card.m8:hover{border-color:rgba(139,195,74,0.6);box-shadow:0 10px 30px rgba(139,195,74,0.18)}
+.menu-card.m8 .card-title{color:#AED581}
+
+.game-screen{display:none;flex-direction:column;height:100vh}
+.game-screen.show{display:flex}
+.mod-bar{text-align:center;padding:3px;background:rgba(0,0,0,0.3);font-size:0.75em;color:#FFD700;flex-shrink:0}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:5px 10px;gap:10px;background:rgba(0,0,0,0.4);flex-shrink:0}
+.top-bar h1{font-size:1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.3em;font-weight:bold;color:#FFD700;min-width:50px;text-align:center}
+.timer.urgent{color:#FF5252;animation:blink 0.5s infinite}
+@keyframes blink{50%{opacity:0.4}}
+.round-info{font-size:0.75em;color:#aaa}
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 6px;position:relative;overflow-y:auto}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:0.9em;font-weight:bold;margin-bottom:1px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.6em;font-weight:bold;margin:1px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.7em;color:#FFD700;min-height:16px}
+.question-box{background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 6px;margin:3px 0;width:100%;text-align:center;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.88em;line-height:1.3;gap:5px}
+.frac-vis{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+.frac-circle{display:inline-block;border-radius:50%;border:2px solid rgba(255,255,255,0.45);flex-shrink:0;overflow:hidden}
+.frac-circle-label{font-size:0.7em;color:#ccc;margin-top:2px}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;margin:3px 0}
+.p-opt{padding:7px 4px;border-radius:10px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.78em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:38px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.03)}
+.p-opt:active{transform:scale(0.95)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 18px rgba(255,107,107,0.5)}
+.right .p-opt.correct{box-shadow:0 0 18px rgba(78,205,196,0.5)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.feedback{font-size:0.75em;font-weight:bold;min-height:18px;text-align:center;margin:1px 0}
+.explain{font-size:0.65em;color:#999;min-height:14px;text-align:center;margin:1px 0;line-height:1.3}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 25px rgba(255,215,0,0.7);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.08)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:5px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:7px 15px;border-radius:16px;border:none;font-size:0.75em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn.back{background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1em;color:#ccc;margin-bottom:14px}
+.win-scores{display:flex;gap:25px;margin-bottom:14px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.2em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+.win-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:600px){
+  .menu-card{min-width:80px;max-width:100px;padding:10px 5px}
+  .menu-card .card-title{font-size:0.7em}
+  .arena{flex-direction:column;min-height:0}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:5px}
+  .question-box{font-size:0.75em;min-height:36px}
+  .p-opt{font-size:0.68em;padding:6px 3px;min-height:32px}
+  .vs-badge{font-size:1.3em}
+  .player-score{font-size:1.2em}
+  .win-title{font-size:1.4em}
+  .frac-circle{width:40px!important;height:40px!important}
+}
+</style>
+</head>
+<body>
+
+<div class="menu-screen" id="mu">
+  <div class="menu-hero">
+    <span class="icon">🔢</span>
+    <h1>分数的初步认识</h1>
+    <div class="sub">苏教版 三年级下册 · 双人PK对战</div>
+  </div>
+  <div class="menu-cards">
+    <div class="menu-card m1" onclick="pickMod(1)"><span class="card-icon">🍕</span><div class="card-title">几分之一</div><div class="card-desc">认识1/2 1/3 1/4...</div></div>
+    <div class="menu-card m2" onclick="pickMod(2)"><span class="card-icon">⚖️</span><div class="card-title">比较大小</div><div class="card-desc">几分之一比大小</div></div>
+    <div class="menu-card m3" onclick="pickMod(3)"><span class="card-icon">🎯</span><div class="card-title">几分之几</div><div class="card-desc">2/3 3/4 5/6...</div></div>
+    <div class="menu-card m4" onclick="pickMod(4)"><span class="card-icon">📏</span><div class="card-title">同分母比较</div><div class="card-desc">2/5和3/5谁大</div></div>
+    <div class="menu-card m5" onclick="pickMod(5)"><span class="card-icon">📐</span><div class="card-title">认识小数</div><div class="card-desc">分米→分数→小数</div></div>
+    <div class="menu-card m6" onclick="pickMod(6)"><span class="card-icon">🔄</span><div class="card-title">等值分数</div><div class="card-desc">1/2=2/4=3/6</div></div>
+    <div class="menu-card m7" onclick="pickMod(7)"><span class="card-icon">🔍</span><div class="card-title">异分母比较</div><div class="card-desc">2/3和3/4谁大</div></div>
+    <div class="menu-card m8" onclick="pickMod(8)"><span class="card-icon">➕</span><div class="card-title">同分母加减</div><div class="card-desc">2/7+3/7=?</div></div>
+  </div>
+</div>
+
+<div class="game-screen" id="gs">
+  <div class="mod-bar" id="modBar"></div>
+  <div class="top-bar">
+    <h1 id="gt">PK对战</h1>
+    <span class="round-info">第 <span id="rn">1</span>/8 轮</span>
+    <span class="timer" id="td">⏱ <span id="tm">20</span>s</span>
+  </div>
+  <div class="arena">
+    <div class="player left" id="p1">
+      <div class="player-name">🔴 红方</div>
+      <div class="player-score" id="s1">0</div>
+      <div class="streak" id="st1"></div>
+      <div class="question-box" id="q1">准备开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+      <div class="explain" id="ex1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="p2">
+      <div class="player-name">🔵 蓝方</div>
+      <div class="player-score" id="s2">0</div>
+      <div class="streak" id="st2"></div>
+      <div class="question-box" id="q2">准备开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+      <div class="explain" id="ex2"></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn back" onclick="backToMenu()">📋 选模块</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重来</button>
+  </div>
+</div>
+
+<div class="win-overlay" id="wo">
+  <div class="win-title" id="wt"></div>
+  <div class="win-subtitle" id="ws"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-buttons">
+    <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1em;padding:10px 24px">🔄 再来一局</button>
+    <button class="ctrl-btn back" onclick="backToMenu()" style="font-size:1em;padding:10px 24px">📋 换个模块</button>
+  </div>
+</div>
+
+<script>
+// ==================== 分数图形生成 ====================
+function fracCircle(num, den, sz, color){
+  sz=sz||50;
+  color=color||'#FF6B6B';
+  var angle=(num/den)*360;
+  // 生成分割线SVG
+  var lines='';
+  for(var i=1;i<den;i++){
+    var a=(i*360/den)-90;
+    var rad=a*Math.PI/180;
+    var r=sz/2-1;
+    var cx=sz/2, cy=sz/2;
+    var x2=cx+r*Math.cos(rad);
+    var y2=cy+r*Math.sin(rad);
+    lines+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x2+'" y2="'+y2+'" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>';
+  }
+  return '<div class="frac-vis-item"><div style="position:relative;width:'+sz+'px;height:'+sz+'px;display:inline-block;"><div class="frac-circle" style="width:'+sz+'px;height:'+sz+'px;background:conic-gradient('+color+' 0deg '+angle+'deg, rgba(255,255,255,0.08) '+angle+'deg 360deg);"></div><svg style="position:absolute;top:0;left:0;width:'+sz+'px;height:'+sz+'px;pointer-events:none;">'+lines+'</svg></div><div class="frac-circle-label">'+num+'/'+den+'</div></div>';
+}
+function fracTwoCircles(n1,d1,n2,d2,sz){
+  sz=sz||44;
+  return '<div class="frac-vis">'+fracCircle(n1,d1,sz,'#FF6B6B')+fracCircle(n2,d2,sz,'#4ECDC4')+'</div>';
+}
+function fracBars(num, den, sz){
+  sz=sz||18;
+  var h='<div class="frac-vis">';
+  for(var i=1;i<=den;i++){
+    var bg=i<=num?'#FF6B6B':'rgba(255,255,255,0.12)';
+    h+='<div style="width:'+sz+'px;height:'+(sz*2)+'px;background:'+bg+';border:1px solid rgba(255,255,255,0.25);border-radius:3px;"></div>';
+  }
+  h+='<div class="frac-circle-label">'+num+'/'+den+'</div></div>';
+  return h;
+}
+
+// ==================== 题库 ====================
+// M1: 几分之一 - 认识一个物体的几分之一
+var rawQ1=[
+{q:"下面圆形阴影部分用分数怎么表示？",o:["1/2","1/3","1/4","1/5"],a:1,vis:"c1_3",ex:"圆被平均分成3份，阴影是其中的1份，写作1/3。"},
+{q:"下面圆形阴影部分用分数怎么表示？",o:["1/2","1/3","1/4","1/8"],a:0,vis:"c1_2",ex:"圆被平均分成2份，阴影是其中的1份，写作1/2。"},
+{q:"下面圆形阴影部分用分数怎么表示？",o:["1/2","1/3","1/4","1/6"],a:2,vis:"c1_4",ex:"圆被平均分成4份，阴影是其中的1份，写作1/4。"},
+{q:"下面哪个图形表示1/3？",o:["圆分成3份取1份","圆分成2份取1份","圆分成4份取1份","圆分成5份取1份"],a:0,vis:"c1_3",ex:"1/3表示把一个物体平均分成3份，取其中的1份。"},
+{q:"下面圆形阴影部分表示？",o:["1/5","1/6","1/8","1/10"],a:1,vis:"c1_6",ex:"圆被平均分成6份，阴影是其中1份，写作1/6。"},
+{q:"下面哪个分数表示这个图形？",o:["1/8","1/4","1/5","1/6"],a:2,vis:"c1_5",ex:"圆被平均分成5份，阴影1份，写作1/5。"},
+{q:"一个蛋糕平均分给4个人，每人吃这个蛋糕的几分之几？",o:["1/2","1/3","1/4","1/5"],a:2,ex:"蛋糕平均分4份，每份是1/4。"},
+{q:"下面图形阴影部分用分数表示是？",o:["1/2","1/8","1/4","1/3"],a:1,vis:"c1_8",ex:"圆被平均分成8份，阴影1份，写作1/8。"},
+{q:"一根绳子平均分成3段，每段是这根绳子的？",o:["1/2","1/3","1/4","1/5"],a:1,ex:"绳子平均分3段，每段是1/3。"},
+{q:"把一张纸对折再对折，打开后每份是这张纸的？",o:["1/2","1/3","1/4","1/8"],a:2,ex:"对折两次=平均分4份，每份是1/4。"}
+];
+
+// M2: 几分之一比较大小
+var rawQ2=[
+{q:"看图比较：1/3和1/5哪个大？",o:["1/3 > 1/5","1/5 > 1/3","一样大","无法比较"],a:0,vis:"c1_3,c1_5",ex:"分子都是1时，分母越小分数越大。3<5，所以1/3>1/5。"},
+{q:"看图比较：1/2和1/8哪个大？",o:["1/2 > 1/8","1/8 > 1/2","一样大","无法比较"],a:0,vis:"c1_2,c1_8",ex:"分母2<8，所以1/2>1/8。分的份数越少，每份越大。"},
+{q:"看图比较：1/4和1/6哪个大？",o:["1/4 > 1/6","1/6 > 1/4","一样大","无法比较"],a:0,vis:"c1_4,c1_6",ex:"分子相同(都是1)，分母4<6，所以1/4>1/6。"},
+{q:"比较大小：1/10和1/7",o:["1/10 > 1/7","1/7 > 1/10","一样大","无法比较"],a:1,ex:"分子相同，分母7<10，所以1/7>1/10。"},
+{q:"看图：1/2和1/3谁大？",o:["1/2大","1/3大","一样大","无法比较"],a:0,vis:"c1_2,c1_3",ex:"1/2>1/3。同一物体分2份比分3份每份大。"},
+{q:"下面哪个分数最大？",o:["1/2","1/4","1/8","1/3"],a:0,ex:"分子相同，分母越小越大。1/2最大。"},
+{q:"下面哪个分数最小？",o:["1/3","1/5","1/8","1/10"],a:3,ex:"分子相同，分母越大越小。1/10最小。"},
+{q:"把同样大的蛋糕，分给2人比分给8人，每人吃的？",o:["更多","更少","一样多","无法确定"],a:0,ex:"分的人越少，每人分得越多。2<8，所以1/2>1/8。"},
+{q:"看图：1/4和1/3谁更大？",o:["1/4","1/3","一样","不确定"],a:1,vis:"c1_4,c1_3",ex:"分子相同，分母3<4，所以1/3>1/4。"},
+{q:"分子都是1的分数，分母越大，分数？",o:["越大","越小","不变","不一定"],a:1,ex:"分子相同(1)，分母越大表示分的份数越多，每份越小。"}
+];
+
+// M3: 几分之几 - 认识一个物体的几分之几
+var rawQ3=[
+{q:"下面阴影部分用分数表示是？",o:["1/3","2/3","3/3","1/2"],a:1,vis:"c2_3",ex:"圆分成3份，阴影2份，写作2/3。"},
+{q:"下面阴影部分用分数表示是？",o:["1/4","2/4","3/4","4/4"],a:2,vis:"c3_4",ex:"圆分成4份，阴影3份，写作3/4。"},
+{q:"下面阴影部分用分数表示是？",o:["2/5","3/5","1/5","4/5"],a:0,vis:"c2_5",ex:"圆分成5份，阴影2份，写作2/5。"},
+{q:"下面阴影部分用分数表示是？",o:["3/8","4/8","5/8","6/8"],a:2,vis:"c5_8",ex:"圆分成8份，阴影5份，写作5/8。"},
+{q:"下面阴影部分用分数表示是？",o:["1/6","2/6","3/6","4/6"],a:3,vis:"c4_6",ex:"圆分成6份，阴影4份，写作4/6。"},
+{q:"3/4中有几个1/4？",o:["1个","2个","3个","4个"],a:2,ex:"3/4就是3个1/4。分母表示分的份数，分子表示取的份数。"},
+{q:"把一条线段平均分成7份，取了其中3份，是这条线段的？",o:["1/7","2/7","3/7","4/7"],a:2,ex:"平均分7份，取3份=3/7。"},
+{q:"下面哪个分数表示涂色部分？",o:["3/5","2/5","4/5","1/5"],a:0,vis:"c3_5",ex:"5份中3份涂色=3/5。"},
+{q:"5/6的分母是？分子是？",o:["分母5分子6","分母6分子5","分母11分子1","分母1分子11"],a:1,ex:"分数线下面是分母(6)，上面是分子(5)。"},
+{q:"下面阴影部分表示？",o:["4/8","3/8","5/8","2/8"],a:0,vis:"c4_8",ex:"8份中4份阴影=4/8，刚好是一半。"}
+];
+
+// M4: 同分母分数比较
+var rawQ4=[
+{q:"看图比较：2/5和3/5哪个大？",o:["2/5 > 3/5","3/5 > 2/5","一样大","无法比较"],a:1,vis:"c2_5,c3_5",ex:"分母相同，分子越大分数越大。3>2，所以3/5>2/5。"},
+{q:"3/8和5/8哪个大？",o:["3/8大","5/8大","一样大","无法比较"],a:1,ex:"分母相同(8)，分子5>3，所以5/8>3/8。"},
+{q:"1/4和3/4哪个大？",o:["1/4大","3/4大","一样大","无法比较"],a:1,ex:"分母相同(4)，分子3>1，所以3/4>1/4。"},
+{q:"比较：4/7和2/7",o:["4/7 > 2/7","2/7 > 4/7","一样大","无法比较"],a:0,ex:"分母相同，分子4>2，所以4/7>2/7。"},
+{q:"6/10和9/10哪个小？",o:["6/10","9/10","一样","不一定"],a:0,ex:"分母相同，分子小的分数小。6<9，所以6/10<9/10。"},
+{q:"同分母分数比较，看什么？",o:["分母","分子","都看","都不看"],a:1,ex:"分母相同时，分子越大分数越大。"},
+{q:"看图：4/9和2/9谁大？",o:["4/9大","2/9大","一样","不确定"],a:0,vis:"c4_9,c2_9",ex:"分母相同(9)，分子4>2，所以4/9>2/9。"},
+{q:"5/12和7/12哪个大？",o:["5/12","7/12","一样","无法比较"],a:1,ex:"分母相同(12)，分子7>5，所以7/12>5/12。"},
+{q:"分数3/5和4/5中，哪个接近1？",o:["3/5","4/5","一样近","都不近"],a:1,ex:"4/5更接近1(即5/5)。分母相同，分子越大越接近1。"},
+{q:"2/8和6/8中谁更大？",o:["2/8","6/8","一样","不一定"],a:1,ex:"分母相同，分子6>2，6/8>2/8。"}
+];
+
+// M5: 认识简单小数（单位换算→分数→小数）
+var rawQ5=[
+{q:"1分米=几分之几米=多少米？",o:["1/10米=0.1米","1/100米=0.01米","1/10米=1.0米","1/100米=0.1米"],a:0,ex:"1米=10分米，所以1分米=1/10米=0.1米。"},
+{q:"1厘米=几分之几米=多少米？",o:["1/10米=0.1米","1/100米=0.01米","1/100米=0.1米","1/10米=1.0米"],a:1,ex:"1米=100厘米，所以1厘米=1/100米=0.01米。"},
+{q:"3分米=多少米？(用小数表示)",o:["0.3米","0.03米","3.0米","0.003米"],a:0,ex:"3分米=3/10米=0.3米。"},
+{q:"5厘米=多少米？(用小数表示)",o:["0.5米","0.05米","0.005米","5.0米"],a:1,ex:"5厘米=5/100米=0.05米。"},
+{q:"1角=几分之几元=多少元？",o:["1/10元=0.1元","1/100元=0.01元","1/10元=0.01元","1/100元=0.1元"],a:0,ex:"1元=10角，所以1角=1/10元=0.1元。"},
+{q:"7角=多少元？(用小数表示)",o:["0.7元","0.07元","7.0元","0.007元"],a:0,ex:"7角=7/10元=0.7元。"},
+{q:"9厘米=多少米？(用小数表示)",o:["0.9米","0.09米","9.0米","0.009米"],a:1,ex:"9厘米=9/100米=0.09米。"},
+{q:"8分米=几分之几米=多少米？",o:["8/100米=0.08米","8/10米=0.8米","8/10米=8.0米","8/100米=0.8米"],a:1,ex:"8分米=8/10米=0.8米。"},
+{q:"1毫米=几分之几米=多少米？",o:["1/10米=0.1米","1/100米=0.01米","1/1000米=0.001米","1/1000米=0.01米"],a:2,ex:"1米=1000毫米，1毫米=1/1000米=0.001米。"},
+{q:"15厘米=多少米？(用小数表示)",o:["0.15米","0.015米","1.5米","0.0015米"],a:0,ex:"15厘米=15/100米=0.15米。"}
+];
+
+// M6: 等值分数
+var rawQ6=[
+{q:"看图：下面哪个分数和1/2相等？",o:["1/3","2/4","3/4","1/4"],a:1,vis:"c1_2,c2_4",ex:"1/2=2/4，两个分数表示的大小相同。"},
+{q:"1/2 = ?/6",o:["2","3","4","5"],a:1,ex:"1/2=3/6。分子分母同时乘以3：1×3/2×3=3/6。"},
+{q:"2/3 = ?/6",o:["2","3","4","5"],a:2,ex:"2/3=4/6。分子分母同时×2。"},
+{q:"下面哪个等于1/4？",o:["1/5","2/8","3/4","2/4"],a:1,ex:"1/4=2/8。分子分母同时×2。"},
+{q:"看图：哪两个分数相等？",o:["1/2=2/3","1/3=2/6","2/3=3/4","1/4=2/8"],a:1,vis:"c1_3,c2_6",ex:"1/3=2/6，都表示同样大小阴影。"},
+{q:"3/5 = ?/10",o:["5","6","7","8"],a:1,ex:"3/5=6/10。分子分母同时×2。"},
+{q:"4/8化简后等于？",o:["1/4","1/2","2/3","3/4"],a:1,ex:"4/8分子分母同时÷4=1/2。"},
+{q:"下面哪个分数不等于1/3？",o:["2/6","3/9","4/12","2/3"],a:3,ex:"1/3=2/6=3/9=4/12。2/3不等于1/3。"},
+{q:"6/9化简后等于？",o:["1/3","2/3","3/4","1/2"],a:1,ex:"6/9分子分母同时÷3=2/3。"},
+{q:"分子分母同时乘以相同数(不为0)，分数大小？",o:["变大","变小","不变","不确定"],a:2,ex:"分子分母同时乘以或除以相同非零数，分数大小不变。"}
+];
+
+// M7: 利用等值分数比较简单异分母分数
+var rawQ7=[
+{q:"用等值分数比较：2/3和3/4哪个大？",o:["2/3大","3/4大","一样大","无法比较"],a:1,ex:"通分：2/3=8/12，3/4=9/12。9>8，所以3/4>2/3。"},
+{q:"比较：1/2和2/3",o:["1/2大","2/3大","一样大","无法比较"],a:1,ex:"通分：1/2=3/6，2/3=4/6。4>3，所以2/3>1/2。"},
+{q:"比较：3/5和1/2",o:["3/5大","1/2大","一样大","无法比较"],a:0,ex:"通分：3/5=6/10，1/2=5/10。6>5，所以3/5>1/2。"},
+{q:"比较：1/4和2/5",o:["1/4大","2/5大","一样大","无法比较"],a:1,ex:"通分：1/4=5/20，2/5=8/20。8>5，所以2/5>1/4。"},
+{q:"比较：2/5和3/8",o:["2/5大","3/8大","一样大","无法比较"],a:0,ex:"通分：2/5=16/40，3/8=15/40。16>15，所以2/5>3/8。"},
+{q:"异分母分数比较需要先？",o:["直接比分子","先通分再比较","直接比分母","无法比较"],a:1,ex:"异分母分数比较大小，先通分(找公分母)，再比较分子。"},
+{q:"比较：5/6和4/5",o:["5/6大","4/5大","一样大","无法比较"],a:0,ex:"通分：5/6=25/30，4/5=24/30。25>24，所以5/6>4/5。"},
+{q:"用公分母12比较：1/3和3/4",o:["1/3大","3/4大","一样大","无法比较"],a:1,ex:"1/3=4/12，3/4=9/12。4<9，所以1/3<3/4。"},
+{q:"比较：3/10和1/5",o:["3/10大","1/5大","一样大","无法比较"],a:0,ex:"1/5=2/10。3/10>2/10，所以3/10>1/5。"},
+{q:"下面哪个最大？",o:["1/2","3/4","2/3","3/5"],a:1,ex:"通分：1/2=30/60,3/4=45/60,2/3=40/60,3/5=36/60。45最大，所以3/4最大。"}
+];
+
+// M8: 同分母分数加减法
+var rawQ8=[
+{q:"2/7 + 3/7 = ?",o:["5/7","5/14","1/7","6/7"],a:0,ex:"分母不变(7)，分子相加：2+3=5，所以=5/7。"},
+{q:"5/8 - 2/8 = ?",o:["7/8","3/8","2/8","3/16"],a:1,ex:"分母不变(8)，分子相减：5-2=3，所以=3/8。"},
+{q:"1/6 + 4/6 = ?",o:["5/12","4/6","5/6","6/6"],a:2,ex:"分母不变(6)，分子相加：1+4=5，所以=5/6。"},
+{q:"7/9 - 3/9 = ?",o:["10/9","4/9","3/9","4/18"],a:1,ex:"分母不变(9)，分子相减：7-3=4，所以=4/9。"},
+{q:"3/10 + 4/10 = ?",o:["7/20","7/10","1/10","12/10"],a:1,ex:"分母不变(10)，分子相加：3+4=7，所以=7/10。"},
+{q:"9/12 - 5/12 = ?",o:["4/12","14/12","4/24","3/12"],a:0,ex:"分母不变(12)，分子相减：9-5=4，所以=4/12(=1/3)。"},
+{q:"1/4 + 1/4 = ?",o:["1/8","2/4","2/8","1/4"],a:1,ex:"1/4+1/4=2/4=1/2。"},
+{q:"同分母分数相加减时？",o:["分母相加","分子分母分别加减","分母不变分子相加减","分子不变分母相加减"],a:2,ex:"同分母分数加减：分母不变，分子相加减。"},
+{q:"4/5 - 1/5 = ?",o:["5/5","3/5","3/10","5/10"],a:1,ex:"4/5-1/5=3/5。分母不变，4-1=3。"},
+{q:"2/9 + 5/9 = ?",o:["7/9","7/18","3/9","10/9"],a:0,ex:"2/9+5/9=7/9。分母不变，2+5=7。"}
+];
+
+// 可视化映射
+var visMap={
+  c1_2:fracCircle(1,2,52,'#FF6B6B'),
+  c1_3:fracCircle(1,3,52,'#FF6B6B'),
+  c1_4:fracCircle(1,4,52,'#FF6B6B'),
+  c1_5:fracCircle(1,5,52,'#FF6B6B'),
+  c1_6:fracCircle(1,6,52,'#FF6B6B'),
+  c1_8:fracCircle(1,8,52,'#FF6B6B'),
+  c2_3:fracCircle(2,3,52,'#FF6B6B'),
+  c2_4:fracCircle(2,4,52,'#FF6B6B'),
+  c2_5:fracCircle(2,5,52,'#FF6B6B'),
+  c3_4:fracCircle(3,4,52,'#FF6B6B'),
+  c3_5:fracCircle(3,5,52,'#FF6B6B'),
+  c4_6:fracCircle(4,6,52,'#FF6B6B'),
+  c4_8:fracCircle(4,8,52,'#FF6B6B'),
+  c4_9:fracCircle(4,9,52,'#FF6B6B'),
+  c5_8:fracCircle(5,8,52,'#FF6B6B'),
+  c2_6:fracCircle(2,6,52,'#FF6B6B'),
+  c2_9:fracCircle(2,9,52,'#FF6B6B'),
+  c3_8:fracCircle(3,8,52,'#FF6B6B'),
+  "c1_3,c1_5":fracTwoCircles(1,3,1,5,44),
+  "c1_2,c1_8":fracTwoCircles(1,2,1,8,44),
+  "c1_4,c1_6":fracTwoCircles(1,4,1,6,44),
+  "c1_2,c1_3":fracTwoCircles(1,2,1,3,44),
+  "c1_4,c1_3":fracTwoCircles(1,4,1,3,44),
+  "c2_5,c3_5":fracTwoCircles(2,5,3,5,44),
+  "c4_9,c2_9":fracTwoCircles(4,9,2,9,44),
+  "c1_2,c2_4":fracTwoCircles(1,2,2,4,44),
+  "c1_3,c2_6":fracTwoCircles(1,3,2,6,44)
+};
+
+function toQ(arr){
+  return arr.map(function(x){
+    var visHTML=visMap[x.vis]||'';
+    return {q:x.q,q1:"",q2:"",o1:x.o,a1:x.a,o2:x.o,a2:x.a,o:x.o,a:x.a,ex:x.ex||"",vis:visHTML};
+  });
+}
+
+// ==================== 全局 ====================
+var Q=[], sc=[0,0], cr=0, tr=8, tm=20, baseTm=20, ti=null, go=false, ans=[false,false];
+var curMod=0;
+var modNames=["","🍕 几分之一","⚖️ 比较大小","🎯 几分之几","📏 同分母比较","📐 认识小数","🔄 等值分数","🔍 异分母比较","➕ 同分母加减"];
+var modTimers=[0,20,18,20,18,22,20,24,18];
+var sk='pk_frac_', musicOn=true, actx=null;
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.05);}
+
+function pickMod(m){
+  initAudio();
+  curMod=m;
+  Q=toQ([rawQ1,rawQ2,rawQ3,rawQ4,rawQ5,rawQ6,rawQ7,rawQ8][m-1]);
+  tr=8; tm=baseTm=modTimers[m];
+  document.getElementById('mu').classList.add('hide');
+  document.getElementById('gs').classList.add('show');
+  document.getElementById('modBar').textContent=modNames[m]+' | '+tr+'轮 | '+tm+'秒/题';
+  document.getElementById('gt').textContent=modNames[m]+' PK';
+  document.getElementById('tm').textContent=tm;
+  resetState();
+  document.getElementById('wo').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+}
+
+function backToMenu(){
+  clearInterval(ti); go=false;
+  document.getElementById('wo').classList.remove('show');
+  document.getElementById('gs').classList.remove('show');
+  document.getElementById('mu').classList.remove('hide');
+  var cf=document.querySelectorAll('.confetti');
+  for(var i=0;i<cf.length;i++)cf[i].remove();
+}
+
+function resetState(){
+  clearInterval(ti); go=false;
+  sc=[0,0]; cr=0; ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('ex1').textContent='';
+  document.getElementById('ex2').textContent='';
+  document.getElementById('rn').textContent='1';
+  tm=baseTm;
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('q1').innerHTML='准备开始...';
+  document.getElementById('q2').innerHTML='准备开始...';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+}
+
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display='none';
+  go=true; sc=[0,0]; cr=0; ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('wo').classList.remove('show');
+  Q=sf(Q);
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];
+  document.getElementById('rn').textContent=cr+1;
+  var q=Q[cr];
+  renderPlayer(1,q,0);
+  renderPlayer(2,q,1);
+  tm=baseTm;
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('td').classList.remove('urgent');
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent=tm;
+    if(tm<=5){sfxTick();document.getElementById('td').classList.add('urgent');}
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+function renderPlayer(pn,q,qi){
+  var qText=q.q;
+  var visHTML=q.vis||'';
+  var opts=qi===0?(q.o1||q.o):(q.o2||q.o);
+  var ansIdx=qi===0?(q.a1!==undefined?q.a1:q.a):(q.a2!==undefined?q.a2:q.a);
+  document.getElementById('q'+pn).innerHTML='<span style="font-size:0.75em;opacity:0.5">第'+(cr+1)+'题</span> '+qText+(visHTML?'<br>'+visHTML:'');
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'], h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('st'+pn).textContent='';
+  document.getElementById('ex'+pn).textContent='';
+  document.getElementById('q'+pn).style.display='';
+  document.getElementById('op'+pn).style.display='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    document.getElementById('ex'+pn).textContent='💡 '+(Q[cr].ex||'');
+    sfxCorrect();
+    var other=pn===1?2:1;
+    if(!ans[other-1]){
+      ans[other-1]=true;
+      var obs=document.querySelectorAll('#op'+other+' .p-opt');
+      obs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+other).innerHTML='对方已抢答';
+      document.getElementById('ex'+other).textContent='💡 '+(Q[cr].ex||'');
+    }
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){nextRound();},2000);
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    document.getElementById('ex'+pn).textContent='💡 '+(Q[cr].ex||'');
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+    if(ans[0]&&ans[1]){
+      clearInterval(ti);
+      cr++;
+      setTimeout(function(){nextRound();},2000);
+    }
+  }
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},2000);
+}
+
+function endGame(){
+  go=false; clearInterval(ti);
+  document.getElementById('wo').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('wt').innerHTML='🔴 红方获胜！';
+    document.getElementById('wt').style.color='#FF6B6B';
+    document.getElementById('ws').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    document.getElementById('wt').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('wt').style.color='#4ECDC4';
+    document.getElementById('ws').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  }else{
+    document.getElementById('wt').innerHTML='🤝 平局！';
+    document.getElementById('wt').style.color='#FFD700';
+    document.getElementById('ws').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk+curMod)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best)localStorage.setItem(sk+curMod,mx);
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*8+5)+'px';
+    d.style.height=(Math.random()*8+5)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti); go=false;
+  document.getElementById('wo').classList.remove('show');
+  var cf=document.querySelectorAll('.confetti');
+  for(var i=0;i<cf.length;i++)cf[i].remove();
+  resetState();
+  document.getElementById('btnStart').style.display='inline-block';
+  Q=sf(Q);
+}
+</script>
+</body>
+</html>

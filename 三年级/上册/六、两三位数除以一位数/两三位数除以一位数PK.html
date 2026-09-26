@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>两三位数除以一位数PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px;gap:10px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.timer{font-size:1.3em;font-weight:bold;color:#FFD700;min-width:50px;text-align:center}
+.round-info{font-size:0.78em;color:#aaa}
+
+.module-tabs{display:flex;gap:4px;padding:4px 6px;justify-content:center;background:rgba(0,0,0,0.3);flex-wrap:wrap}
+.module-tab{padding:5px 10px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.7em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.3s}
+.module-tab.active{border-color:#FFD700;background:rgba(255,215,0,0.15);color:#FFD700;box-shadow:0 0 10px rgba(255,215,0,0.25)}
+.module-tab:hover{border-color:rgba(255,255,255,0.5)}
+.mode-desc{text-align:center;padding:2px 8px;font-size:0.7em;color:#aaa;background:rgba(0,0,0,0.2)}
+
+.arena{display:flex;flex:1;height:calc(100vh - 225px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 5px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:0.95em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:5px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.6em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.7em;color:#FFD700;min-height:16px}
+
+.question-box{background:rgba(255,255,255,0.1);border-radius:10px;padding:8px 6px;margin:3px 0;width:100%;text-align:center;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.85em;line-height:1.3;gap:4px;position:relative;overflow:hidden}
+
+/* Vertical division interactive grid */
+.vert-div{display:inline-block;padding:4px;margin:2px auto}
+.vd-grid{display:inline-grid;gap:1px;font-family:'Courier New','Consolas',monospace;font-size:1.05em}
+.vd-cell{width:30px;height:28px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold}
+.vd-cell.empty{visibility:hidden}
+.vd-cell.text{color:#ddd;font-size:1em}
+.vd-cell.bar{border-top:2px solid rgba(255,255,255,0.55)}
+.vd-cell.left-text{justify-content:flex-end;padding-right:0;color:#4ECDC4;font-size:1em;font-weight:bold;width:auto}
+.vd-cell.bracket{color:rgba(255,255,255,0.55);font-size:1.5em;line-height:0.9;justify-content:flex-start;padding-left:0;width:auto}
+.vd-cell.bar-sub{border-top:1.5px solid rgba(255,255,255,0.3)}
+.vd-input{width:28px;height:28px;text-align:center;font-size:1em;font-weight:bold;border:2px solid rgba(255,255,255,0.35);border-radius:5px;background:rgba(255,255,255,0.08);color:#FFD700;font-family:inherit;outline:none;padding:0}
+.vd-input:focus{border-color:#FFD700;box-shadow:0 0 8px rgba(255,215,0,0.35);background:rgba(255,255,255,0.15)}
+.vd-input.filled{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.12)}
+.vd-input.correct-box{border-color:#10B981!important;background:rgba(16,185,129,0.3)!important;box-shadow:0 0 10px rgba(16,185,129,0.4);color:#fff!important}
+.vd-input.wrong-box{border-color:#EF4444!important;background:rgba(239,68,68,0.3)!important;animation:shake 0.4s;color:#fff!important}
+/* Number keypad */
+.numpad{display:inline-grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-top:6px}
+.np-btn{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.np-btn:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.45)}
+.np-btn:active{transform:scale(0.9);background:rgba(255,255,255,0.25)}
+.np-btn.del{color:#FF6B6B;font-size:0.75em}
+.np-btn.ok{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;border:none;font-size:0.8em}
+.np-btn:disabled{opacity:0.3;pointer-events:none}
+.submit-row{margin-top:4px}
+.submit-btn{padding:6px 18px;border-radius:14px;border:none;background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;font-size:0.78em;font-weight:bold;cursor:pointer;font-family:inherit}
+.submit-btn:disabled{opacity:0.35;pointer-events:none}
+.vd-hbox{display:flex;gap:6px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+
+/* Formula display */
+.formula-big{font-size:1.6em;font-weight:bold;color:#fff;letter-spacing:2px;padding:4px 8px;background:rgba(255,255,255,0.06);border-radius:8px;display:inline-block;margin:4px}
+
+/* Part labels */
+.part-labels{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0;font-size:0.75em}
+.part-label{padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.08);color:#ccc}
+.part-label b{color:#FFD700}
+
+/* Comparison table */
+.comp-table{font-size:0.75em;margin:4px auto;border-collapse:collapse}
+.comp-table td{padding:3px 8px;border:1px solid rgba(255,255,255,0.15);text-align:center}
+.comp-table .hdr{background:rgba(255,215,0,0.15);color:#FFD700;font-weight:bold}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;margin:3px 0}
+.p-opt{padding:8px 4px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.75em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.25;min-height:36px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.5);transform:scale(1.02)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 16px rgba(255,107,107,0.5)}
+.right .p-opt.correct{box-shadow:0 0 16px rgba(78,205,196,0.5)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.feedback{font-size:0.75em;font-weight:bold;min-height:18px;text-align:center;margin:2px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.8em;font-weight:bold;z-index:10;text-shadow:0 0 20px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:8px 16px;border-radius:16px;border:none;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1em;color:#ccc;margin-bottom:14px}
+.win-scores{display:flex;gap:32px;margin-bottom:14px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:5px 4px}
+  .question-box{font-size:0.75em;min-height:50px;padding:6px 4px}
+  .p-opt{font-size:0.7em;padding:6px 3px;min-height:32px}
+  .vs-badge{font-size:1.2em}
+  .player-score{font-size:1.2em}
+  .win-title{font-size:1.4em}
+  .options-grid{gap:3px}
+  .module-tab{padding:4px 7px;font-size:0.65em}
+  .top-bar h1{font-size:0.8em}
+  .vd-grid{font-size:0.75em}.vd-cell{width:24px;height:24px}.vd-input{width:22px;height:22px;font-size:0.9em}.np-btn{width:28px;height:28px;font-size:0.9em}
+  .formula-big{font-size:1.2em}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>两三位数÷一位数 ⚔️ PK对战</h1>
+  <span class="round-info">第 <span id="rn">1</span>/<span id="tt">12</span> 轮</span>
+  <span class="timer">⏱ <span id="tm">25</span>s</span>
+</div>
+
+<div class="module-tabs">
+  <button class="module-tab active" id="tab0" onclick="switchModule(0)">一、口算除法</button>
+  <button class="module-tab" id="tab1" onclick="switchModule(1)">二、除法估算</button>
+  <button class="module-tab" id="tab2" onclick="switchModule(2)">三、两位数笔算</button>
+  <button class="module-tab" id="tab3" onclick="switchModule(3)">四、首位能整除</button>
+  <button class="module-tab" id="tab4" onclick="switchModule(4)">五、首位不够除</button>
+  <button class="module-tab" id="tab5" onclick="switchModule(5)">六、商中间末尾0</button>
+</div>
+<div class="mode-desc" id="modeDesc">模块一：整百数÷一位数 · 几百几十÷一位数（首位不够除）口算</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="question-box" id="q1">准备开始...</div>
+    <div class="options-grid" id="op1"></div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="question-box" id="q2">准备开始...</div>
+    <div class="options-grid" id="op2"></div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.1em;padding:12px 28px">🔄 再来一局</button>
+</div>
+
+<script>
+// ==================== VERTICAL DIVISION DISPLAY ====================
+// Compute layout for complete step-by-step vertical division
+function computeDivisionLayout(dividend, divisor){
+  var quotient=Math.floor(dividend/divisor), qStr=String(quotient);
+  var dStr=String(dividend), nCols=dStr.length, qDigits=qStr.length;
+  var rows=[], remainder=dividend%divisor;
+
+  // Helper: right-align digits to endCol
+  function digitCells(numStr, endCol){
+    var arr=[]; for(var c=0; c<nCols; c++) arr.push(null);
+    var len=numStr.length;
+    for(var i=0; i<len; i++){
+      var col=endCol - len + 1 + i;
+      if(col>=0 && col<nCols) arr[col]={digit:numStr[i]};
+    }
+    return arr;
+  }
+
+  // Row 0: Quotient (input boxes, right-aligned)
+  var qRow=[]; for(var c=0; c<nCols; c++) qRow.push(null);
+  for(var i=0; i<qDigits; i++){
+    var col=nCols - qDigits + i;
+    qRow[col]={digit:qStr[i], isInput:true, qIdx:i};
+  }
+  rows.push({type:'quotient', cells:qRow});
+
+  // Simulate long division step by step
+  var cur=0, dPos=0;
+  while(dPos<nCols && cur<divisor){
+    cur=cur*10 + parseInt(dStr[dPos]); dPos++;
+  }
+
+  for(var qPos=0; qPos<qDigits; qPos++){
+    var qd=parseInt(qStr[qPos]);
+    var endCol=dPos-1; // rightmost column of current working number
+
+    if(qd>0){
+      var prod=qd*divisor, newRem=cur-prod;
+      var prodStr=String(prod);
+      // Product row
+      rows.push({type:'product', cells:digitCells(prodStr, endCol)});
+
+      // Result row: remainder (right-aligned to endCol) + brought-down digits
+      var isLast=(qPos===qDigits-1);
+      var resultCells=[]; for(var c=0; c<nCols; c++) resultCells.push(null);
+
+      // Remainder digits (right-aligned to endCol)
+      var remStr=String(newRem);
+      for(var ri=0; ri<remStr.length; ri++){
+        resultCells[endCol - remStr.length + 1 + ri]={digit:remStr[ri]};
+      }
+
+      if(!isLast && dPos<nCols){
+        // Bring down next digit(s), add to result cells
+        var bringStart=dPos;
+        cur=newRem*10 + parseInt(dStr[dPos]); dPos++;
+        var bringEnd=dPos-1;
+        while(cur<divisor && dPos<nCols){
+          cur=cur*10 + parseInt(dStr[dPos]); dPos++;
+          bringEnd=dPos-1;
+        }
+        // Add brought-down digits (endCol+1 to bringEnd)
+        for(var bi=endCol+1; bi<=bringEnd; bi++){
+          resultCells[bi]={digit:dStr[bi]};
+        }
+      }
+      rows.push({type:'result', cells:resultCells});
+    } else {
+      // Zero quotient: no new rows needed, number already shown in previous result
+    }
+  }
+
+  return {nCols:nCols, dStr:dStr, qStr:qStr, divisor:divisor, qRow:qRow, qDigits:qDigits, quotient:quotient, remainder:remainder, rows:rows};
+}
+
+// Static display-only vertical division (for conceptual questions)
+function vertDivStatic(dividend, divisor, quotient){
+  var dStr=String(dividend), qStr=String(quotient), nCols=dStr.length;
+  var qDigits=String(quotient).length;
+
+  var h='<div class="vert-div"><div class="vd-grid" style="grid-template-columns:auto auto '+('30px '.repeat(nCols))+'">';
+
+  // Row 0: 商 (above bar)
+  h+='<div class="vd-cell empty" style="grid-column:1/3">.</div>';
+  for(var c=0; c<nCols; c++){
+    var qi=c - (nCols - qDigits);
+    if(qi>=0 && qi<qDigits) h+='<div class="vd-cell text" style="color:#FFD700">'+qStr[qi]+'</div>';
+    else h+='<div class="vd-cell empty">.</div>';
+  }
+
+  // Row 1: 横线
+  h+='<div class="vd-cell empty" style="grid-column:1/3">.</div>';
+  for(var c=0; c<nCols; c++) h+='<div class="vd-cell bar"></div>';
+
+  // Row 2: 除数 ) 被除数
+  h+='<div class="vd-cell left-text">'+divisor+'</div>';
+  h+='<div class="vd-cell bracket">)</div>';
+  for(var c=0; c<nCols; c++) h+='<div class="vd-cell text">'+dStr[c]+'</div>';
+
+  h+='</div></div>';
+  return h;
+}
+
+// Render interactive vertical division question for player pn
+function renderVertQuestion(pn, qData){
+  var layout=computeDivisionLayout(qData.dividend, qData.divisor);
+  var nCols=layout.nCols, cellW='28px';
+
+  var h='<div class="vert-div">';
+  h+='<div style="text-align:center;font-size:0.7em;color:#aaa;margin-bottom:3px">第'+(cr+1)+'题：商要对齐数位，填入方框</div>';
+  h+='<div class="vd-hbox">';
+
+  // Vertical division grid
+  h+='<div class="vd-grid" style="grid-template-columns:auto auto '+('28px '.repeat(nCols))+'">';
+
+  // Row 0: 商 (quotient input boxes, above the top bar)
+  h+='<div class="vd-cell empty" style="grid-column:1/3">.</div>';
+  var qRow=layout.qRow;
+  for(var c=0; c<nCols; c++){
+    if(qRow[c] && qRow[c].isInput){
+      var qIdx=qRow[c].qIdx;
+      h+='<div class="vd-cell"><input class="vd-input" id="db'+pn+'_'+qIdx+'" maxlength="1" inputmode="none" pattern="[0-9]" onfocus="onBoxFocus('+pn+','+qIdx+','+layout.qDigits+')" onkeydown="onBoxKey(event,'+pn+','+qIdx+','+layout.qDigits+')" onclick="this.select()"></div>';
+    } else {
+      h+='<div class="vd-cell empty">.</div>';
+    }
+  }
+
+  // Row 1: 横线 (top horizontal bar)
+  h+='<div class="vd-cell empty" style="grid-column:1/3">.</div>';
+  for(var c=0; c<nCols; c++) h+='<div class="vd-cell bar"></div>';
+
+  // Row 2: 除数 ) 被除数
+  h+='<div class="vd-cell left-text">'+layout.divisor+'</div>';
+  h+='<div class="vd-cell bracket">)</div>';
+  for(var c=0; c<nCols; c++) h+='<div class="vd-cell text">'+layout.dStr[c]+'</div>';
+
+  // Rows 3+: Intermediate steps (product → sub-bar → result)
+  for(var ri=1; ri<layout.rows.length; ri++){
+    var row=layout.rows[ri];
+    var hasContent=false;
+    for(var c=0; c<nCols; c++){if(row.cells[c]){hasContent=true;break;}}
+    if(!hasContent) continue;
+
+    if(row.type==='product'){
+      // Product digits (above the sub-bar)
+      h+='<div class="vd-cell" style="grid-column:1/3"></div>';
+      for(var c=0; c<nCols; c++){
+        var cell=row.cells[c];
+        if(cell && cell.digit!==undefined){
+          h+='<div class="vd-cell text" style="color:rgba(255,255,255,0.55)">'+cell.digit+'</div>';
+        } else {
+          h+='<div class="vd-cell empty">.</div>';
+        }
+      }
+      // Sub-bar below product
+      h+='<div class="vd-cell" style="grid-column:1/3"></div>';
+      for(var c=0; c<nCols; c++) h+='<div class="vd-cell bar-sub"></div>';
+    } else if(row.type==='result'){
+      // Result (remainder + brought-down digits)
+      h+='<div class="vd-cell" style="grid-column:1/3"></div>';
+      for(var c=0; c<nCols; c++){
+        var cell=row.cells[c];
+        if(cell && cell.digit!==undefined){
+          h+='<div class="vd-cell text">'+cell.digit+'</div>';
+        } else {
+          h+='<div class="vd-cell empty">.</div>';
+        }
+      }
+    }
+  }
+
+  // Final remainder label
+  if(layout.remainder>0){
+    h+='<div class="vd-cell" style="grid-column:1/3"></div>';
+    h+='<div class="vd-cell text" style="color:#4ECDC4;font-weight:bold;grid-column:span '+(nCols)+';text-align:right;font-size:0.7em">余 '+layout.remainder+'</div>';
+  }
+
+  h+='</div>'; // end vd-grid
+
+  // Number keypad
+  h+='<div class="numpad" id="np'+pn+'">';
+  var keys=[1,2,3,4,5,6,7,8,9,'del',0,'ok'];
+  for(var k=0; k<keys.length; k++){
+    var key=keys[k];
+    if(key==='del') h+='<button class="np-btn del" onclick="numpadDel('+pn+','+layout.qDigits+')">⌫</button>';
+    else if(key==='ok') h+='<button class="np-btn ok" id="npok'+pn+'" onclick="submitVertical('+pn+','+layout.qDigits+')">✓</button>';
+    else h+='<button class="np-btn" onclick="numpadDigit('+pn+','+key+','+layout.qDigits+')">'+key+'</button>';
+  }
+  h+='</div>';
+
+  h+='</div>'; // end vd-hbox
+  h+='<div class="submit-row"><button class="submit-btn" id="sb'+pn+'" onclick="submitVertical('+pn+','+layout.qDigits+')">✓ 提交答案</button></div>';
+  h+='</div>'; // end vert-div
+
+  return h;
+}
+
+// ========== NUMpad LOGIC ==========
+var curFocusP=0;
+function onBoxFocus(pn, idx, total){
+  curFocusP=pn;
+  window['_focusIdx'+pn]=idx;
+}
+
+function numpadDigit(pn, digit, total){
+  if(ans[pn-1]||!go) return;
+  var idx=window['_focusIdx'+pn];
+  if(idx===undefined||idx===null){
+    for(var i=0; i<total; i++){
+      var b=document.getElementById('db'+pn+'_'+i);
+      if(b&&b.value===''){idx=i;break;}
+    }
+  }
+  var box=document.getElementById('db'+pn+'_'+idx);
+  if(!box) return;
+  box.value=digit;
+  box.classList.add('filled');
+  var next=idx;
+  if(idx<total-1){
+    var nb=document.getElementById('db'+pn+'_'+(idx+1));
+    if(nb&&nb.value==='') next=idx+1;
+  }
+  if(next!==idx){
+    var nb=document.getElementById('db'+pn+'_'+next);
+    if(nb){nb.focus();nb.select();}
+  }
+  window['_focusIdx'+pn]=next;
+  checkAllFilled(pn, total);
+}
+
+function numpadDel(pn, total){
+  if(ans[pn-1]||!go) return;
+  var idx=window['_focusIdx'+pn];
+  if(idx===undefined) idx=total-1;
+  for(var i=total-1; i>=0; i--){
+    var box=document.getElementById('db'+pn+'_'+i);
+    if(box&&box.value!==''){idx=i;break;}
+  }
+  var box=document.getElementById('db'+pn+'_'+idx);
+  if(box){
+    box.value='';
+    box.classList.remove('filled');
+    box.focus();box.select();
+    window['_focusIdx'+pn]=idx;
+  }
+}
+
+function onBoxKey(event, pn, idx, total){
+  if(event.key==='Enter'){submitVertical(pn, total);return;}
+  if(event.key==='Backspace'||event.key==='Delete'){
+    event.preventDefault();
+    var box=document.getElementById('db'+pn+'_'+idx);
+    if(box&&box.value===''&&idx>0){
+      var pb=document.getElementById('db'+pn+'_'+(idx-1));
+      if(pb){pb.focus();pb.select();}
+    }
+    return;
+  }
+  if(event.key==='ArrowLeft'&&idx>0){
+    var pb=document.getElementById('db'+pn+'_'+(idx-1));
+    if(pb){pb.focus();pb.select();}
+    return;
+  }
+  if(event.key==='ArrowRight'&&idx<total-1){
+    var nb=document.getElementById('db'+pn+'_'+(idx+1));
+    if(nb){nb.focus();nb.select();}
+    return;
+  }
+  if(/^[0-9]$/.test(event.key)){
+    event.preventDefault();
+    var box=document.getElementById('db'+pn+'_'+idx);
+    if(box){
+      box.value=event.key;
+      box.classList.add('filled');
+      if(idx<total-1){
+        var nb=document.getElementById('db'+pn+'_'+(idx+1));
+        if(nb){nb.focus();nb.select();}
+      }
+      checkAllFilled(pn, total);
+    }
+  }
+}
+
+function checkAllFilled(pn, total){
+  if(ans[pn-1]||!go) return;
+  for(var i=0; i<total; i++){
+    var box=document.getElementById('db'+pn+'_'+i);
+    if(!box||box.value==='') return;
+  }
+  submitVertical(pn, total);
+}
+
+function submitVertical(pn, total){
+  if(ans[pn-1]||!go) return;
+  var qData=allQ[cr];
+  var userAnswer='';
+  for(var i=0; i<total; i++){
+    var box=document.getElementById('db'+pn+'_'+i);
+    userAnswer+=box?(box.value||''):'';
+  }
+  if(userAnswer.length<total){
+    document.getElementById('fb'+pn).innerHTML='⚠️ 请先填满所有方框';
+    return;
+  }
+  ans[pn-1]=true;
+  var userNum=parseInt(userAnswer,10);
+
+  // Disable keypad
+  var np=document.getElementById('np'+pn);
+  if(np){var btns=np.querySelectorAll('.np-btn');for(var b=0; b<btns.length; b++) btns[b].disabled=true;}
+  var sb=document.getElementById('sb'+pn);if(sb) sb.disabled=true;
+
+  if(userNum===qData.quotient){
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    sfxCorrect();
+    for(var i=0; i<total; i++){
+      var box=document.getElementById('db'+pn+'_'+i);
+      if(box){box.classList.add('correct-box');box.disabled=true;}
+    }
+  } else {
+    document.getElementById('fb'+pn).innerHTML='❌ 正确答案是 '+qData.quotient+(qData.tip?'<br><span style="font-size:0.7em;color:#FFD700">💡 '+qData.tip+'</span>':'');
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0; i<total; i++){
+      var box=document.getElementById('db'+pn+'_'+i);
+      if(box){box.classList.add('wrong-box');box.disabled=true;}
+    }
+    var ansStr=qData.quotient.toString();
+    for(var i=0; i<total; i++){
+      var box=document.getElementById('db'+pn+'_'+i);
+      if(box&&i<ansStr.length){box.value=ansStr[i];box.classList.add('correct-box');}
+    }
+  }
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},2000);}
+}
+
+// ==================== QUESTION BANKS ====================
+
+// Module 1: 口算 - 整百数÷一位数, 几百几十÷一位数(首位不够除)
+var M1=[
+  {q:"600 ÷ 3 = ？<br>想：6个百÷3=2个百",
+   visual:function(){return'<span class="formula-big">600 ÷ 3 = ?</span>';},
+   o:["20","200","2000","2"], a:1,
+   tip:"6个百÷3=2个百=200。整百数除以一位数，先用0前面的数除，再在商末尾添2个0"},
+
+  {q:"800 ÷ 4 = ？",
+   visual:function(){return'<span class="formula-big">800 ÷ 4 = ?</span>';},
+   o:["20","100","200","400"], a:2,
+   tip:"8÷4=2，800÷4=200。8个百÷4=2个百"},
+
+  {q:"900 ÷ 3 = ？",
+   o:["30","300","3000","90"], a:1,
+   tip:"9÷3=3，900÷3=300"},
+
+  {q:"500 ÷ 5 = ？",
+   o:["10","100","50","500"], a:1,
+   tip:"5÷5=1，500÷5=100"},
+
+  {q:"120 ÷ 4 = ？<br>想：12个十÷4=3个十",
+   visual:function(){return'<span class="formula-big">120 ÷ 4 = ?</span>';},
+   o:["3","30","300","40"], a:1,
+   tip:"12个十÷4=3个十=30。首位1<4不够除，看前两位12÷4=3"},
+
+  {q:"150 ÷ 5 = ？",
+   visual:function(){return'<span class="formula-big">150 ÷ 5 = ?</span>';},
+   o:["3","30","300","50"], a:1,
+   tip:"15个十÷5=3个十=30"},
+
+  {q:"240 ÷ 6 = ？",
+   o:["4","40","400","60"], a:1,
+   tip:"24个十÷6=4个十=40"},
+
+  {q:"360 ÷ 9 = ？",
+   o:["4","40","400","90"], a:1,
+   tip:"36个十÷9=4个十=40"},
+
+  {q:"420 ÷ 7 = ？",
+   o:["6","60","600","70"], a:1,
+   tip:"42个十÷7=6个十=60"},
+
+  {q:"560 ÷ 8 = ？",
+   o:["7","70","700","80"], a:1,
+   tip:"56个十÷8=7个十=70"},
+
+  {q:"180 ÷ 3 = ？",
+   o:["6","60","600","30"], a:1,
+   tip:"18个十÷3=6个十=60"},
+
+  {q:"720 ÷ 9 = ？",
+   o:["8","80","800","90"], a:1,
+   tip:"72个十÷9=8个十=80"}
+];
+
+// Module 2: 除法估算
+var M2=[
+  {q:"估算：78 ÷ 4 ≈ ？<br>78接近哪个能被4整除的数？",
+   visual:function(){return'<span class="formula-big">78 ÷ 4 ≈ ?</span>';},
+   o:["≈10","≈20","≈30","≈40"], a:1,
+   tip:"78≈80，80÷4=20，所以78÷4≈20"},
+
+  {q:"估算：123 ÷ 3 ≈ ？<br>123接近哪个整十数？",
+   visual:function(){return'<span class="formula-big">123 ÷ 3 ≈ ?</span>';},
+   o:["≈30","≈40","≈50","≈60"], a:1,
+   tip:"123≈120，120÷3=40，所以123÷3≈40"},
+
+  {q:"估算：157 ÷ 8 ≈ ？",
+   o:["≈10","≈20","≈30","≈40"], a:1,
+   tip:"157≈160，160÷8=20，所以157÷8≈20"},
+
+  {q:"估算：238 ÷ 6 ≈ ？",
+   o:["≈30","≈40","≈50","≈60"], a:1,
+   tip:"238≈240，240÷6=40，所以238÷6≈40"},
+
+  {q:"估算：319 ÷ 4 ≈ ？",
+   o:["≈60","≈70","≈80","≈90"], a:2,
+   tip:"319≈320，320÷4=80，所以319÷4≈80"},
+
+  {q:"估算：482 ÷ 6 ≈ ？",
+   o:["≈60","≈70","≈80","≈90"], a:2,
+   tip:"482≈480，480÷6=80"},
+
+  {q:"估算：271 ÷ 9 ≈ ？",
+   o:["≈20","≈30","≈40","≈50"], a:1,
+   tip:"271≈270，270÷9=30"},
+
+  {q:"估算：89 ÷ 3 ≈ ？下列哪个最接近？",
+   o:["≈20","≈30","≈40","≈50"], a:1,
+   tip:"89≈90，90÷3=30"},
+
+  {q:"估算时，一般把被除数看成什么数？",
+   o:["任意数","最接近的整十或整百数","最小的数","最大的数"], a:1,
+   tip:"除法估算时，把被除数看作最接近的整十数或整百数，使计算简便"},
+
+  {q:"估算：416 ÷ 7 ≈ ？",
+   o:["≈50","≈60","≈70","≈80"], a:1,
+   tip:"416≈420，420÷7=60"},
+
+  {q:"估算：635 ÷ 8 ≈ ？",
+   o:["≈70","≈80","≈90","≈100"], a:1,
+   tip:"635≈640，640÷8=80"},
+
+  {q:"不计算，判断：196 ÷ 5 的商大约是多少？",
+   o:["≈20","≈30","≈40","≈50"], a:2,
+   tip:"196≈200，200÷5=40"}
+];
+
+// Module 3: 两位数÷一位数 笔算
+var M3=[
+  {dividend:48, divisor:4, quotient:12, q:"48 ÷ 4 = ？用竖式计算", tip:"48÷4=12。4×1=4,4-4=0,移下8,4×2=8,8-8=0"},
+
+  {q:"竖式中，被除数48里面的'4'表示什么？", visual:function(){return vertDivStatic(48,4,12);},
+   o:["4个一","4个十","4个百","4"], a:1, tip:"48中4在十位上，表示4个十"},
+
+  {dividend:75, divisor:5, quotient:15, q:"75 ÷ 5 = ？用竖式计算", tip:"75÷5=15。5×1=5,7-5=2,移下5得25,5×5=25,25-25=0"},
+
+  {dividend:96, divisor:8, quotient:12, q:"96 ÷ 8 = ？", tip:"96÷8=12。8×1=8,9-8=1,移下6得16,8×2=16,16-16=0"},
+
+  {q:"在48÷4=12的竖式中，'12'叫什么？", visual:function(){return'<div class="part-labels"><span class="part-label">48 ÷ 4 = <b>12</b></span></div>';},
+   o:["被除数","除数","商","余数"], a:2, tip:"48是被除数，4是除数，12是商"},
+
+  {q:"在竖式68÷3=22…2中，余数2必须满足什么条件？", visual:function(){return vertDivStatic(68,3,'22…2');},
+   o:["大于除数","等于除数","小于除数","随意"], a:2, tip:"余数必须小于除数！这里2<3，符合要求"},
+
+  {dividend:84, divisor:6, quotient:14, q:"84 ÷ 6 = ？", tip:"84÷6=14。6×1=6,8-6=2,移下4得24,6×4=24"},
+
+  {q:"竖式57÷3中，第一步算什么？", visual:function(){return vertDivStatic(57,3,'?');},
+   o:["3×1=3","5÷3商1余2","57÷3直接算","3×2=6"], a:1, tip:"从高位除起：5÷3=1…2，商1写在十位上"},
+
+  {dividend:91, divisor:7, quotient:13, q:"91 ÷ 7 = ？", tip:"91÷7=13。7×1=7,9-7=2,移下1得21,7×3=21"},
+
+  {q:"竖式计算：52÷4。商的十位是多少？", visual:function(){return vertDivStatic(52,4,'?');},
+   o:["0","1","2","3"], a:1, tip:"5÷4=1…1，商1写在十位"},
+
+  {dividend:76, divisor:4, quotient:19, q:"76 ÷ 4 = ？", tip:"76÷4=19。4×1=4,7-4=3,移下6得36,4×9=36"},
+
+  {q:"在竖式中，每次除完后余下的数要和下一位的数字怎么做？",
+   o:["相加","相减","合并（移下来）","忽略"], a:2, tip:"余数和下一位数字合并（移下来），继续除"}
+];
+
+// Module 4: 首位能整除的三位数÷一位数
+var M4=[
+  {dividend:256, divisor:2, quotient:128, q:"256 ÷ 2 = ？列竖式计算", tip:"256÷2=128。2÷2=1,5÷2=2…1,16÷2=8 → 128"},
+
+  {dividend:369, divisor:3, quotient:123, q:"369 ÷ 3 = ？", tip:"369÷3=123。百位3÷3=1,十位6÷3=2,个位9÷3=3"},
+
+  {q:"竖式256÷2中，第二步5÷2商2，这个2写在什么位置？为什么？", visual:function(){return vertDivStatic(256,2,128);},
+   o:["百位","十位","个位","随意"], a:1, tip:"5在十位上，5÷2商2写在十位上。除到哪一位商就写在哪一位上面"},
+
+  {dividend:484, divisor:4, quotient:121, q:"484 ÷ 4 = ？", tip:"484÷4=121。每步都能整除"},
+
+  {dividend:693, divisor:3, quotient:231, q:"693 ÷ 3 = ？", tip:"693÷3=231。6÷3=2,9÷3=3,3÷3=1"},
+
+  {dividend:846, divisor:2, quotient:423, q:"竖式846÷2中，商是多少？", tip:"846÷2=423。8÷2=4,4÷2=2,6÷2=3"},
+
+  {q:"在竖式中，每一步的乘积（如2×1=2, 2×2=4）表示什么？",
+   o:["已经分掉的部分","剩下的部分","总数","余数"], a:0, tip:"乘积表示已经分掉的数量，从被除数中减去，得到余数"},
+
+  {dividend:555, divisor:5, quotient:111, q:"555 ÷ 5 = ？", tip:"555÷5=111。每位都能整除"},
+
+  {dividend:648, divisor:2, quotient:324, q:"648 ÷ 2 = ？", tip:"648÷2=324"},
+
+  {q:"竖式计算936÷3，第一步百位9÷3商3，写在什么位置？",
+   o:["个位","十位","百位","高位"], a:2, tip:"9在百位，9÷3的商3写在百位上。除到哪一位商就写在哪一位"},
+
+  {q:"在256÷2的竖式中，最后的0表示什么？", visual:function(){return vertDivStatic(256,2,128);},
+   o:["没有意义","没有剩余（整除）","商是0","算错了"], a:1, tip:"余数为0表示整除，没有剩余"}
+];
+
+// Module 5: 首位不够除的三位数÷一位数
+var M5=[
+  {dividend:128, divisor:4, quotient:32, q:"128 ÷ 4 = ？首位1<4不够除怎么办？", tip:"首位1<4不够除，看前两位12÷4=3，商写在十位上"},
+
+  {dividend:156, divisor:6, quotient:26, q:"156 ÷ 6 = ？", tip:"156÷6=26。1<6看前两位15÷6=2…3,36÷6=6"},
+
+  {dividend:212, divisor:4, quotient:53, q:"212 ÷ 4 = ？", tip:"212÷4=53。2<4看前两位21÷4=5…1,12÷4=3"},
+
+  {dividend:175, divisor:7, quotient:25, q:"175 ÷ 7 = ？", tip:"175÷7=25。1<7看17÷7=2…3,35÷7=5"},
+
+  {q:"首位不够除时，商是几位数？例：128÷4", visual:function(){return vertDivStatic(128,4,32);},
+   o:["三位数","两位数","一位数","不确定"], a:1, tip:"128÷4=32，首位不够除商是两位数（比被除数少一位）"},
+
+  {dividend:252, divisor:6, quotient:42, q:"252 ÷ 6 = ？", tip:"252÷6=42。2<6看25÷6=4…1,12÷6=2"},
+
+  {dividend:136, divisor:8, quotient:17, q:"136 ÷ 8 = ？", tip:"136÷8=17。1<8看13÷8=1…5,56÷8=7"},
+
+  {q:"竖式189÷9，首位1<9，应该看哪几位？", visual:function(){return vertDivStatic(189,9,'?');},
+   o:["看1","看18","看189全部","看89"], a:1, tip:"1<9不够除，看前两位18÷9=2"},
+
+  {dividend:168, divisor:3, quotient:56, q:"168 ÷ 3 = ？", tip:"168÷3=56。1<3看16÷3=5…1,18÷3=6"},
+
+  {q:"比较：428÷4和128÷4，为什么一个商是三位数一个是两位数？",
+   o:["数字大小不同","首位够除是三位，不够是两位","没有规律","看除数"], a:1, tip:"428首位4≥4→够除→商三位。128首位1<4→不够除→商两位"},
+
+  {dividend:245, divisor:5, quotient:49, q:"245 ÷ 5 = ？", tip:"245÷5=49。2<5看24÷5=4…4,45÷5=9"}
+];
+
+// Module 6: 商中间/末尾有零
+var M6=[
+  {dividend:612, divisor:3, quotient:204, q:"612 ÷ 3 = ？注意：十位1<3，商中间要补0", tip:"612÷3=204。6÷3=2,1÷3不够商1要商0,12÷3=4"},
+
+  {q:"竖式612÷3中，商中间的0能不能省略？为什么？", visual:function(){return vertDivStatic(612,3,204);},
+   o:["能省略","不能，0占位","可以写也可以不写","省略后是24"], a:1, tip:"不能省略！0起占位作用，省略后24≠204，数值完全不同"},
+
+  {dividend:824, divisor:4, quotient:206, q:"824 ÷ 4 = ？", tip:"824÷4=206。8÷4=2,2÷4不够商0,24÷4=6"},
+
+  {dividend:420, divisor:4, quotient:105, q:"420 ÷ 4 = ？注意末尾有0", tip:"420÷4=105。4÷4=1,2÷4不够商0,20÷4=5"},
+
+  {dividend:630, divisor:3, quotient:210, q:"630 ÷ 3 = ？", tip:"630÷3=210。6÷3=2,3÷3=1,0÷3=0"},
+
+  {dividend:918, divisor:9, quotient:102, q:"竖式918÷9，商是多少？", tip:"918÷9=102。9÷9=1,1÷9不够商0,18÷9=2"},
+
+  {dividend:520, divisor:5, quotient:104, q:"520 ÷ 5 = ？", tip:"520÷5=104。5÷5=1,2÷5不够商0,20÷5=4"},
+
+  {q:"什么时候商的中间会出现0？",
+   o:["任意情况","某一位不够商1时","被除数有0时","除数很大时"], a:1, tip:"除到哪一位不够商1时，就在那一位上写0占位"},
+
+  {dividend:714, divisor:7, quotient:102, q:"714 ÷ 7 = ？", tip:"714÷7=102。7÷7=1,1÷7不够商0,14÷7=2"},
+
+  {dividend:840, divisor:6, quotient:140, q:"840 ÷ 6 = ？", tip:"840÷6=140。8÷6=1…2,24÷6=4,0÷6=0"},
+
+  {q:"比较：612÷3=204和630÷3=210，两个商中的0分别在什么位置？",
+   o:["都在末尾","都在中间","204在中间，210在末尾","204在末尾，210在中间"], a:2, tip:"204的0在十位(中间)，210的0在个位(末尾)。都起占位作用"},
+
+  {dividend:909, divisor:9, quotient:101, q:"909 ÷ 9 = ？", tip:"909÷9=101。9÷9=1,0÷9=0,9÷9=1"}
+];
+
+// ==================== GAME STATE ====================
+var allQ=[], sc=[0,0], cr=0, tr=12, tm=25, ti=null, go=false, ans=[false,false];
+var curModule=0;
+var moduleNames=['口算除法','除法估算','两位数笔算','首位能整除','首位不够除','商中间末尾0'];
+var sk='pk_div_2_3_by_1';
+var musicOn=true, actx=null;
+
+var moduleDescs=[
+  '模块一：整百数÷一位数 · 几百几十÷一位数（首位不够除）口算',
+  '模块二：除法估算 — 把被除数看作整十/整百数进行估算',
+  '模块三：两位数÷一位数笔算 — 竖式计算步骤与各部分含义',
+  '模块四：首位能整除的三位数÷一位数 — 竖式笔算过程',
+  '模块五：首位不够除的三位数÷一位数 — 看前两位',
+  '模块六：商中间/末尾有0 — 0的占位作用'
+];
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function switchModule(m){
+  curModule=m;
+  for(var i=0;i<6;i++)document.getElementById('tab'+i).classList.toggle('active',i===m);
+  document.getElementById('modeDesc').textContent=moduleDescs[m];
+  buildQuestionSet();
+  restartGame();
+}
+
+function buildQuestionSet(){
+  var pools=[M1,M2,M3,M4,M5,M6];
+  allQ=sf(pools[curModule].slice());
+  tr=Math.min(allQ.length,10);
+  document.getElementById('tt').textContent=tr;
+  document.getElementById('rn').textContent='1';
+}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.1,'square',0.06);setTimeout(function(){playTone(659,0.1,'square',0.06);},70);setTimeout(function(){playTone(784,0.15,'square',0.06);},140);}
+function sfxWrong(){playTone(200,0.22,'sawtooth',0.05);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.15,'square',0.06);},i*100);}}
+function sfxTick(){playTone(800,0.03,'sine',0.03);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.07,'sine',0.04);}}
+
+buildQuestionSet();
+
+// ==================== GAME LOGIC ====================
+function startGame(){
+  initAudio();document.getElementById('btnStart').style.display='none';
+  go=true;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  buildQuestionSet();nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];
+  document.getElementById('rn').textContent=cr+1;
+  var q=allQ[cr];
+  renderPlayer(1,q);renderPlayer(2,q);
+  var time=(curModule>=2&&q.dividend)?30:(curModule>=2?25:20); tm=time;
+  document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;document.getElementById('tm').textContent=tm;
+    if(tm<=5)sfxTick();
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+function renderPlayer(pn,q){
+  if(q.dividend!=null){
+    // Interactive vertical division format
+    document.getElementById('q'+pn).innerHTML=
+      '<div style="font-weight:bold;margin-bottom:2px;color:#FFD700">第'+(cr+1)+'题 ['+moduleNames[curModule]+']</div>'+
+      '<div style="margin-bottom:4px">'+q.q+'</div>';
+    document.getElementById('op'+pn).innerHTML=renderVertQuestion(pn,q);
+    document.getElementById('fb'+pn).textContent='';
+    document.getElementById('st'+pn).textContent='';
+    // Auto-focus first input box
+    setTimeout(function(){
+      var fb=document.getElementById('db'+pn+'_0');
+      if(fb){fb.focus();fb.select();}
+    },150);
+    return;
+  }
+
+  // Multiple choice format
+  var vis='';
+  if(q.visual){try{vis='<div style="margin:2px 0">'+q.visual()+'</div>';}catch(e){vis='';}}
+  var fullQ='<div style="font-weight:bold;margin-bottom:2px;color:#FFD700">第'+(cr+1)+'题 ['+moduleNames[curModule]+']</div>'+
+    '<div>'+q.q+'</div>'+vis;
+  document.getElementById('q'+pn).innerHTML=fullQ;
+
+  var opts=q.o, ansIdx=q.a;
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'], h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('st'+pn).textContent='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';sfxCorrect();
+  } else {
+    btn.classList.add('wrong');
+    var q=allQ[cr];
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了'+(q.tip?'<br><span style="font-size:0.7em;color:#FFD700">💡 '+q.tip+'</span>':'');
+    document.getElementById('st'+pn).textContent='';sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+  }
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},2000);}
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      ans[p-1]=true;
+      var q=allQ[cr];
+      if(q.dividend!=null){
+        // Fill-in question: disable inputs and show correct answer
+        var total=String(q.quotient).length;
+        for(var i=0;i<total;i++){
+          var box=document.getElementById('db'+p+'_'+i);
+          if(box){box.disabled=true;}
+        }
+        var np=document.getElementById('np'+p);
+        if(np){var btns=np.querySelectorAll('.np-btn');for(var b=0;b<btns.length;b++)btns[b].disabled=true;}
+        var sb=document.getElementById('sb'+p);if(sb) sb.disabled=true;
+        document.getElementById('fb'+p).innerHTML='⏰ 时间到！正确答案是 '+q.quotient+(q.tip?'<br><span style="font-size:0.7em;color:#FFD700">💡 '+q.tip+'</span>':'');
+        var ansStr=q.quotient.toString();
+        for(var i=0;i<total;i++){
+          var box=document.getElementById('db'+p+'_'+i);
+          if(box&&i<ansStr.length){box.value=ansStr[i];box.classList.add('correct-box');}
+        }
+      } else {
+        // MC question
+        var bs=document.querySelectorAll('#op'+p+' .p-opt');
+        bs.forEach(function(b){b.disabled=true;});
+        document.getElementById('fb'+p).innerHTML='⏰ 时间到！'+(q.tip?'<br><span style="font-size:0.7em;color:#FFD700">💡 '+q.tip+'</span>':'');
+        for(var i=0;i<bs.length;i++){
+          var lb=['A','B','C','D'];
+          if(bs[i].textContent.indexOf(lb[q.a]+'.')>=0)bs[i].classList.add('correct');
+        }
+      }
+    }
+  }
+  cr++;setTimeout(function(){nextRound();},2000);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  var mn=' ['+moduleNames[curModule]+']';
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方'+mn;sfxWin();
+  } else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方'+mn;sfxWin();
+  } else {
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分'+mn;
+    playTone(523,0.2,'sine',0.06);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk)||'0'),mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<50;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*8+5)+'px';d.style.height=(Math.random()*8+5)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);setTimeout(function(){d.remove();},3500);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';document.getElementById('st2').textContent='';
+  document.getElementById('rn').textContent='1';document.getElementById('tm').textContent='25';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('q1').innerHTML='准备开始...';document.getElementById('q2').innerHTML='准备开始...';
+  document.getElementById('op1').innerHTML='';document.getElementById('op2').innerHTML='';
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});
+  buildQuestionSet();
+}
+</script>
+</body>
+</html>

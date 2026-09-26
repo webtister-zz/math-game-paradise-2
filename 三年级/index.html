@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三年级数学PK对战乐园</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#0f0c29,#302b63,#24243e);background-attachment:fixed;min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.bf{position:absolute;font-size:2.5em;opacity:0.08;animation:fa 20s infinite ease-in-out}
+@keyframes fa{0%,100%{transform:translateY(0)rotate(0)}25%{transform:translateY(-30px)rotate(5deg)}50%{transform:translateY(-10px)rotate(-3deg)}75%{transform:translateY(-40px)rotate(2deg)}}
+.bf:nth-child(1){top:5%;left:5%}.bf:nth-child(2){top:15%;right:8%;animation-delay:-4s}.bf:nth-child(3){top:50%;left:3%;animation-delay:-8s}.bf:nth-child(4){top:60%;right:5%;animation-delay:-12s}.bf:nth-child(5){top:80%;left:10%;animation-delay:-16s}.bf:nth-child(6){top:35%;left:85%;animation-delay:-6s}.bf:nth-child(7){top:85%;right:15%;animation-delay:-10s}.bf:nth-child(8){top:25%;left:45%;animation-delay:-14s}
+.main{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:16px}
+.hero{text-align:center;padding:24px 16px 18px;margin-bottom:8px;background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03));border-radius:28px;box-shadow:0 8px 32px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);position:relative;overflow:hidden}
+.hero .icon{font-size:3.5em;display:block;margin-bottom:6px;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.hero h1{font-size:2em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero p{color:rgba(255,255,255,0.6);font-size:0.95em;margin-top:6px}
+.tabs{display:flex;justify-content:center;gap:12px;margin:16px 0}
+.tab{padding:14px 40px;border-radius:30px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:1.1em;font-weight:bold;cursor:pointer;transition:all 0.3s;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.tab:hover{transform:translateY(-3px);border-color:rgba(255,255,255,0.4);color:#fff}
+.tab.active{color:#fff;border-color:transparent}
+.tab.s1.active{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);box-shadow:0 8px 28px rgba(255,107,107,0.3)}
+.tab.s2.active{background:linear-gradient(135deg,#4ECDC4,#44b8b0);box-shadow:0 8px 28px rgba(78,205,196,0.3)}
+.sb{display:flex;justify-content:center;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.sp{background:rgba(255,255,255,0.08);padding:8px 18px;border-radius:20px;font-size:0.85em;font-weight:bold;border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.85)}
+.sp .v{color:#FFD700;font-size:1.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.card{background:rgba(255,255,255,0.06);border-radius:18px;padding:18px 16px;box-shadow:0 6px 20px rgba(0,0,0,0.2);transition:all 0.3s;border:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden;backdrop-filter:blur(4px)}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.4);border-color:rgba(255,215,0,0.3)}
+.card:nth-child(8n+1){border-left:4px solid #FF6B6B}
+.card:nth-child(8n+2){border-left:4px solid #4ECDC4}
+.card:nth-child(8n+3){border-left:4px solid #FFD93D}
+.card:nth-child(8n+4){border-left:4px solid #6C5CE7}
+.card:nth-child(8n+5){border-left:4px solid #FF9800}
+.card:nth-child(8n+6){border-left:4px solid #66BB6A}
+.card:nth-child(8n+7){border-left:4px solid #42A5F5}
+.card:nth-child(8n+8){border-left:4px solid #EC407A}
+.card .ch{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.card .cn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;font-weight:bold;color:#fff;flex-shrink:0}
+.card:nth-child(8n+1) .cn{background:linear-gradient(135deg,#FF6B6B,#ee5a5a)}
+.card:nth-child(8n+2) .cn{background:linear-gradient(135deg,#4ECDC4,#44b8b0)}
+.card:nth-child(8n+3) .cn{background:linear-gradient(135deg,#FFD93D,#f0c800);color:#333}
+.card:nth-child(8n+4) .cn{background:linear-gradient(135deg,#6C5CE7,#5a4bd1)}
+.card:nth-child(8n+5) .cn{background:linear-gradient(135deg,#FF9800,#F57C00)}
+.card:nth-child(8n+6) .cn{background:linear-gradient(135deg,#66BB6A,#43A047)}
+.card:nth-child(8n+7) .cn{background:linear-gradient(135deg,#42A5F5,#1E88E5)}
+.card:nth-child(8n+8) .cn{background:linear-gradient(135deg,#EC407A,#D81B60)}
+.card .un{font-size:1.05em;font-weight:bold;color:rgba(255,255,255,0.9);line-height:1.3}
+.card .ud{font-size:0.78em;color:rgba(255,255,255,0.5);margin-bottom:10px;line-height:1.4}
+.card .ui{font-size:1.5em;position:absolute;top:14px;right:14px;opacity:0.3}
+.card .gl{display:flex;flex-wrap:wrap;gap:5px}
+.gl-btn{padding:7px 13px;border-radius:14px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);font-size:0.8em;font-weight:bold;cursor:pointer;transition:all 0.25s;font-family:inherit}
+.gl-btn:nth-child(8n+1):hover{background:rgba(255,107,107,0.3);border-color:#FF6B6B}
+.gl-btn:nth-child(8n+2):hover{background:rgba(78,205,196,0.3);border-color:#4ECDC4}
+.gl-btn:nth-child(8n+3):hover{background:rgba(255,217,61,0.3);border-color:#FFD93D}
+.gl-btn:nth-child(8n+4):hover{background:rgba(108,92,231,0.3);border-color:#6C5CE7}
+.gl-btn:nth-child(8n+5):hover{background:rgba(255,152,0,0.3);border-color:#FF9800}
+.gl-btn:nth-child(8n+6):hover{background:rgba(102,187,106,0.3);border-color:#66BB6A}
+.gl-btn:nth-child(8n+7):hover{background:rgba(66,165,245,0.3);border-color:#42A5F5}
+.gl-btn:nth-child(8n+8):hover{background:rgba(236,64,122,0.3);border-color:#EC407A}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;background:rgba(0,0,0,0);transition:0.35s;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden}
+.modal.open{background:rgba(0,0,0,0.75);pointer-events:auto;opacity:1;visibility:visible}
+.modal .mw{width:97%;height:95%;max-width:1200px;background:#1a1a2e;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);transform:scale(0.85);transition:0.35s;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.1)}
+.modal.open .mw{transform:scale(1)}
+.modal .mh{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,0.5);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.1)}
+.modal .mh .mt{font-weight:bold;color:rgba(255,255,255,0.85);font-size:0.95em}
+.modal .cb{width:36px;height:36px;border-radius:50%;border:none;background:#ff5252;color:#fff;font-size:1.3em;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal .cb:hover{background:#d32f2f}
+.modal iframe{flex:1;border:none;width:100%;background:#0f0c29}
+.star-badge{display:inline-flex;align-items:center;gap:2px;font-size:0.85em}
+.star-badge .e{color:#FFD700}
+.star-badge .em{color:rgba(255,255,255,0.3)}
+.footer{text-align:center;padding:20px;color:rgba(255,255,255,0.35);font-size:0.8em}
+.rs{padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.5);font-size:0.75em;cursor:pointer;font-family:inherit}
+.rs:hover{border-color:#ff5252;color:#ff5252}
+@media(max-width:600px){.hero h1{font-size:1.4em}.tab{padding:10px 22px;font-size:0.95em}.grid{grid-template-columns:1fr}.card{padding:12px}}
+</style>
+</head>
+<body>
+<div class="bg">
+<span class="bf">⚔️</span><span class="bf">🎮</span><span class="bf">🏆</span><span class="bf">⚡</span><span class="bf">🔥</span><span class="bf">💪</span><span class="bf">🎯</span><span class="bf">🌟</span>
+</div>
+<div class="main">
+<div class="hero">
+<span class="icon">⚔️</span>
+<h1>三年级数学PK对战乐园</h1>
+<p>苏教版 · 双人对战 · 谁是数学王者？</p>
+</div>
+<div class="tabs">
+<button class="tab s1 active" onclick="sw(0)">📘 三年级上册</button>
+<button class="tab s2" onclick="sw(1)">📗 三年级下册</button>
+</div>
+<div class="sb">
+<div class="sp">🏆 总星数：<span class="v" id="ts">0</span></div>
+<div class="sp">🎮 已完成：<span class="v" id="cc">0</span> 局</div>
+<button class="rs" onclick="rsa()">重置记录</button>
+</div>
+<div id="ca"></div>
+<div class="footer">⚡ 叫上小伙伴，一起来对战吧！⚡</div>
+</div>
+<div class="modal" id="gm">
+<div class="mw">
+<div class="mh"><span class="mt" id="mt">加载中...</span><button class="cb" onclick="cg()">✕</button></div>
+<iframe id="gf" src="" allow="accelerometer;autoplay;clipboard-write;gyroscope"></iframe>
+</div>
+</div>
+<script>
+var unitsUp=[{"n": 1, "i": "🔢", "nn": "混合运算与数量关系", "d": "乘加乘减混合运算", "g": [{"t": "混合运算PK", "f": "上册/混合运算PK.html"}]}, {"n": 2, "i": "✖️", "nn": "两三位数乘一位数", "d": "笔算乘法", "g": [{"t": "乘法进阶PK", "f": "上册/乘法进阶PK.html"}]}, {"n": 3, "i": "📏", "nn": "毫米分米和千米", "d": "长度单位换算", "g": [{"t": "长度单位PK", "f": "上册/长度单位PK.html"}]}, {"n": 4, "i": "🔄", "nn": "平移旋转轴对称", "d": "图形变换", "g": [{"t": "图形变换PK", "f": "上册/图形变换PK.html"}]}, {"n": 5, "i": "➗", "nn": "两三位数除以一位数", "d": "笔算除法", "g": [{"t": "除法挑战PK", "f": "上册/除法挑战PK.html"}]}, {"n": 6, "i": "🔍", "nn": "数量关系分析", "d": "分析数量关系", "g": [{"t": "数量关系PK", "f": "上册/数量关系PK.html"}]}, {"n": 7, "i": "👁", "nn": "观察物体(二)", "d": "三视图初步", "g": [{"t": "观察物体PK", "f": "上册/观察物体PK.html"}]}];
+var unitsDown=[{"n": 1, "i": "✖️", "nn": "两位数乘两位数", "d": "乘法进阶", "g": [{"t": "乘法高手PK", "f": "下册/乘法高手PK.html"}]}, {"n": 2, "i": "📅", "nn": "年月日", "d": "时间单位", "g": [{"t": "年月日PK", "f": "下册/年月日PK.html"}]}, {"n": 3, "i": "📐", "nn": "长方形正方形面积", "d": "面积计算", "g": [{"t": "面积PK", "f": "下册/面积PK.html"}]}, {"n": 4, "i": "🍕", "nn": "分数的初步认识", "d": "认识分数", "g": [{"t": "分数PK", "f": "下册/分数PK.html"}]}, {"n": 5, "i": "💹", "nn": "小数的初步认识", "d": "认识小数", "g": [{"t": "小数PK", "f": "下册/小数PK.html"}]}];
+var cs=0,ts=0,cc=0;
+function init(){ls();ru();}
+function gk(f){return 'pk_'+f.replace(/[\/\.\s]/g,'_').replace(/^_+|_+$/g,'');}
+function ls(){ts=0;cc=0;var a=unitsUp.concat(unitsDown);a.forEach(function(u){u.g.forEach(function(g){var k=gk(g.f);var s=parseInt(localStorage.getItem(k)||'0');g._s=s;if(s>0){ts+=s;cc++;}});});us();}
+function rc(){ls();}
+function us(){document.getElementById('ts').textContent=ts;document.getElementById('cc').textContent=cc;}
+function ru(){var u=cs===0?unitsUp:unitsDown;var h='';u.forEach(function(u){h+='<div class="card">';h+='<span class="ui">'+u.i+'</span>';h+='<div class="ch"><div class="cn">'+u.n+'</div><div class="un">'+u.nn+'</div></div>';h+='<div class="ud">'+u.d+'</div>';h+='<div class="gl">';u.g.forEach(function(g){var sh='',st=g._s||0;for(var i=0;i<3;i++)sh+='<span class="'+(i<st?'e':'em')+'">'+(i<st?'⭐':'☆')+'</span>';h+='<button class="gl-btn" onclick="og(''+eh(g.f)+'',''+eh(g.t)+'')">⚔ '+g.t+' <span class="star-badge">'+sh+'</span></button>';});h+='</div></div>';});document.getElementById('ca').innerHTML=h;}
+function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sw(i){cs=i;document.querySelectorAll('.tab').forEach(function(t,j){t.classList.toggle('active',j===i);});ru();}
+function og(f,t){var m=document.getElementById('gm');document.getElementById('mt').textContent=t;document.getElementById('gf').src=f;m.classList.add('open');document.body.style.overflow='hidden';var k=gk(f);clearTimeout(document.getElementById('gf')._st);document.getElementById('gf')._st=setTimeout(function(){var c=parseInt(localStorage.getItem(k)||'0');if(c<3){localStorage.setItem(k,c+1);rc();ru();}},45000);}
+function cg(){var m=document.getElementById('gm');m.classList.remove('open');document.body.style.overflow='';setTimeout(function(){document.getElementById('gf').src='';},350);}
+function rsa(){if(confirm('确定要重置所有PK记录吗？')){var ks=[];for(var k in localStorage)if(k.indexOf('pk_')===0)ks.push(k);ks.forEach(function(k){localStorage.removeItem(k);});rc();ru();}}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cg();});
+document.getElementById('gm').addEventListener('click',function(e){if(e.target===this)cg();});
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>认识时间PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px 8px;gap:10px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;color:#FFD700;min-width:55px;text-align:center}
+.round-info{font-size:0.8em;color:#aaa}
+
+.module-tabs{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;background:rgba(0,0,0,0.3);flex-wrap:wrap}
+.mod-tab{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.78em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap}
+.mod-tab:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.4)}
+.mod-tab.active{background:linear-gradient(135deg,#FFD700,#FF9800);border-color:#FFD700;color:#333}
+.mod-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7em;font-weight:bold;margin-bottom:4px}
+.mod-tag.m1{background:#FF6B6B;color:#fff}
+.mod-tag.m2{background:#4ECDC4;color:#fff}
+.mod-tag.m3{background:#FFD700;color:#333}
+
+.arena{display:flex;flex:1;height:calc(100vh - 190px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.8em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.75em;color:#FFD700;min-height:18px}
+
+.clock-img{width:130px;height:130px;margin:4px auto;display:block;border-radius:50%;background:rgba(255,255,255,0.08);padding:4px}
+.question-box{background:rgba(255,255,255,0.1);border-radius:14px;padding:10px;margin:4px 0;width:100%;text-align:center;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.95em;line-height:1.4}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;margin:4px 0}
+.p-opt{padding:9px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.82em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:42px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.feedback{font-size:0.8em;font-weight:bold;min-height:20px;text-align:center;margin:2px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:9px 20px;border-radius:20px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:30px;margin-bottom:16px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.8em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:6px}
+  .clock-img{width:100px;height:100px}
+  .question-box{font-size:0.8em;min-height:36px;padding:8px}
+  .p-opt{font-size:0.72em;padding:7px 4px;min-height:34px}
+  .vs-badge{font-size:1.2em;top:50%}
+  .player-score{font-size:1.3em}
+  .win-title{font-size:1.4em}
+  .options-grid{gap:4px}
+  .mod-tab{font-size:0.7em;padding:5px 10px}
+  .top-bar h1{font-size:0.95em}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>认识时间PK ⚔️ PK对战</h1>
+  <span class="round-info">第 <span id="rn">1</span>/10 轮</span>
+  <span class="timer">⏱ <span id="tm">15</span>s</span>
+</div>
+
+<div class="module-tabs">
+  <button class="mod-tab active" onclick="setModule(0)">📋 综合模式</button>
+  <button class="mod-tab" onclick="setModule(1)">🕐 模块一：认识钟面</button>
+  <button class="mod-tab" onclick="setModule(2)">⏳ 模块二：时间感受</button>
+  <button class="mod-tab" onclick="setModule(3)">⏱ 模块三：计算经过时间</button>
+</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="question-box" id="q1">准备开始...</div>
+    <div class="options-grid" id="op1"></div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="question-box" id="q2">准备开始...</div>
+    <div class="options-grid" id="op2"></div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.1em;padding:12px 32px">🔄 再来一局</button>
+</div>
+
+<script>
+// ==================== 音效系统 ====================
+var musicOn=true,actx=null;
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.1,'sine',0.05);}}
+
+// ==================== 钟面绘制 ====================
+function drawClock(hour, minute, size) {
+  size = size || 180;
+  var canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  var ctx = canvas.getContext('2d');
+  var cx = size/2, cy = size/2, r = size/2 - 8;
+
+  // 表盘底色
+  ctx.beginPath();
+  ctx.arc(cx, cy, r+4, 0, Math.PI*2);
+  ctx.fillStyle = '#f5f0e8';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = '#fffef9';
+  ctx.fill();
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // 外圈装饰环
+  ctx.beginPath();
+  ctx.arc(cx, cy, r-1, 0, Math.PI*2);
+  ctx.strokeStyle = '#8B7355';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // 分钟刻度 (60个)
+  for (var i = 0; i < 60; i++) {
+    var angle = (i * 6 - 90) * Math.PI / 180;
+    var inner = (i % 5 === 0) ? r - 16 : r - 9;
+    var outer = r - 3;
+    var x1 = cx + Math.cos(angle) * inner;
+    var y1 = cy + Math.sin(angle) * inner;
+    var x2 = cx + Math.cos(angle) * outer;
+    var y2 = cy + Math.sin(angle) * outer;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = (i % 5 === 0) ? '#333' : '#aaa';
+    ctx.lineWidth = (i % 5 === 0) ? 2.5 : 1;
+    ctx.stroke();
+  }
+
+  // 数字
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold ' + Math.round(size * 0.09) + 'px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (var i = 1; i <= 12; i++) {
+    var angle = (i * 30 - 90) * Math.PI / 180;
+    var nx = cx + Math.cos(angle) * (r - 28);
+    var ny = cy + Math.sin(angle) * (r - 28);
+    ctx.fillText(i.toString(), nx, ny);
+  }
+
+  // 时针
+  var hAngle = ((hour % 12) * 30 + minute * 0.5 - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(cx - Math.cos(hAngle) * r * 0.15, cy - Math.sin(hAngle) * r * 0.15);
+  ctx.lineTo(cx + Math.cos(hAngle) * r * 0.48, cy + Math.sin(hAngle) * r * 0.48);
+  ctx.strokeStyle = '#1a237e';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // 分针
+  var mAngle = (minute * 6 - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(cx - Math.cos(mAngle) * r * 0.12, cy - Math.sin(mAngle) * r * 0.12);
+  ctx.lineTo(cx + Math.cos(mAngle) * r * 0.68, cy + Math.sin(mAngle) * r * 0.68);
+  ctx.strokeStyle = '#c62828';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // 中心点
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.028, 0, Math.PI*2);
+  ctx.fillStyle = '#333';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.014, 0, Math.PI*2);
+  ctx.fillStyle = '#c62828';
+  ctx.fill();
+
+  return canvas.toDataURL();
+}
+
+// ==================== 格式化时间 ====================
+function fmtTime(h, m) {
+  if (m === 0) return h + ':00';
+  if (m < 10) return h + ':0' + m;
+  return h + ':' + m;
+}
+
+// ==================== 模块一：生成钟面题目 ====================
+function generateClockQuestion() {
+  var hour = Math.floor(Math.random() * 12) + 1;
+  var mins = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  var minute = mins[Math.floor(Math.random() * mins.length)];
+  var clockImg = drawClock(hour, minute);
+
+  var correct = fmtTime(hour, minute);
+  var wrongs = new Set();
+
+  // 生成3个不同的干扰项
+  var attempts = 0;
+  while (wrongs.size < 3 && attempts < 100) {
+    attempts++;
+    var rnd = Math.random();
+    if (rnd < 0.35) {
+      // 同一小时，不同分钟
+      var wm = mins[Math.floor(Math.random() * mins.length)];
+      if (wm !== minute) wrongs.add(fmtTime(hour, wm));
+    } else if (rnd < 0.6) {
+      // 不同小时
+      var wh = ((hour + Math.floor(Math.random() * 4) + 1 - 1) % 12) + 1;
+      if (wh !== hour) wrongs.add(fmtTime(wh, minute));
+    } else if (rnd < 0.8) {
+      // 时针分针易混淆 (如3:10 vs 2:15)
+      var ch = Math.max(1, Math.min(12, Math.round(minute / 5)));
+      var cm = (hour % 12) * 5;
+      if (cm >= 60) cm -= 60;
+      if (ch !== hour || cm !== minute) wrongs.add(fmtTime(ch, cm));
+    } else {
+      // 随机合法时间
+      var rh = Math.floor(Math.random() * 12) + 1;
+      var rm = mins[Math.floor(Math.random() * mins.length)];
+      if (rh !== hour || rm !== minute) wrongs.add(fmtTime(rh, rm));
+    }
+  }
+
+  // 如果还不够3个，补齐
+  var fallback = [
+    fmtTime(((hour) % 12) + 1, minute),
+    fmtTime(hour, (minute + 15) % 60),
+    fmtTime(((hour + 2 - 1) % 12) + 1, (minute + 30) % 60)
+  ];
+  for (var i = 0; i < fallback.length && wrongs.size < 3; i++) {
+    if (fallback[i] !== correct) wrongs.add(fallback[i]);
+  }
+
+  var opts = [correct];
+  var wa = Array.from(wrongs).slice(0, 3);
+  for (var i = 0; i < wa.length; i++) opts.push(wa[i]);
+
+  var modTag = (minute === 0) ? '整时' : '几时几分';
+  return {
+    q: '看一看钟面，这是几时几分？',
+    clockImg: clockImg,
+    o: opts,
+    a: 0, // correct is always at index 0 before shuffle
+    module: 1,
+    tag: modTag
+  };
+}
+
+// ==================== 模块二：时间感受 & 生活运用 ====================
+var M2_QUESTIONS = [
+  {q:'眨一下眼睛大约需要多长时间？',o:['1秒','1分钟','1小时','10秒'],a:0},
+  {q:'小学生每天睡眠时间应不少于？',o:['6小时','7小时','9小时','12小时'],a:2},
+  {q:'课间休息通常是多长时间？',o:['5分钟','10分钟','20分钟','30分钟'],a:1},
+  {q:'一节课通常是多长时间？',o:['20分钟','30分钟','40分钟','60分钟'],a:2},
+  {q:'刷一次牙大约需要多长时间？',o:['10秒','3分钟','30分钟','1小时'],a:1},
+  {q:'做一次眼保健操大约需要？',o:['1分钟','5分钟','20分钟','40分钟'],a:1},
+  {q:'吃一顿午饭大约需要？',o:['2分钟','5分钟','20分钟','2小时'],a:2},
+  {q:'跑50米大约需要多长时间？',o:['1秒','10秒','1分钟','10分钟'],a:1},
+  {q:'一集动画片通常是多长时间？',o:['5分钟','20分钟','1小时','3小时'],a:1},
+  {q:'秒针走一圈是多久？',o:['1秒','10秒','30秒','60秒'],a:3},
+  {q:'分针走一小格是多久？',o:['1秒','1分钟','5分钟','10分钟'],a:1},
+  {q:'时针走一大格是多久？',o:['1分钟','30分钟','1小时','12小时'],a:2},
+  {q:'升国旗奏国歌大约需要？',o:['10秒','1分钟','5分钟','半小时'],a:1},
+  {q:'夏天午睡大约多长时间合适？',o:['5分钟','30分钟到1小时','3小时','8小时'],a:1},
+  {q:'写一页口算题大约需要？',o:['30秒','3~5分钟','30分钟','2小时'],a:1},
+  {q:'爸爸看晚间新闻通常需要？',o:['5分钟','30分钟','2小时','5小时'],a:1}
+];
+
+function generateModule2Question() {
+  var q = M2_QUESTIONS[Math.floor(Math.random() * M2_QUESTIONS.length)];
+  return {
+    q: q.q,
+    clockImg: null,
+    o: q.o.slice(),
+    a: q.a,
+    module: 2,
+    tag: '时间感受'
+  };
+}
+
+// ==================== 模块三：计算经过时间 ====================
+var M3_CONTEXTS = [
+  '小明从{START}开始写作业，写到{END}写完，他写了多长时间？',
+  '一部动画片{START}开始播放，{END}结束，播放了多长时间？',
+  '小红{START}从家出发去学校，{END}到达学校，路上用了多长时间？',
+  '妈妈{START}开始做饭，{END}做好饭，做饭用了多长时间？',
+  '一场足球比赛{START}开始，{END}结束，比赛进行了多长时间？',
+  '小华{START}开始看书，{END}看完，他看了多长时间？',
+  '爸爸{START}出门上班，{END}到单位，路上花了多长时间？',
+  '一节课{START}开始，{END}下课，这节课有多长时间？',
+  '超市{START}开门，妈妈{END}进去购物，她逛了多长时间？',
+  '晚会{START}开始，{END}结束，晚会开了多长时间？',
+  '小丽{START}开始练琴，{END}练完，她练了多长时间？',
+  '工人叔叔{START}开始修路，{END}修完，修了多长时间？'
+];
+
+function generateElapsedQuestion() {
+  // 随机开始时间 (6:00 ~ 20:00)
+  var startH = Math.floor(Math.random() * 15) + 6; // 6-20
+  var mins5 = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  var startM = mins5[Math.floor(Math.random() * mins5.length)];
+
+  // 随机经过时间 (10~150分钟，5分钟间隔)
+  var durations = [];
+  for (var d = 10; d <= 150; d += 5) durations.push(d);
+  var elapsed = durations[Math.floor(Math.random() * durations.length)];
+
+  // 计算结束时间
+  var endTotal = startH * 60 + startM + elapsed;
+  var endH = Math.floor(endTotal / 60) % 24;
+  var endM = endTotal % 60;
+
+  var startStr = fmtTime(startH, startM);
+  var endStr = fmtTime(endH, endM);
+
+  // 格式化答案
+  var answerStr;
+  if (elapsed < 60) {
+    answerStr = elapsed + '分钟';
+  } else if (elapsed === 60) {
+    answerStr = '1小时';
+  } else if (elapsed % 60 === 0) {
+    answerStr = (elapsed / 60) + '小时';
+  } else {
+    answerStr = Math.floor(elapsed / 60) + '小时' + (elapsed % 60) + '分钟';
+  }
+
+  // 生成3个干扰项
+  var wrongs = new Set();
+  var offsets = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, -5, -10, -15, -20, -25, -30];
+  var shuffledOffsets = offsets.slice().sort(function(){return Math.random()-0.5;});
+  for (var i = 0; i < shuffledOffsets.length && wrongs.size < 3; i++) {
+    var wo = elapsed + shuffledOffsets[i];
+    if (wo <= 0) continue;
+    var ws;
+    if (wo < 60) ws = wo + '分钟';
+    else if (wo === 60) ws = '1小时';
+    else if (wo % 60 === 0) ws = (wo / 60) + '小时';
+    else ws = Math.floor(wo / 60) + '小时' + (wo % 60) + '分钟';
+    if (ws !== answerStr) wrongs.add(ws);
+  }
+
+  var opts = [answerStr];
+  var wa = Array.from(wrongs).slice(0, 3);
+  for (var i = 0; i < wa.length; i++) opts.push(wa);
+
+  // 随机选一个场景
+  var ctxText = M3_CONTEXTS[Math.floor(Math.random() * M3_CONTEXTS.length)];
+  var qText = ctxText.replace('{START}', startStr).replace('{END}', endStr);
+
+  return {
+    q: qText,
+    clockImg: null,
+    o: opts,
+    a: 0,
+    module: 3,
+    tag: '经过时间',
+    startTime: startStr,
+    endTime: endStr
+  };
+}
+
+// ==================== 游戏状态 ====================
+var sc=[0,0], cr=0, tr=10, tm=15, ti=null, go=false, ans=[false,false];
+var curModule=0; // 0=综合, 1=模块一, 2=模块二, 3=模块三
+var roundQuestions=[];
+var sk='pk_time_'+window.location.pathname.replace(/[\/\.\s]/g,'_').replace(/^_+|_+$/g,'');
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function generateQuestion(mod) {
+  // mod: 0=随机, 1=钟面, 2=时间感受, 3=经过时间
+  var m = mod;
+  if (m === 0) {
+    // 综合模式：均匀分配 (1-3:模块一, 4-6:模块二, 7-10:模块三)
+    if (cr < 3) m = 1;
+    else if (cr < 6) m = 2;
+    else m = 3;
+  }
+  if (m === 1) return generateClockQuestion();
+  if (m === 2) return generateModule2Question();
+  if (m === 3) return generateElapsedQuestion();
+  return generateClockQuestion();
+}
+
+function setModule(mod) {
+  curModule = mod;
+  var tabs = document.querySelectorAll('.mod-tab');
+  tabs.forEach(function(t,i){t.classList.toggle('active', i===mod);});
+  restartGame();
+}
+
+// ==================== 渲染玩家界面 ====================
+function renderPlayer(pn, q) {
+  var qBox = document.getElementById('q'+pn);
+  var modTag = q.tag || '';
+  var modClass = 'm' + (q.module || 1);
+
+  // 构建问题显示
+  var html = '<span class="mod-tag '+modClass+'">' + modTag + '</span>';
+
+  if (q.clockImg) {
+    // 每个玩家看到不同的钟面（重新生成相同时间的钟面图片）
+    var clockSize = (window.innerWidth <= 600) ? 100 : 140;
+    html += '<img class="clock-img" src="' + q.clockImg + '" style="width:'+clockSize+'px;height:'+clockSize+'px" alt="钟面">';
+  }
+
+  // 如果有开始/结束时间展示
+  if (q.startTime && q.endTime) {
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;font-size:1.1em;font-weight:bold">';
+    html += '<span style="color:#FFD700">' + q.startTime + '</span>';
+    html += '<span style="color:#aaa">→</span>';
+    html += '<span style="color:#FFD700">' + q.endTime + '</span>';
+    html += '</div>';
+  }
+
+  html += '<span>' + q.q + '</span>';
+  qBox.innerHTML = html;
+
+  // 渲染选项
+  var opts = sf([0, 1, 2, 3]);
+  var labels = ['A','B','C','D'];
+  var optHtml = '';
+  for (var i = 0; i < 4; i++) {
+    var oi = opts[i];
+    optHtml += '<button class="p-opt" onclick="answer('+pn+','+oi+','+q.a+',this)" id="ob'+pn+'_'+i+'">'+labels[i]+'. '+q.o[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML = optHtml;
+  document.getElementById('fb'+pn).textContent = '';
+  document.getElementById('st'+pn).textContent = '';
+}
+
+// ==================== 游戏流程 ====================
+function startGame() {
+  initAudio();
+  document.getElementById('btnStart').style.display = 'none';
+  go = true;
+  sc = [0,0]; cr = 0; ans = [false,false];
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('winOverlay').classList.remove('show');
+  roundQuestions = [];
+  nextRound();
+}
+
+function nextRound() {
+  if (cr >= tr) { endGame(); return; }
+  ans = [false, false];
+  document.getElementById('rn').textContent = cr + 1;
+
+  var q = generateQuestion(curModule);
+  roundQuestions[cr] = q;
+
+  // 两个玩家看同一个问题（选项顺序各自随机）
+  renderPlayer(1, q);
+  renderPlayer(2, q);
+
+  tm = 15;
+  document.getElementById('tm').textContent = tm;
+  clearInterval(ti);
+  ti = setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent = tm;
+    if (tm <= 5) sfxTick();
+    if (tm <= 0) { clearInterval(ti); timeUp(); }
+  }, 1000);
+}
+
+function answer(pn, oi, ai, btn) {
+  if (!go || ans[pn-1]) return;
+  ans[pn-1] = true;
+  var bs = document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){ b.disabled = true; });
+  if (oi === ai) {
+    btn.classList.add('correct');
+    sc[pn-1] += 10;
+    document.getElementById('s'+pn).textContent = sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML = '✅ 正确！+10';
+    document.getElementById('st'+pn).textContent = '🔥 连击！';
+    sfxCorrect();
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML = '❌ 答错了';
+    document.getElementById('st'+pn).textContent = '';
+    sfxWrong();
+    var q = roundQuestions[cr];
+    var correctText = q.o[ai];
+    for (var i = 0; i < bs.length; i++) {
+      var t = bs[i].textContent.replace(/^[A-D]\.\s*/, '');
+      if (t === correctText) {
+        bs[i].classList.add('correct');
+        break;
+      }
+    }
+  }
+  if (ans[0] && ans[1]) {
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){ nextRound(); }, 1200);
+  }
+}
+
+function timeUp() {
+  for (var p = 1; p <= 2; p++) {
+    if (!ans[p-1]) {
+      var bs = document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){ b.disabled = true; });
+      document.getElementById('fb'+p).innerHTML = '⏰ 时间到！';
+    }
+  }
+  cr++;
+  setTimeout(function(){ nextRound(); }, 1200);
+}
+
+function endGame() {
+  go = false;
+  clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent = sc[0];
+  document.getElementById('ws2').textContent = sc[1];
+  if (sc[0] > sc[1]) {
+    document.getElementById('winTitle').innerHTML = '🔴 红方获胜！';
+    document.getElementById('winTitle').style.color = '#FF6B6B';
+    document.getElementById('winSub').textContent = '红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  } else if (sc[1] > sc[0]) {
+    document.getElementById('winTitle').innerHTML = '🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color = '#4ECDC4';
+    document.getElementById('winSub').textContent = '蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  } else {
+    document.getElementById('winTitle').innerHTML = '🤝 平局！';
+    document.getElementById('winTitle').style.color = '#FFD700';
+    document.getElementById('winSub').textContent = '双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best = parseInt(localStorage.getItem(sk)||'0');
+  var mx = Math.max(sc[0], sc[1]);
+  if (mx > best) { localStorage.setItem(sk, mx); }
+}
+
+function spawnConfetti() {
+  var colors = ['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for (var i = 0; i < 60; i++) {
+    var d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random()*100+'%';
+    d.style.top = -(Math.random()*50+10)+'px';
+    d.style.width = (Math.random()*10+6)+'px';
+    d.style.height = (Math.random()*10+6)+'px';
+    d.style.background = colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration = (Math.random()*2+2)+'s';
+    d.style.animationDelay = Math.random()*1.5+'s';
+    d.style.borderRadius = Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.remove(); }, 4000);
+  }
+}
+
+function restartGame() {
+  clearInterval(ti);
+  go = false;
+  sc = [0,0]; cr = 0; ans = [false,false];
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('q1').innerHTML = '准备开始...';
+  document.getElementById('q2').innerHTML = '准备开始...';
+  document.getElementById('op1').innerHTML = '';
+  document.getElementById('op2').innerHTML = '';
+  document.getElementById('fb1').textContent = '';
+  document.getElementById('fb2').textContent = '';
+  document.getElementById('st1').textContent = '';
+  document.getElementById('st2').textContent = '';
+  document.getElementById('rn').textContent = '1';
+  document.getElementById('tm').textContent = '15';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display = 'inline-block';
+  roundQuestions = [];
+  var cf = document.querySelectorAll('.confetti');
+  cf.forEach(function(c){ c.remove(); });
+}
+</script>
+</body>
+</html>

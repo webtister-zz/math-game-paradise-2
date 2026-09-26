@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>倍的认识 - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主菜单 ===== */
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:linear-gradient(180deg,#0f0c29,#1a1a2e,#16213e);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.menu-screen.hide{display:none}
+.menu-hero{text-align:center;margin-bottom:30px}
+.menu-hero .icon{font-size:4em;display:block;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.menu-hero h1{font-size:2em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite;margin:8px 0}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.menu-hero .sub{color:rgba(255,255,255,0.5);font-size:0.9em}
+.menu-cards{display:flex;gap:20px;max-width:1100px;width:100%;flex-wrap:wrap;justify-content:center}
+.menu-card{flex:1;min-width:260px;max-width:340px;padding:28px 20px;border-radius:24px;cursor:pointer;transition:all 0.35s;text-align:center;position:relative;overflow:hidden;border:2px solid transparent}
+.menu-card:hover{transform:translateY(-8px)}
+.menu-card.m1{background:linear-gradient(180deg,rgba(76,175,80,0.2),rgba(76,175,80,0.05));border-color:rgba(76,175,80,0.4);box-shadow:0 8px 32px rgba(76,175,80,0.15)}
+.menu-card.m1:hover{border-color:rgba(76,175,80,0.7);box-shadow:0 16px 48px rgba(76,175,80,0.25)}
+.menu-card.m2{background:linear-gradient(180deg,rgba(33,150,243,0.2),rgba(33,150,243,0.05));border-color:rgba(33,150,243,0.4);box-shadow:0 8px 32px rgba(33,150,243,0.15)}
+.menu-card.m2:hover{border-color:rgba(33,150,243,0.7);box-shadow:0 16px 48px rgba(33,150,243,0.25)}
+.menu-card.m3{background:linear-gradient(180deg,rgba(156,39,176,0.2),rgba(156,39,176,0.05));border-color:rgba(156,39,176,0.4);box-shadow:0 8px 32px rgba(156,39,176,0.15)}
+.menu-card.m3:hover{border-color:rgba(156,39,176,0.7);box-shadow:0 16px 48px rgba(156,39,176,0.25)}
+.menu-card .card-icon{font-size:3.5em;display:block;margin-bottom:8px}
+.menu-card .card-title{font-size:1.4em;font-weight:bold;margin-bottom:6px}
+.menu-card.m1 .card-title{color:#4CAF50}
+.menu-card.m2 .card-title{color:#64B5F6}
+.menu-card.m3 .card-title{color:#CE93D8}
+.menu-card .card-desc{font-size:0.85em;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:8px}
+.menu-card .card-info{display:inline-block;padding:4px 14px;border-radius:12px;font-size:0.75em;font-weight:bold;margin-top:6px}
+.menu-card.m1 .card-info{background:rgba(76,175,80,0.25);color:#81C784}
+.menu-card.m2 .card-info{background:rgba(33,150,243,0.25);color:#90CAF9}
+.menu-card.m3 .card-info{background:rgba(156,39,176,0.25);color:#CE93D8}
+.menu-footer{position:absolute;bottom:20px;color:rgba(255,255,255,0.25);font-size:0.75em}
+
+/* ===== 游戏区 ===== */
+.game-screen{display:none;flex-direction:column;height:100vh}
+.game-screen.show{display:flex}
+
+.mod-banner{text-align:center;padding:6px 12px;background:rgba(0,0,0,0.3);font-size:0.85em;color:#FFD700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.5s;flex-shrink:0}
+.mod-banner .mod-icon{font-size:1.3em}
+.mod-banner.m1{background:linear-gradient(90deg,rgba(76,175,80,0.2),rgba(0,0,0,0.3),rgba(76,175,80,0.2))}
+.mod-banner.m2{background:linear-gradient(90deg,rgba(33,150,243,0.2),rgba(0,0,0,0.3),rgba(33,150,243,0.2))}
+.mod-banner.m3{background:linear-gradient(90deg,rgba(156,39,176,0.2),rgba(0,0,0,0.3),rgba(156,39,176,0.2))}
+
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:16px;background:rgba(0,0,0,0.4);flex-shrink:0}
+.top-bar h1{font-size:1.2em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:60px;text-align:center}
+.timer.urgent{color:#FF5252;animation:blink 0.5s infinite}
+@keyframes blink{50%{opacity:0.4}}
+.round-info{font-size:0.85em;color:#aaa}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:2em;font-weight:bold;margin:4px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.8em;color:#FFD700;min-height:20px}
+.first-badge{font-size:0.75em;color:#FFD700;min-height:18px;animation:pulse 0.6s}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.question-box{background:rgba(255,255,255,0.1);border-radius:14px;padding:14px 10px;margin:6px 0;width:100%;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.05em;line-height:1.5;word-break:break-word;flex-direction:column}
+.question-box .q-tag{display:inline-block;padding:2px 10px;border-radius:8px;font-size:0.7em;background:rgba(255,255,255,0.15);margin-bottom:5px}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;margin:6px 0}
+.p-opt{padding:10px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:44px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:0.85em;font-weight:bold;min-height:22px;text-align:center;margin:3px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.5em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:10px 22px;border-radius:20px;border:none;font-size:0.9em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn.back{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.ctrl-btn:disabled{opacity:0.4;pointer-events:none;transform:none;box-shadow:none}
+
+/* ===== Module 1: Visual groups ===== */
+.m1-visual{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin:6px 0;padding:8px}
+.m1-group{background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:6px 10px;text-align:center;min-width:44px;transition:all 0.3s}
+.m1-group-emoji{font-size:1.6em;letter-spacing:2px;display:block;line-height:1.3}
+.m1-group-label{font-size:0.6em;color:rgba(255,255,255,0.45);margin-top:2px}
+.m1-arrow{font-size:1.2em;color:rgba(255,255,255,0.3);display:flex;align-items:center}
+@media(max-width:500px){
+  .m1-visual{gap:6px;padding:4px}
+  .m1-group{padding:4px 6px;min-width:36px}
+  .m1-group-emoji{font-size:1.3em;letter-spacing:1px}
+}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+.win-detail{font-size:0.85em;color:#aaa;margin-bottom:20px;text-align:center;line-height:1.6}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.win-btns .ctrl-btn{font-size:1.05em;padding:14px 28px}
+
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* Progress dots */
+.progress-dots{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;max-width:200px;margin:4px 0}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s}
+.progress-dot.done.p1{background:#FF6B6B}
+.progress-dot.done.p2{background:#4ECDC4}
+.progress-dot.current{background:#FFD700;box-shadow:0 0 8px #FFD700;animation:pulse 1s infinite}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:8px 6px}
+  .question-box{font-size:0.9em;min-height:40px;padding:10px}
+  .p-opt{font-size:0.75em;padding:8px 4px;min-height:36px}
+  .vs-badge{font-size:1.5em;top:50%}
+  .player-score{font-size:1.4em}
+  .win-title{font-size:1.6em}
+  .options-grid{gap:4px}
+  .progress-dots{max-width:140px}
+  .progress-dot{width:8px;height:8px}
+  .menu-hero h1{font-size:1.5em}
+  .menu-card{min-width:220px;padding:20px 14px}
+  .menu-card .card-icon{font-size:2.5em}
+  .menu-card .card-title{font-size:1.2em}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 主菜单 ===== -->
+<div class="menu-screen" id="menuScreen">
+  <div class="menu-hero">
+    <span class="icon">✖️</span>
+    <h1>倍的认识 PK对战</h1>
+    <p class="sub">苏教版 · 二年级下册</p>
+  </div>
+  <div class="menu-cards">
+    <div class="menu-card m1" onclick="startGame(1)">
+      <span class="card-icon">👀</span>
+      <div class="card-title">模块一</div>
+      <div class="card-desc">看图识倍<br>根据实物图判断几个几</div>
+      <span class="card-info">⏱ 20秒/题 · 8轮</span>
+    </div>
+    <div class="menu-card m2" onclick="startGame(2)">
+      <span class="card-icon">🧮</span>
+      <div class="card-title">模块二</div>
+      <div class="card-desc">求一个数的几倍<br>抢答"几倍是多少"</div>
+      <span class="card-info">⏱ 12秒/题 · 8轮</span>
+    </div>
+    <div class="menu-card m3" onclick="startGame(3)">
+      <span class="card-icon">🔍</span>
+      <div class="card-title">模块三</div>
+      <div class="card-desc">求一个数是另一个的几倍<br>学会列除法算式</div>
+      <span class="card-info">⏱ 15秒/题 · 8轮</span>
+    </div>
+  </div>
+  <div class="menu-footer">叫上小伙伴，双人PK对战！</div>
+</div>
+
+<!-- ===== 游戏区 ===== -->
+<div class="game-screen" id="gameScreen">
+  <div class="mod-banner m1" id="modBanner">
+    <span class="mod-icon" id="modIconL">👀</span>
+    <span id="modLabel">模块一：看图识倍 — 根据实物图判断几个几</span>
+    <span class="mod-icon" id="modIconR">👀</span>
+  </div>
+
+  <div class="top-bar">
+    <h1>倍的认识 PK对战</h1>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tt">8</span> 轮</span>
+    <span class="timer">⏱ <span id="tm">20</span>s</span>
+  </div>
+
+  <div class="arena" id="arena">
+    <!-- Player 1 (Red/Left) -->
+    <div class="player left" id="p1">
+      <div class="player-name">🔴 红方玩家</div>
+      <div class="player-score" id="s1">0</div>
+      <div class="streak" id="st1"></div>
+      <div class="first-badge" id="fb1b"></div>
+      <div class="progress-dots" id="pd1"></div>
+      <div class="question-box" id="q1">准备开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+
+    <!-- VS Badge -->
+    <div class="vs-badge">VS</div>
+
+    <!-- Player 2 (Teal/Right) -->
+    <div class="player right" id="p2">
+      <div class="player-name">🔵 蓝方玩家</div>
+      <div class="player-score" id="s2">0</div>
+      <div class="streak" id="st2"></div>
+      <div class="first-badge" id="fb2b"></div>
+      <div class="progress-dots" id="pd2"></div>
+      <div class="question-box" id="q2">准备开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+    <button class="ctrl-btn back" onclick="goToMenu()">🏠 返回主界面</button>
+  </div>
+</div>
+
+<!-- ===== 胜利弹窗 ===== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w">
+      <div style="color:#FF6B6B;margin-bottom:4px">🔴 红方</div>
+      <div class="wscore" id="ws1">0</div>
+    </div>
+    <div class="win-player right-w">
+      <div style="color:#4ECDC4;margin-bottom:4px">🔵 蓝方</div>
+      <div class="wscore" id="ws2">0</div>
+    </div>
+  </div>
+  <div class="win-detail" id="winDetail"></div>
+  <div class="win-btns">
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 再来一局</button>
+    <button class="ctrl-btn back" onclick="goToMenu()">🏠 返回主界面</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 倍的认识 PK — 完整游戏逻辑
+// ============================================================
+
+// ===== 题目数据 =====
+var ALL_Q = [
+  // ===== 模块一：看图识倍 (8题) =====
+  { mod:1, emoji:"⭐", groupSize:2, groups:3,
+    q:"看图，这是几个几？",
+    opts:["2个3","3个2","6个1","1个6"], answer:1,
+    explain:"每组有2个⭐，一共3组，所以是3个2" },
+  { mod:1, emoji:"⭐", groupSize:2, groups:3,
+    q:"3个2 用乘法算式表示是？",
+    opts:["2×3=6","2+3=5","3+2=5","2+2+2=6"], answer:0,
+    explain:"3个2就是2×3=6" },
+  { mod:1, emoji:"💛", groupSize:3, groups:4,
+    q:"看图，这是几个几？",
+    opts:["3个4","4个3","7个1","12个1"], answer:1,
+    explain:"每组有3个💛，一共4组，所以是4个3" },
+  { mod:1, emoji:"💛", groupSize:3, groups:4,
+    q:"4个3 用乘法算式表示是？",
+    opts:["3×4=12","3+4=7","4+3=7","3+3+3+3=12"], answer:0,
+    explain:"4个3就是3×4=12" },
+  { mod:1, emoji:"🌸", groupSize:2, groups:5,
+    q:"看图，这是几个几？",
+    opts:["5个2","2个5","10个1","7个1"], answer:0,
+    explain:"每组有2个🌸，一共5组，所以是5个2" },
+  { mod:1, emoji:"🌸", groupSize:2, groups:5,
+    q:"5个2 用乘法算式表示是？",
+    opts:["2×5=10","5×5=25","2+5=7","2+2=4"], answer:0,
+    explain:"5个2就是2×5=10" },
+  { mod:1, emoji:"🟣", groupSize:6, groups:2,
+    q:"看图，这是几个几？",
+    opts:["6个2","2个6","12个1","8个1"], answer:1,
+    explain:"每组有6个🟣，一共2组，所以是2个6" },
+  { mod:1, emoji:"🟣", groupSize:6, groups:2,
+    q:"2个6 用乘法算式表示是？",
+    opts:["6×2=12","2+6=8","6+6=12","2×2×2=8"], answer:0,
+    explain:"2个6就是6×2=12" },
+
+  // ===== 模块二：求一个数的几倍是多少 (8题) =====
+  { mod:2, q:"5的3倍是多少？",
+    opts:["15","8","2","53"], answer:0,
+    explain:"5×3=15" },
+  { mod:2, q:"4的6倍是多少？",
+    opts:["24","10","2","46"], answer:0,
+    explain:"4×6=24" },
+  { mod:2, q:"7的2倍是多少？",
+    opts:["14","9","5","72"], answer:0,
+    explain:"7×2=14" },
+  { mod:2, q:"3的8倍是多少？列式正确的是？",
+    opts:["3×8=24","3+8=11","8-3=5","8÷3"], answer:0,
+    explain:"求3的8倍，用乘法：3×8=24" },
+  { mod:2, q:"小明有4支铅笔，小红的是小明的3倍，小红有几支？",
+    opts:["12支","7支","1支","43支"], answer:0,
+    explain:"4×3=12，小红有12支铅笔" },
+  { mod:2, q:"6的5倍是多少？",
+    opts:["30","11","1","65"], answer:0,
+    explain:"6×5=30" },
+  { mod:2, q:"一本书8元，字典价格是书的4倍，字典多少元？",
+    opts:["32元","12元","2元","84元"], answer:0,
+    explain:"8×4=32，字典32元" },
+  { mod:2, q:"操场有9个男生，女生是男生的2倍，女生多少人？",
+    opts:["18人","11人","7人","92人"], answer:0,
+    explain:"9×2=18，女生18人" },
+
+  // ===== 模块三：求一个数是另一个数的几倍 (8题) =====
+  { mod:3, q:"12是4的几倍？",
+    opts:["3倍","8倍","16倍","48倍"], answer:0,
+    explain:"12÷4=3，所以是3倍" },
+  { mod:3, q:"20是5的几倍？列式正确的是？",
+    opts:["20÷5=4","20×5=100","20+5=25","20-5=15"], answer:0,
+    explain:"求一个数是另一个的几倍，用除法：20÷5=4" },
+  { mod:3, q:"18是6的几倍？",
+    opts:["3倍","12倍","24倍","108倍"], answer:0,
+    explain:"18÷6=3，所以是3倍" },
+  { mod:3, q:"小明24张卡片，小红6张，小明是小红的几倍？",
+    opts:["4倍","18倍","30倍","144倍"], answer:0,
+    explain:"24÷6=4，小明是小红的4倍" },
+  { mod:3, q:"15是3的几倍？列式正确的是？",
+    opts:["15÷3=5","15×3=45","15+3=18","15-3=12"], answer:0,
+    explain:"求倍数用除法：15÷3=5，所以是5倍" },
+  { mod:3, q:"28是7的几倍？",
+    opts:["4倍","21倍","35倍","196倍"], answer:0,
+    explain:"28÷7=4，所以是4倍" },
+  { mod:3, q:"10是2的几倍？",
+    opts:["5倍","8倍","12倍","20倍"], answer:0,
+    explain:"10÷2=5，所以是5倍" },
+  { mod:3, q:"小红做8道题，小明做32道，小明是小红的几倍？",
+    opts:["4倍","24倍","40倍","256倍"], answer:0,
+    explain:"32÷8=4，小明做的是小红的4倍" }
+];
+
+// ===== 模块标签 =====
+var MOD_NAMES = ['','一 · 看图识倍 — 根据实物图判断几个几','二 · 求一个数的几倍是多少 — 抢答几倍问题','三 · 求一个数是另一个的几倍 — 学会列除法算式'];
+var MOD_ICONS = ['','👀','🧮','🔍'];
+var MOD_BANNER_CLASS = ['','m1','m2','m3'];
+
+// ===== 全局游戏状态 =====
+var Q=[], sc=[0,0], cr=0, tr=0, tm=15, baseTm=15, ti=null, go=false, ans=[false,false];
+var streak=[0,0], firstToAnswer=null, currentMod=0;
+var baseSk='pk_times_v1';
+var musicOn=true, actx=null;
+
+// ===== 工具函数 =====
+function sf(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function qs(el){ return document.querySelector(el); }
+function gebi(id){ return document.getElementById(id); }
+
+// ===== 音频 =====
+function initAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function playTone(f,d,ty,vol){
+  if(!actx||!musicOn) return;
+  try{
+    var o=actx.createOscillator();
+    var g=actx.createGain();
+    o.type=ty||'square';
+    o.frequency.setValueAtTime(f,actx.currentTime);
+    g.gain.setValueAtTime(vol||0.3,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);
+    o.connect(g);g.connect(actx.destination);
+    o.start(actx.currentTime);o.stop(actx.currentTime+d);
+  }catch(e){}
+}
+function sfxCorrect(){ playTone(523,0.12,'square',0.3);setTimeout(function(){playTone(659,0.12,'square',0.3);},100);setTimeout(function(){playTone(784,0.15,'square',0.3);},200); }
+function sfxWrong(){ playTone(200,0.3,'sawtooth',0.3); }
+function sfxWin(){ for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.12,'square',0.3);},i*120);} }
+function sfxTick(){ playTone(800,0.04,'sine',0.2); }
+function sfxFirst(){ playTone(880,0.08,'square',0.3);setTimeout(function(){playTone(1100,0.1,'square',0.3);},80); }
+function toggleMusic(){ initAudio(); musicOn=!musicOn; gebi('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音'; if(musicOn) playTone(440,0.1,'sine',0.15); }
+
+// ===== 菜单/游戏流程 =====
+function startGame(mod){
+  initAudio();
+  currentMod=mod;
+  Q=sf(ALL_Q.filter(function(q){return q.mod===mod;}));
+  tr=Q.length;
+  if(mod===1) baseTm=20;
+  else if(mod===2) baseTm=12;
+  else baseTm=15;
+
+  // Update mod banner
+  var banner=gebi('modBanner');
+  banner.className='mod-banner '+MOD_BANNER_CLASS[mod];
+  gebi('modLabel').textContent='模块'+MOD_NAMES[mod];
+  gebi('modIconL').textContent=MOD_ICONS[mod];
+  gebi('modIconR').textContent=MOD_ICONS[mod];
+  gebi('tt').textContent=tr;
+
+  // Reset state
+  sc=[0,0]; cr=0; streak=[0,0]; firstToAnswer=null;
+  go=false; ans=[false,false];
+  if(ti) clearInterval(ti); ti=null;
+
+  // Clear UI
+  gebi('s1').textContent='0'; gebi('s2').textContent='0';
+  gebi('st1').textContent=''; gebi('st2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('q1').innerHTML='准备开始...'; gebi('q2').innerHTML='准备开始...';
+  gebi('op1').innerHTML=''; gebi('op2').innerHTML='';
+  gebi('rn').textContent='1'; gebi('tm').textContent=baseTm;
+  gebi('winOverlay').classList.remove('show');
+
+  // Show game screen, hide menu
+  gebi('menuScreen').classList.add('hide');
+  gebi('gameScreen').classList.add('show');
+
+  updateProgressDots();
+  nextRound();
+}
+
+function goToMenu(){
+  if(ti) clearInterval(ti); ti=null; go=false;
+  gebi('gameScreen').classList.remove('show');
+  gebi('menuScreen').classList.remove('hide');
+  gebi('winOverlay').classList.remove('show');
+}
+
+function updateProgressDots(){
+  var h1='', h2='';
+  for(var i=0;i<tr;i++){
+    var cls='progress-dot';
+    if(i<cr) cls+=' done p1';
+    if(i===cr) cls+=' current';
+    h1+='<div class="'+cls+'"></div>';
+    h2+='<div class="'+cls+'"></div>';
+  }
+  gebi('pd1').innerHTML=h1; gebi('pd2').innerHTML=h2;
+}
+
+// ===== 通用游戏循环 =====
+function nextRound(){
+  if(cr>=tr){ endGame(); return; }
+  tm=baseTm;
+  ans=[false,false]; firstToAnswer=null;
+  go=true;
+
+  gebi('rn').textContent=cr+1;
+  gebi('tm').textContent=tm;
+  gebi('tm').parentElement.classList.remove('urgent');
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+  gebi('st1').textContent=streak[0]>=2?'🔥 连击x'+streak[0]:'';
+  gebi('st2').textContent=streak[1]>=2?'🔥 连击x'+streak[1]:'';
+
+  updateProgressDots();
+
+  var q=Q[cr];
+  if(currentMod===1) renderMod1(q);
+  else if(currentMod===2) renderMod2(q);
+  else if(currentMod===3) renderMod3(q);
+
+  // Start timer
+  if(ti) clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    gebi('tm').textContent=tm;
+    if(tm<=5){ gebi('tm').parentElement.classList.add('urgent'); sfxTick(); }
+    if(tm<=0){ clearInterval(ti); ti=null; timeUp(); }
+  },1000);
+}
+
+function timeUp(){
+  go=false;
+  if(!ans[0]){ disablePlayerOpts(1); gebi('fb1').textContent='⏰ 时间到！'; streak[0]=0; }
+  if(!ans[1]){ disablePlayerOpts(2); gebi('fb2').textContent='⏰ 时间到！'; streak[1]=0; }
+  setTimeout(function(){ cr++; nextRound(); },1800);
+}
+
+function endGame(){
+  go=false; if(ti) clearInterval(ti); ti=null;
+  gebi('winOverlay').classList.add('show');
+  gebi('ws1').textContent=sc[0]; gebi('ws2').textContent=sc[1];
+  gebi('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+  var detailEl=gebi('winDetail');
+
+  if(sc[0]>sc[1]){
+    gebi('winTitle').innerHTML='🔴 红方获胜！';
+    gebi('winTitle').style.color='#FF6B6B';
+    detailEl.textContent='红方对"倍"的概念掌握得更棒！';
+  } else if(sc[1]>sc[0]){
+    gebi('winTitle').innerHTML='🔵 蓝方获胜！';
+    gebi('winTitle').style.color='#4ECDC4';
+    detailEl.textContent='蓝方对"倍"的概念掌握得更棒！';
+  } else {
+    gebi('winTitle').innerHTML='🤝 平局！';
+    gebi('winTitle').style.color='#FFD700';
+    detailEl.textContent='双方旗鼓相当，都很厉害！';
+  }
+
+  sfxWin(); spawnConfetti();
+
+  try{
+    var key=baseSk+'_m'+currentMod;
+    var best=parseInt(localStorage.getItem(key)||'0');
+    var mx=Math.max(sc[0],sc[1]);
+    if(mx>best) localStorage.setItem(key,mx);
+  }catch(e){}
+}
+
+function restartGame(){
+  if(ti) clearInterval(ti); ti=null; go=false;
+  sc=[0,0]; cr=0; streak=[0,0]; firstToAnswer=null;
+  ans=[false,false];
+  gebi('s1').textContent='0'; gebi('s2').textContent='0';
+  gebi('st1').textContent=''; gebi('st2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('q1').innerHTML='准备开始...'; gebi('q2').innerHTML='准备开始...';
+  gebi('op1').innerHTML=''; gebi('op2').innerHTML='';
+  gebi('rn').textContent='1'; gebi('tm').textContent=baseTm;
+  gebi('tm').parentElement.classList.remove('urgent');
+  gebi('winOverlay').classList.remove('show');
+  Q=sf(ALL_Q.filter(function(q){return q.mod===currentMod;}));
+  updateProgressDots();
+  nextRound();
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#10B981','#AB47BC','#42A5F5','#FFEE58'];
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<60;i++){
+    var el=document.createElement('div');
+    el.className='confetti';
+    el.style.left=Math.random()*100+'%';
+    el.style.top=-(Math.random()*40+10)+'px';
+    el.style.width=(Math.random()*10+6)+'px';
+    el.style.height=(Math.random()*10+6)+'px';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.borderRadius=Math.random()>0.5?'50%':'0';
+    el.style.animationDuration=(Math.random()*2+2)+'s';
+    el.style.animationDelay=Math.random()*1.5+'s';
+    frag.appendChild(el);
+  }
+  document.body.appendChild(frag);
+  setTimeout(function(){
+    var all=document.querySelectorAll('.confetti');
+    for(var i=0;i<all.length;i++) all[i].remove();
+  },4000);
+}
+
+function disablePlayerOpts(pn){
+  var btns=gebi('op'+pn).querySelectorAll('.p-opt');
+  for(var i=0;i<btns.length;i++) btns[i].disabled=true;
+}
+
+// ============================================================
+// 模块一：看图识倍 — 根据实物图判断几个几
+// ============================================================
+function renderMod1(q){
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+
+  // Build visual: groups of emojis
+  var visHTML='<div class="m1-visual">';
+  for(var i=0;i<q.groups;i++){
+    visHTML+='<div class="m1-group">';
+    visHTML+='<span class="m1-group-emoji">'+repeatEmoji(q.emoji,q.groupSize)+'</span>';
+    visHTML+='<span class="m1-group-label">第'+(i+1)+'组</span>';
+    visHTML+='</div>';
+  }
+  visHTML+='</div>';
+
+  // Question text
+  var fullQ='<span class="q-tag">👀 看图识倍</span>'+visHTML+'<div style="margin-top:6px;font-weight:bold">'+q.q+'</div>';
+  gebi('q1').innerHTML=fullQ;
+  gebi('q2').innerHTML=fullQ;
+
+  // Render shuffled options per player
+  var idx1=sf([0,1,2,3]), idx2=sf([0,1,2,3]);
+  renderPlayerOpts(1,q,idx1,'answerMod1');
+  renderPlayerOpts(2,q,idx2,'answerMod1');
+}
+
+function repeatEmoji(emoji,n){
+  var s='';
+  for(var i=0;i<n;i++) s+=emoji;
+  return s;
+}
+
+function renderPlayerOpts(pn,q,idx,fnName){
+  var h='';
+  for(var i=0;i<4;i++){
+    var oi=idx[i];
+    h+='<button class="p-opt" data-answer="'+oi+'" onclick="'+fnName+'('+pn+','+oi+',this)">'+q.opts[oi]+'</button>';
+  }
+  gebi('op'+pn).innerHTML=h;
+}
+
+function answerMod1(pn,oi,btn){
+  standardAnswer(pn,oi,btn);
+}
+
+// ============================================================
+// 模块二：求一个数的几倍是多少
+// ============================================================
+function renderMod2(q){
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+
+  var fullQ='<span class="q-tag">🧮 求一个数的几倍</span><div style="margin-top:6px;font-weight:bold;font-size:1.1em">'+q.q+'</div>';
+  gebi('q1').innerHTML=fullQ;
+  gebi('q2').innerHTML=fullQ;
+
+  var idx1=sf([0,1,2,3]), idx2=sf([0,1,2,3]);
+  renderPlayerOpts(1,q,idx1,'answerMod2');
+  renderPlayerOpts(2,q,idx2,'answerMod2');
+}
+
+function answerMod2(pn,oi,btn){
+  standardAnswer(pn,oi,btn);
+}
+
+// ============================================================
+// 模块三：求一个数是另一个数的几倍
+// ============================================================
+function renderMod3(q){
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+
+  var fullQ='<span class="q-tag">🔍 求一个数是另一个的几倍</span><div style="margin-top:6px;font-weight:bold;font-size:1.1em">'+q.q+'</div>';
+  gebi('q1').innerHTML=fullQ;
+  gebi('q2').innerHTML=fullQ;
+
+  var idx1=sf([0,1,2,3]), idx2=sf([0,1,2,3]);
+  renderPlayerOpts(1,q,idx1,'answerMod3');
+  renderPlayerOpts(2,q,idx2,'answerMod3');
+}
+
+function answerMod3(pn,oi,btn){
+  standardAnswer(pn,oi,btn);
+}
+
+// ============================================================
+// 通用答题逻辑
+// ============================================================
+function standardAnswer(pn,oi,btn){
+  if(!go||ans[pn-1]) return;
+  ans[pn-1]=true;
+  disablePlayerOpts(pn);
+
+  var q=Q[cr];
+  var correctAnswer=q.answer;
+  var isCorrect=(oi===correctAnswer);
+
+  if(isCorrect){
+    btn.classList.add('correct');
+    var bonus=10;
+    streak[pn-1]++;
+    if(streak[pn-1]>=3) bonus+=2;
+    if(firstToAnswer===null){ firstToAnswer=pn; bonus+=3; sfxFirst(); }
+    sc[pn-1]+=bonus;
+    gebi('s'+pn).textContent=sc[pn-1];
+    gebi('fb'+pn).textContent='✅ 正确！+'+bonus;
+    gebi('fb'+pn).style.color='#10B981';
+    gebi('st'+pn).textContent=streak[pn-1]>=2?'🔥 连击x'+streak[pn-1]:'';
+    if(firstToAnswer===pn) gebi('fb'+pn+'b').textContent='⚡ 抢先答对！';
+    sfxCorrect();
+    go=false;
+    if(ti) clearInterval(ti);
+    // Show correct answer to other player
+    var otherPn=pn===1?2:1;
+    if(!ans[otherPn-1]){
+      disablePlayerOpts(otherPn);
+      gebi('fb'+otherPn).textContent='对方已答对，进入下一题';
+      var otherBtns=gebi('op'+otherPn).querySelectorAll('.p-opt');
+      for(var i=0;i<otherBtns.length;i++){
+        if(parseInt(otherBtns[i].dataset.answer)===correctAnswer) otherBtns[i].classList.add('correct');
+      }
+    }
+    setTimeout(function(){ cr++; nextRound(); },1800);
+  } else {
+    btn.classList.add('wrong');
+    streak[pn-1]=0;
+    sc[pn-1]=Math.max(0,sc[pn-1]-2);
+    gebi('s'+pn).textContent=sc[pn-1];
+    gebi('fb'+pn).textContent='❌ 答错了 -2';
+    gebi('fb'+pn).style.color='#EF4444';
+    gebi('st'+pn).textContent='';
+    sfxWrong();
+    // Highlight correct answer
+    var btns=gebi('op'+pn).querySelectorAll('.p-opt');
+    for(var i=0;i<btns.length;i++){
+      if(parseInt(btns[i].dataset.answer)===correctAnswer) btns[i].classList.add('correct');
+    }
+    var otherPn=pn===1?2:1;
+    if(ans[otherPn-1]){
+      go=false; if(ti) clearInterval(ti);
+      setTimeout(function(){ cr++; nextRound(); },1800);
+    }
+  }
+}
+</script>
+</body>
+</html>

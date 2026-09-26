@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>第二单元 加法数量关系 PK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px 8px;gap:10px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;color:#FFD700;min-width:55px;text-align:center}
+.round-info{font-size:0.8em;color:#aaa}
+.module-tabs{display:flex;gap:4px;padding:4px 8px;background:rgba(0,0,0,0.3);justify-content:center;flex-wrap:wrap}
+.mtab{padding:6px 11px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.75em;cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap}
+.mtab:hover{border-color:rgba(255,255,255,0.5);color:#fff}
+.mtab.active{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;border-color:#FFD700;font-weight:bold}
+.module-tag{font-size:0.7em;color:#FFD700;margin-top:2px;min-height:14px}
+.arena{display:flex;flex:1;height:calc(100vh - 195px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.8em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.75em;color:#FFD700;min-height:18px}
+.question-box{background:rgba(255,255,255,0.1);border-radius:12px;padding:8px 8px;margin:4px 0;width:100%;text-align:center;min-height:55px;display:flex;align-items:center;justify-content:center;font-size:0.95em;line-height:1.35;flex-direction:column}
+/* 图表区域 */
+.diagram-area{width:100%;margin:6px 0;padding:6px;background:rgba(0,0,0,0.2);border-radius:8px;min-height:40px;display:flex;align-items:center;justify-content:center}
+/* 线段图 */
+.seg-chart{width:100%;display:flex;flex-direction:column;gap:4px}
+.seg-row{display:flex;align-items:center;gap:4px}
+.seg-label{font-size:0.7em;color:#ccc;min-width:40px;text-align:right;flex-shrink:0}
+.seg-bar-wrap{flex:1;height:22px;background:rgba(255,255,255,0.05);border-radius:4px;position:relative;overflow:visible}
+.seg-bar{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:0.7em;font-weight:bold;color:#fff;min-width:0;position:relative;transition:width 0.5s}
+.seg-bar.part{position:absolute;top:0;left:0;height:100%;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.65em;font-weight:bold;color:#fff}
+.seg-val{font-size:0.7em;color:#FFD700;margin-left:4px;white-space:nowrap;flex-shrink:0}
+.seg-total{font-size:0.7em;color:#aaa;margin-top:2px;text-align:center}
+.seg-hint{font-size:0.65em;color:#FF9800;font-style:italic;margin-left:4px}
+/* 表格 */
+.data-table{border-collapse:collapse;font-size:0.72em;width:100%;max-width:220px}
+.data-table th{background:rgba(255,215,0,0.2);color:#FFD700;padding:4px 8px;border:1px solid rgba(255,255,255,0.2)}
+.data-table td{padding:4px 8px;border:1px solid rgba(255,255,255,0.2);text-align:center;color:#fff}
+.data-table td.unknown{color:#FFD700;font-weight:bold;background:rgba(255,215,0,0.1)}
+.data-table .col-lbl{text-align:left;color:#ccc}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;margin:4px 0}
+.p-opt{padding:9px 5px;border-radius:10px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.25;min-height:40px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:0.8em;font-weight:bold;min-height:20px;text-align:center;margin:2px 0}
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:9px 18px;border-radius:18px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:6px 4px}
+  .question-box{font-size:0.82em;min-height:38px;padding:6px}
+  .p-opt{font-size:0.72em;padding:7px 3px;min-height:34px}
+  .vs-badge{font-size:1.4em;top:50%}
+  .player-score{font-size:1.3em}
+  .win-title{font-size:1.5em}
+  .options-grid{gap:3px}
+  .mtab{font-size:0.68em;padding:5px 8px}
+  .module-tabs{gap:2px;padding:3px 4px}
+  .arena{height:calc(100vh - 220px)}
+  .data-table{font-size:0.65em}
+  .seg-label{font-size:0.6em;min-width:30px}
+  .seg-bar{font-size:0.6em}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>⚔️ 第二单元 加法数量关系 PK</h1>
+  <span class="round-info">第 <span id="rn">1</span>/10 轮</span>
+  <span class="timer">⏱ <span id="tm">15</span>s</span>
+</div>
+
+<div class="module-tabs" id="moduleTabs">
+  <button class="mtab active" onclick="switchModule(0)">📚 综合模式</button>
+  <button class="mtab" onclick="switchModule(1)">一、加减法抽象概括</button>
+  <button class="mtab" onclick="switchModule(2)">二、比多比少逆序</button>
+  <button class="mtab" onclick="switchModule(3)">三、分量总量关系</button>
+  <button class="mtab" onclick="switchModule(4)">四、线段图表格运用</button>
+</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="question-box">
+      <div id="q1">准备开始...</div>
+      <div class="module-tag" id="mt1"></div>
+      <div class="diagram-area" id="dg1"></div>
+    </div>
+    <div class="options-grid" id="op1"></div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="question-box">
+      <div id="q2">准备开始...</div>
+      <div class="module-tag" id="mt2"></div>
+      <div class="diagram-area" id="dg2"></div>
+    </div>
+    <div class="options-grid" id="op2"></div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.2em;padding:14px 36px">🔄 再来一局</button>
+</div>
+
+<script>
+var MN=['综合','加减法运算意义的抽象概括','逆序的比多比少实际问题','加法数量关系的抽象概括','加法数量关系的运用'];
+
+// 模块一：加减法运算意义的抽象概括 — 注重"画的过程"（从加法画出两个减法算式）
+var M1=[
+// 1. 画的第一步：写出加法算式
+{q:"画关系第一步：写出加法算式 加数+加数=和。如 36+27=63，第二步应画出什么？", o:["63+36=99","63-36=27和63-27=36","36-27=9","63+27=90"], a:1},
+// 2. 从具体加法画减法
+{q:"从 45+38=83 画减法算式：83-45=□，□里画几？", o:["45","28","48","38"], a:3},
+// 3. 画另一个减法算式
+{q:"从 45+38=83 画另一个减法算式：83-□=45，□里画几？", o:["45","38","28","48"], a:1},
+// 4. 字母抽象 — 从 a+b=c 画 c-a
+{q:"从 a+b=c 画出 c-a=？ （用箭头 → 画一遍）", o:["a","b","c","a+b"], a:1},
+// 5. 字母抽象 — 从 a+b=c 画 c-b
+{q:"从 a+b=c 画出 c-b=？ （写出推导过程）", o:["a","b","c","a+b"], a:0},
+// 6. 求加数 — 画过程
+{q:"已知 □+28=70，画出求□的过程：□=70○28，○里画什么？", o:["+","-","×","÷"], a:1},
+// 7. 算出结果
+{q:"接上题：□+28=70 → □=70-28 → □=？", o:["98","52","42","32"], a:2},
+// 8. 求另一个加数 — 画过程
+{q:"已知 56+□=90，画出求□的算式：□=？", o:["90+56","90-56","56-90","90×56"], a:1},
+// 9. 逆运算概念
+{q:"减法是加法的什么运算？（根据画图过程回答）", o:["相同运算","逆运算","混合运算","简便运算"], a:1},
+// 10. 画关系：加数=和-另一个加数
+{q:"因为 34+□=100，画出 □=100-34，运用了什么关系？", o:["和=加数+加数","加数=和-另一个加数","差=被减数-减数","被减数=差+减数"], a:1},
+// 11. 被减数未知 — 画求被减数
+{q:"已知 □-48=36，画出求□的过程：□=36○48，○里画什么？", o:["-","+","×","÷"], a:1},
+// 12. 算出被减数
+{q:"接上题：□-48=36 → □=36+48 → □=？", o:["12","74","84","64"], a:2},
+// 13. 减数未知 — 画关系
+{q:"被减数-减数=差，已知被减数和差，画出求减数的关系：减数=？", o:["被减数+差","被减数-差","差-被减数","被减数×差"], a:1},
+// 14. 综合画过程
+{q:"已知 200-□=125，画出求□的完整过程，□=？", o:["200+125=325","200-125=75","125+75=200","125-200=75"], a:1},
+// 15. 验证 — 从加法画出的两个减法算式
+{q:"从 67+45=112 画出了四个式子，哪个是画错的？", o:["112-67=45","112-45=67","67-45=22","45+67=112"], a:2}
+];
+
+// 模块二
+var M2=[
+{q:"跳绳的有20人，跳绳的比踢毽子的多5人，踢毽子的有几人？", o:["25人","15人","20人","5人"], a:1},
+{q:"小明有15本书，比小红多3本，小红有几本书？", o:["18本","15本","12本","3本"], a:2},
+{q:"公园里有35棵柳树，柳树比杨树多8棵，杨树有多少棵？", o:["43棵","35棵","8棵","27棵"], a:3},
+{q:"篮球80元，篮球比足球贵15元，足球多少元？", o:["95元","80元","65元","15元"], a:2},
+{q:"小华身高135厘米，比小丽高8厘米，小丽身高多少？", o:["143厘米","135厘米","8厘米","127厘米"], a:3},
+{q:"一班有42人，比二班少3人，二班有几人？", o:["39人","45人","42人","3人"], a:1},
+{q:"一本书看了28页，比没看的多12页，没看的有多少页？", o:["40页","28页","16页","12页"], a:2},
+{q:"苹果每斤6元，苹果比香蕉便宜2元，香蕉每斤多少元？", o:["4元","8元","6元","2元"], a:1},
+{q:"鸡有54只，鸡比鸭少16只，鸭有多少只？", o:["38只","70只","54只","16只"], a:1},
+{q:"故事书68页，比科技书薄22页，科技书多少页？", o:["46页","90页","68页","22页"], a:1},
+{q:"小明今年10岁，比哥哥小5岁，哥哥今年几岁？", o:["5岁","10岁","15岁","20岁"], a:2},
+{q:"公交车上原来有30人，到站下去一些人后还剩18人，下去了几人？", o:["48人","30人","12人","18人"], a:2},
+{q:"图书馆借出56本书后还剩44本，原来有多少本？", o:["12本","100本","56本","44本"], a:1},
+{q:"超市有大米120袋，比面粉多35袋，面粉有多少袋？", o:["155袋","120袋","85袋","35袋"], a:2},
+{q:"一条路修了240米，比没修的多80米，没修的有多少米？", o:["320米","240米","160米","80米"], a:2}
+];
+
+// 模块三
+var M3=[
+{q:"男生25人，女生18人，全班共几人？（求总量）", o:["43人","7人","25人","18人"], a:0},
+{q:"全班43人，男生25人，女生几人？（求分量）", o:["43人","68人","18人","25人"], a:2},
+{q:"分量+分量=？", o:["差","总量","分量","积"], a:1},
+{q:"总量-分量=？", o:["另一个分量","总量","两个分量之和","差"], a:0},
+{q:"妈妈买了苹果和橘子，苹果15个，橘子12个，一共多少个？", o:["3个","15个","12个","27个"], a:3},
+{q:"果园有桃树和李树共86棵，桃树38棵，李树多少棵？", o:["124棵","86棵","48棵","38棵"], a:2},
+{q:"图书角有科技书和故事书共65本，科技书30本，故事书多少本？", o:["95本","65本","35本","30本"], a:2},
+{q:"小明和小红一共做了48道题，小明做了26道，小红做了多少道？", o:["74道","22道","48道","26道"], a:1},
+{q:"已知总量和一个分量，求另一个分量用什么法？", o:["加法","乘法","除法","减法"], a:3},
+{q:"一袋米吃了一半后还剩15千克，原来有多少千克？", o:["15千克","7.5千克","30千克","45千克"], a:2},
+{q:"停车场有小汽车和卡车共52辆，卡车18辆，小汽车多少辆？", o:["70辆","34辆","52辆","18辆"], a:1},
+{q:"红花和黄花一共有40朵，黄花16朵，红花多少朵？列式正确的是？", o:["40+16","40-16","16+40","40×16"], a:1},
+{q:"求总量用什么法？", o:["减法","乘法","加法","除法"], a:2},
+{q:"一根绳子用去28米后还剩17米，原来长多少米？", o:["11米","28米","17米","45米"], a:3},
+{q:"三(1)班共有54人，其中女生26人，男生多少人？", o:["80人","28人","54人","26人"], a:1}
+];
+
+// 模块四：加法数量关系的运用 — 带线段图和表格
+// d: {t:'seg'|'tbl', ...}  — seg=线段图, tbl=表格
+var M4=[
+  // 0: 比较型线段图 - 甲段 vs 乙段(多18米)
+  {q:"甲段长45米，乙段比甲段多18米，乙段长多少米？", o:["27米","63米","45米","18米"], a:1,
+   d:{t:'seg2',a:{l:'甲段',v:45,u:'米',c:'#4ECDC4'},b:{l:'乙段',v:'?',u:'米',c:'#FF6B6B'},hint:'比甲段多18米'}},
+  // 1: 部分+部分=总量 线段图
+  {q:"上午走了18千米，下午走了24千米，一共走了多少千米？", o:["6千米","42千米","18千米","24千米"], a:1,
+   d:{t:'segP',parts:[{l:'上午',v:18,u:'千米',c:'#4ECDC4'},{l:'下午',v:24,u:'千米',c:'#FF9800'}],total:{l:'全天',v:'?',u:'千米'}}},
+  // 2: 表格 - 两天卖出
+  {q:"苹果：第一天卖出32kg，第二天卖出28kg，两天共卖出多少kg？", o:["4kg","60kg","32kg","28kg"], a:1,
+   d:{t:'tbl',h:['时间','卖出'],rows:[['第一天','32kg'],['第二天','28kg'],['两天合计','?']]}},
+  // 3: 表格 - 借书
+  {q:"图书：上半月借出45本，下半月借出38本，两个月共借出多少本？", o:["7本","83本","45本","38本"], a:1,
+   d:{t:'tbl',h:['时间','借出数量'],rows:[['上半月','45本'],['下半月','38本'],['两月合计','?']]}},
+  // 4: 总量-部分 线段图
+  {q:"一条绳子分成两段，第一段36厘米，总长75厘米，第二段多长？", o:["111厘米","75厘米","39厘米","36厘米"], a:2,
+   d:{t:'segW',total:{l:'总长',v:75,u:'厘米'},parts:[{l:'第一段',v:36,u:'厘米',c:'#4ECDC4'},{l:'第二段',v:'?',u:'厘米',c:'#FF6B6B'}]}},
+  // 5: 表格 - 总数100
+  {q:"总数100个，已知一部分是46个，求另一部分是多少？", o:["146","54","46","100"], a:1,
+   d:{t:'tbl',h:['类别','数量'],rows:[['总数','100个'],['已知部分','46个'],['未知部分','?']]}},
+  // 6: 总量-部分 线段图
+  {q:"树上原来有58只鸟，飞走一些后还剩23只，飞走了几只？", o:["81只","58只","35只","23只"], a:2,
+   d:{t:'segW',total:{l:'原来',v:58,u:'只'},parts:[{l:'飞走',v:'?',u:'只',c:'#FF6B6B'},{l:'还剩',v:23,u:'只',c:'#4ECDC4'}]}},
+  // 7: 表格 - 班级人数
+  {q:"一年级人数：一班40人，二班38人，两个班一共多少人？", o:["2人","78人","40人","38人"], a:1,
+   d:{t:'tbl',h:['班级','人数'],rows:[['一班','40人'],['二班','38人'],['合计','?']]}},
+  // 8: 总量-部分 线段图
+  {q:"一本书共120页，已看75页，还剩多少页没看？", o:["195页","120页","75页","45页"], a:3,
+   d:{t:'segW',total:{l:'全书',v:120,u:'页'},parts:[{l:'已看',v:75,u:'页',c:'#4ECDC4'},{l:'还剩',v:'?',u:'页',c:'#FF6B6B'}]}},
+  // 9: 表格 - 大米
+  {q:"原有大米150袋，又运来85袋，现在共有多少袋？", o:["65袋","235袋","150袋","85袋"], a:1,
+   d:{t:'tbl',h:['类别','袋数'],rows:[['原有','150袋'],['运来','85袋'],['现在共有','?']]}},
+  // 10: 总量-部分 线段图
+  {q:"学校到公园距离860米，走了380米，还要走多少米？", o:["1240米","860米","480米","380米"], a:2,
+   d:{t:'segW',total:{l:'全程',v:860,u:'米'},parts:[{l:'已走',v:380,u:'米',c:'#4ECDC4'},{l:'还要走',v:'?',u:'米',c:'#FF6B6B'}]}},
+  // 11: 表格 - 兔子（复合问题）
+  {q:"白兔28只，灰兔比白兔多12只，灰兔几只？一共有几只？", o:["灰兔40只，共68只","灰兔16只，共44只","灰兔40只，共28只","灰兔28只，共56只"], a:0,
+   d:{t:'tbl',h:['种类','数量'],rows:[['白兔','28只'],['灰兔','比白兔多12只 → ?'],['一共','?']]}},
+  // 12: 比较+总量 线段图
+  {q:"两根绳子共长90米，第一根长55米，第二根比第一根短多少米？", o:["35米","20米","55米","145米"], a:1,
+   d:{t:'segW',total:{l:'总长',v:90,u:'米'},parts:[{l:'第一根',v:55,u:'米',c:'#4ECDC4'},{l:'第二根',v:'?',u:'米',c:'#FF6B6B'}]}},
+  // 13: 表格 - 三个小组
+  {q:"三个兴趣小组：数学组25人，美术组30人，音乐组28人，一共有多少人？", o:["55人","58人","53人","83人"], a:3,
+   d:{t:'tbl',h:['小组','人数'],rows:[['数学组','25人'],['美术组','30人'],['音乐组','28人'],['合计','?']]}},
+  // 14: 部分+部分=总量 线段图
+  {q:"桶里有油，倒出18升后还剩27升，原来有多少升？", o:["9升","18升","27升","45升"], a:3,
+   d:{t:'segP',parts:[{l:'倒出',v:18,u:'升',c:'#FF6B6B'},{l:'还剩',v:27,u:'升',c:'#4ECDC4'}],total:{l:'原来',v:'?',u:'升'}}}
+];
+
+var ALL=[M1,M2,M3,M4];
+var Q=[],curModule=0;
+var sc=[0,0],cr=0,tr=10,tm=15,ti=null,go=false,ans=[false,false];
+var sk='pk_add_rel';
+var musicOn=true,actx=null;
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function buildQ(m){
+  if(m===0){
+    var pool=[];
+    for(var i=0;i<4;i++){
+      var modQ=sf(ALL[i].slice());
+      for(var j=0;j<3;j++){pool.push({q:modQ[j].q,o:modQ[j].o,a:modQ[j].a,mod:i+1,d:modQ[j].d||null});}
+    }
+    var extras=[];
+    for(var i=0;i<4;i++){
+      var eq=sf(ALL[i].slice());
+      for(var j=3;j<Math.min(5,eq.length);j++){extras.push({q:eq[j].q,o:eq[j].o,a:eq[j].a,mod:i+1,d:eq[j].d||null});}
+    }
+    sf(extras);
+    while(pool.length<10&&extras.length>0){pool.push(extras.shift());}
+    Q=sf(pool).slice(0,10);
+  } else {
+    var src=sf(ALL[m-1].slice());
+    Q=src.slice(0,10).map(function(x){return {q:x.q,o:x.o,a:x.a,mod:m,d:x.d||null};});
+  }
+}
+
+function switchModule(m){
+  if(go){restartGame();}
+  curModule=m;
+  var tabs=document.querySelectorAll('.mtab');
+  tabs.forEach(function(t,i){t.classList.toggle('active',i===m);});
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('q1').textContent='准备开始...';
+  document.getElementById('q2').textContent='准备开始...';
+  document.getElementById('mt1').textContent='';
+  document.getElementById('mt2').textContent='';
+  document.getElementById('dg1').innerHTML='';
+  document.getElementById('dg2').innerHTML='';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+}
+
+// ---- 图表渲染 ----
+
+function renderDiagram(pn,d){
+  var el=document.getElementById('dg'+pn);
+  if(!d){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='flex';
+  if(d.t==='seg2'){el.innerHTML=seg2(d);}
+  else if(d.t==='segW'){el.innerHTML=segW(d);}
+  else if(d.t==='segP'){el.innerHTML=segP(d);}
+  else if(d.t==='tbl'){el.innerHTML=tblHtml(d);}
+  else {el.innerHTML='';}
+}
+
+// 比较型：两个独立条，A已知，B=?
+function seg2(d){
+  var maxW=Math.max(d.a.v, typeof d.b.v==='number'?d.b.v:0)+20;
+  var wa=Math.round(d.a.v/maxW*100);
+  var wb=typeof d.b.v==='number'?Math.round(d.b.v/maxW*100):Math.round((d.a.v+15)/maxW*100);
+  return '<div class="seg-chart">'+
+    '<div class="seg-row"><span class="seg-label">'+d.a.l+'</span><div class="seg-bar-wrap"><div class="seg-bar" style="width:'+wa+'%;background:'+d.a.c+'">'+d.a.v+d.a.u+'</div></div></div>'+
+    '<div class="seg-row"><span class="seg-label">'+d.b.l+'</span><div class="seg-bar-wrap"><div class="seg-bar" style="width:'+wb+'%;background:'+d.b.c+';border:2px dashed '+d.b.c+'">?</div><span class="seg-hint">'+d.hint+'</span></div></div>'+
+    '</div>';
+}
+
+// 部分+部分=总量（两个或更多部分组成整体）
+function segP(d){
+  var totalV=0;var knownAll=true;
+  for(var i=0;i<d.parts.length;i++){
+    if(typeof d.parts[i].v==='number')totalV+=d.parts[i].v;else knownAll=false;
+  }
+  if(typeof d.total.v==='number')totalV=Math.max(totalV,d.total.v);
+  else if(!knownAll)totalV=50; // fallback scale
+  var h='<div class="seg-chart"><div class="seg-row">';
+  for(var i=0;i<d.parts.length;i++){
+    var p=d.parts[i];
+    var wp=typeof p.v==='number'?Math.round(p.v/totalV*100):15;
+    h+='<div class="seg-bar-wrap" style="flex:'+wp+'"><div class="seg-bar" style="width:100%;background:'+p.c+'">'+(typeof p.v==='number'?p.v+p.u:'?')+'</div><div style="font-size:0.6em;color:#ccc;text-align:center">'+p.l+'</div></div>';
+  }
+  h+='</div>';
+  var tv=typeof d.total.v==='number'?d.total.v+d.total.u:'?';
+  h+='<div class="seg-total">'+d.total.l+'：<b style="color:#FFD700">'+tv+'</b></div>';
+  h+='</div>';
+  return h;
+}
+
+// 总量-部分型：一个总条，内部分段
+function segW(d){
+  var totalV=d.total.v;
+  var h='<div class="seg-chart">';
+  // 总条
+  h+='<div class="seg-row"><span class="seg-label">'+d.total.l+'</span><div class="seg-bar-wrap" style="height:26px;position:relative">';
+  var left=0;
+  for(var i=0;i<d.parts.length;i++){
+    var p=d.parts[i];
+    if(typeof p.v==='number'){
+      var w=Math.round(p.v/totalV*100);
+      h+='<div class="seg-bar part" style="left:'+left+'%;width:'+w+'%;background:'+p.c+'">'+p.v+p.u+'</div>';
+      left+=w;
+    }
+  }
+  // 未知部分
+  for(var i=0;i<d.parts.length;i++){
+    var p=d.parts[i];
+    if(typeof p.v!=='number'){
+      var w=Math.max(100-left,10);
+      h+='<div class="seg-bar part" style="left:'+left+'%;width:'+w+'%;background:'+p.c+';border:2px dashed '+p.c+';opacity:0.7">?</div>';
+    }
+  }
+  h+='</div></div>';
+  // 底部标签
+  h+='<div class="seg-row">';
+  for(var i=0;i<d.parts.length;i++){
+    var p=d.parts[i];
+    var wp=typeof p.v==='number'?Math.round(p.v/totalV*100):Math.max(100-left,10);
+    h+='<span style="font-size:0.6em;color:#ccc;width:'+wp+'%;text-align:center">'+p.l+' '+(typeof p.v==='number'?p.v+p.u:'?')+'</span>';
+  }
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+
+// 表格
+function tblHtml(d){
+  var h='<table class="data-table"><thead><tr>';
+  for(var i=0;i<d.h.length;i++){h+='<th>'+d.h[i]+'</th>';}
+  h+='</tr></thead><tbody>';
+  for(var i=0;i<d.rows.length;i++){
+    h+='<tr>';
+    h+='<td class="col-lbl">'+d.rows[i][0]+'</td>';
+    var isQ=d.rows[i][1].indexOf('?')>=0;
+    h+='<td'+(isQ?' class="unknown"':'')+'>'+d.rows[i][1]+'</td>';
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
+  return h;
+}
+
+// ---- 音频 ----
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.1,'sine',0.05);}}
+
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display='none';
+  buildQ(curModule);
+  go=true;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];
+  document.getElementById('rn').textContent=cr+1;
+  var q=Q[cr];
+  renderPlayer(1,q);
+  renderPlayer(2,q);
+  tm=15;document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;document.getElementById('tm').textContent=tm;
+    if(tm<=5)sfxTick();
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+function renderPlayer(pn,q){
+  document.getElementById('q'+pn).textContent='第'+(cr+1)+'题：'+q.q;
+  document.getElementById('mt'+pn).textContent=q.mod?'【'+MN[q.mod]+'】':'';
+  renderDiagram(pn,q.d||null);
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'];
+  var h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+q.a+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+q.o[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('st'+pn).textContent='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    sfxCorrect();
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+  }
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},1200);}
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+    }
+  }
+  cr++;setTimeout(function(){nextRound();},1200);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  } else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  } else {
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk+'_'+curModule)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk+'_'+curModule,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');
+    d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';
+    d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;
+  sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent='15';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('q1').textContent='准备开始...';
+  document.getElementById('q2').textContent='准备开始...';
+  document.getElementById('mt1').textContent='';
+  document.getElementById('mt2').textContent='';
+  document.getElementById('dg1').innerHTML='';
+  document.getElementById('dg2').innerHTML='';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  var cf=document.querySelectorAll('.confetti');
+  cf.forEach(function(c){c.remove();});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>表内乘法PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主菜单 ===== */
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:linear-gradient(180deg,#0f0c29,#1a1a2e,#16213e);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.menu-screen.hide{display:none}
+.menu-hero{text-align:center;margin-bottom:30px}
+.menu-hero .icon{font-size:4em;display:block;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.menu-hero h1{font-size:2em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite;margin:8px 0}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.menu-hero .sub{color:rgba(255,255,255,0.5);font-size:0.9em}
+.menu-cards{display:flex;gap:20px;max-width:700px;width:100%;flex-wrap:wrap;justify-content:center}
+.menu-card{flex:1;min-width:260px;max-width:340px;padding:28px 20px;border-radius:24px;cursor:pointer;transition:all 0.35s;text-align:center;position:relative;overflow:hidden;border:2px solid transparent}
+.menu-card:hover{transform:translateY(-8px)}
+.menu-card.m1{background:linear-gradient(180deg,rgba(76,175,80,0.2),rgba(76,175,80,0.05));border-color:rgba(76,175,80,0.4);box-shadow:0 8px 32px rgba(76,175,80,0.15)}
+.menu-card.m1:hover{border-color:rgba(76,175,80,0.7);box-shadow:0 16px 48px rgba(76,175,80,0.25)}
+.menu-card.m2{background:linear-gradient(180deg,rgba(255,152,0,0.2),rgba(255,152,0,0.05));border-color:rgba(255,152,0,0.4);box-shadow:0 8px 32px rgba(255,152,0,0.15)}
+.menu-card.m2:hover{border-color:rgba(255,152,0,0.7);box-shadow:0 16px 48px rgba(255,152,0,0.25)}
+.menu-card.m3{background:linear-gradient(180deg,rgba(156,39,176,0.2),rgba(156,39,176,0.05));border-color:rgba(156,39,176,0.4);box-shadow:0 8px 32px rgba(156,39,176,0.15)}
+.menu-card.m3:hover{border-color:rgba(156,39,176,0.7);box-shadow:0 16px 48px rgba(156,39,176,0.25)}
+.menu-card.m4{background:linear-gradient(180deg,rgba(0,188,212,0.2),rgba(0,188,212,0.05));border-color:rgba(0,188,212,0.4);box-shadow:0 8px 32px rgba(0,188,212,0.15)}
+.menu-card.m4:hover{border-color:rgba(0,188,212,0.7);box-shadow:0 16px 48px rgba(0,188,212,0.25)}
+.menu-card .card-icon{font-size:3.5em;display:block;margin-bottom:8px}
+.menu-card .card-title{font-size:1.4em;font-weight:bold;margin-bottom:6px}
+.menu-card.m1 .card-title{color:#4CAF50}
+.menu-card.m2 .card-title{color:#FF9800}
+.menu-card.m3 .card-title{color:#CE93D8}
+.menu-card.m4 .card-title{color:#4DD0E1}
+.menu-card .card-desc{font-size:0.85em;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:8px}
+.menu-card .card-info{display:inline-block;padding:4px 14px;border-radius:12px;font-size:0.75em;font-weight:bold;margin-top:6px}
+.menu-card.m1 .card-info{background:rgba(76,175,80,0.25);color:#81C784}
+.menu-card.m2 .card-info{background:rgba(255,152,0,0.25);color:#FFB74D}
+.menu-card.m3 .card-info{background:rgba(156,39,176,0.25);color:#CE93D8}
+.menu-card.m4 .card-info{background:rgba(0,188,212,0.25);color:#4DD0E1}
+.menu-footer{position:absolute;bottom:20px;color:rgba(255,255,255,0.25);font-size:0.75em}
+
+/* ===== 游戏区 ===== */
+.game-screen{display:none;flex-direction:column;height:100vh}
+.game-screen.show{display:flex}
+
+.mod-banner{text-align:center;padding:6px 12px;background:rgba(0,0,0,0.3);font-size:0.85em;color:#FFD700;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.5s;flex-shrink:0}
+.mod-banner .mod-icon{font-size:1.3em}
+.mod-banner.m1{background:linear-gradient(90deg,rgba(76,175,80,0.2),rgba(0,0,0,0.3),rgba(76,175,80,0.2))}
+.mod-banner.m2{background:linear-gradient(90deg,rgba(255,152,0,0.2),rgba(0,0,0,0.3),rgba(255,152,0,0.2))}
+.mod-banner.m3{background:linear-gradient(90deg,rgba(156,39,176,0.2),rgba(0,0,0,0.3),rgba(156,39,176,0.2))}
+.mod-banner.m4{background:linear-gradient(90deg,rgba(0,188,212,0.2),rgba(0,0,0,0.3),rgba(0,188,212,0.2))}
+
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:16px;background:rgba(0,0,0,0.4);flex-shrink:0}
+.top-bar h1{font-size:1.2em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:60px;text-align:center}
+.timer.urgent{color:#FF5252;animation:blink 0.5s infinite}
+@keyframes blink{50%{opacity:0.4}}
+.round-info{font-size:0.85em;color:#aaa}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+
+.player-name{font-size:1.1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:2em;font-weight:bold;margin:4px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.8em;color:#FFD700;min-height:20px}
+.first-badge{font-size:0.75em;color:#FFD700;min-height:18px;animation:pulse 0.6s}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.question-box{background:rgba(255,255,255,0.1);border-radius:14px;padding:14px 10px;margin:6px 0;width:100%;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.05em;line-height:1.5;word-break:break-word;flex-direction:column}
+.question-box .q-tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.7em;background:rgba(255,255,255,0.15)}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;margin:6px 0}
+.p-opt{padding:10px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:44px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:0.85em;font-weight:bold;min-height:22px;text-align:center;margin:3px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.5em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:10px 22px;border-radius:20px;border:none;font-size:0.9em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn.back{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+.win-detail{font-size:0.85em;color:#aaa;margin-bottom:20px;text-align:center;line-height:1.6}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.win-btns .ctrl-btn{font-size:1.05em;padding:14px 28px}
+
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* Progress dots */
+.progress-dots{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;max-width:200px;margin:4px 0}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s}
+.progress-dot.done.p1{background:#FF6B6B}
+.progress-dot.done.p2{background:#4ECDC4}
+.progress-dot.current{background:#FFD700;box-shadow:0 0 8px #FFD700;animation:pulse 1s infinite}
+
+/* ===== 模块三：棋盘摆子 ===== */
+.grid-wrap{width:100%;margin:6px 0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.grid-board{display:grid;gap:3px;padding:6px;background:rgba(255,255,255,0.08);border-radius:12px;border:2px solid rgba(255,255,255,0.15)}
+.grid-cell{aspect-ratio:1;border-radius:8px;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(255,255,255,0.15);cursor:pointer;transition:all 0.15s;min-width:28px;position:relative;display:flex;align-items:center;justify-content:center;font-size:1.2em}
+.grid-cell:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);transform:scale(1.08)}
+.grid-cell:active{transform:scale(0.9)}
+.grid-cell.filled{background:rgba(255,255,255,0.2);border-style:solid;animation:snapIn 0.25s ease-out}
+.left .grid-cell.filled{background:rgba(255,107,107,0.35);border-color:rgba(255,107,107,0.6);box-shadow:0 0 8px rgba(255,107,107,0.3)}
+.right .grid-cell.filled{background:rgba(78,205,196,0.35);border-color:rgba(78,205,196,0.6);box-shadow:0 0 8px rgba(78,205,196,0.3)}
+.grid-cell.correct-cell{animation:cellGlow 0.5s ease-out}
+@keyframes snapIn{0%{transform:scale(1.3)}60%{transform:scale(0.85)}100%{transform:scale(1)}}
+@keyframes cellGlow{0%{box-shadow:0 0 5px #FFD700}50%{box-shadow:0 0 20px #FFD700,0 0 40px #FFD700}100%{box-shadow:0 0 5px #FFD700}}
+.grid-controls{display:flex;gap:6px;width:100%;justify-content:center;flex-wrap:wrap}
+.grid-btn{padding:8px 16px;border-radius:16px;border:none;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;color:#fff}
+.grid-btn.submit{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.grid-btn.clear{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3)}
+.grid-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.grid-btn:disabled{opacity:0.4;pointer-events:none;transform:none;box-shadow:none}
+
+/* ===== 模块四：天降口诀 ===== */
+.drop-zone{width:100%;height:260px;margin:6px 0;position:relative;overflow:hidden;border-radius:14px;background:rgba(0,0,0,0.3);border:2px solid rgba(255,255,255,0.1)}
+.left .drop-zone{border-color:rgba(255,107,107,0.3)}
+.right .drop-zone{border-color:rgba(78,205,196,0.3)}
+.fall-item{position:absolute;top:-50px;padding:14px 20px;border-radius:24px;font-weight:bold;font-size:1.05em;cursor:pointer;z-index:10;white-space:nowrap;animation:fallDown var(--fall-dur,5s) linear forwards;background:rgba(255,255,255,0.15);border:2.5px solid rgba(255,255,255,0.3);color:#fff;text-align:center;min-width:56px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;will-change:transform}
+.fall-item:hover{border-color:#FFD700!important;box-shadow:0 0 20px rgba(255,215,0,0.6),0 0 40px rgba(255,215,0,0.2)}
+.fall-item:active{background:rgba(255,255,255,0.3)}
+.fall-item.caught-correct{animation:caughtPop 0.4s ease-out forwards!important;background:#10B981!important;border-color:#10B981!important}
+.fall-item.caught-wrong{animation:caughtShake 0.4s ease-out forwards!important;background:#EF4444!important;border-color:#EF4444!important}
+@keyframes fallDown{0%{transform:translateY(0);opacity:0}8%{opacity:1}90%{opacity:1}100%{transform:translateY(340px);opacity:0}}
+@keyframes caughtPop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(0);opacity:0}}
+@keyframes caughtShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+@media(max-width:600px){
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:8px 6px}
+  .question-box{font-size:0.9em;min-height:40px;padding:10px}
+  .p-opt{font-size:0.75em;padding:8px 4px;min-height:36px}
+  .vs-badge{font-size:1.5em;top:50%}
+  .player-score{font-size:1.4em}
+  .win-title{font-size:1.6em}
+  .options-grid{gap:4px}
+  .progress-dots{max-width:140px}
+  .progress-dot{width:8px;height:8px}
+  .menu-hero h1{font-size:1.5em}
+  .menu-card{min-width:220px;padding:20px 14px}
+  .menu-card .card-icon{font-size:2.5em}
+  .menu-card .card-title{font-size:1.2em}
+  .grid-board{gap:2px;padding:4px}
+  .grid-cell{min-width:22px;font-size:0.9em;border-radius:5px}
+  .drop-zone{height:180px}
+  .fall-item{padding:10px 14px;font-size:0.85em;border-radius:18px;min-width:48px}
+  .grid-btn{padding:6px 12px;font-size:0.7em}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 主菜单 ===== -->
+<div class="menu-screen" id="menuScreen">
+  <div class="menu-hero">
+    <span class="icon">✖️</span>
+    <h1>表内乘法(1~6) PK对战</h1>
+    <p class="sub">苏教版 · 二年级上册 · 第一单元</p>
+  </div>
+  <div class="menu-cards">
+    <div class="menu-card m1" onclick="startGame(1)">
+      <span class="card-icon">🌳</span>
+      <div class="card-title">模块一</div>
+      <div class="card-desc">认识乘法<br>几个几 → 加法 → 乘法 → 交换律</div>
+      <span class="card-info">⏱ 18秒/题 · 7轮</span>
+    </div>
+    <div class="menu-card m2" onclick="startGame(2)">
+      <span class="card-icon">🏰</span>
+      <div class="card-title">模块二</div>
+      <div class="card-desc">口诀城堡<br>口诀填空 · 速算 · 找规律 · 综合应用</div>
+      <span class="card-info">⏱ 12秒/题 · 8轮</span>
+    </div>
+    <div class="menu-card m3" onclick="startGame(3)">
+      <span class="card-icon">🧩</span>
+      <div class="card-title">模块三</div>
+      <div class="card-desc">棋盘摆子<br>动手摆一摆 · 几个几 · 可吸附棋盘</div>
+      <span class="card-info">⏱ 25秒/题 · 7轮</span>
+    </div>
+    <div class="menu-card m4" onclick="startGame(4)">
+      <span class="card-icon">🌠</span>
+      <div class="card-title">模块四</div>
+      <div class="card-desc">天降口诀<br>口诀掉落 · 眼明手快 · 点击得分</div>
+      <span class="card-info">⏱ 15秒/题 · 8轮</span>
+    </div>
+  </div>
+  <div class="menu-footer">⚡ 叫上小伙伴，双人PK对战！</div>
+</div>
+
+<!-- ===== 游戏区 ===== -->
+<div class="game-screen" id="gameScreen">
+  <div class="mod-banner m1" id="modBanner">
+    <span class="mod-icon">🌳</span>
+    <span id="modLabel">模块一：认识乘法 — 几个几的秘密</span>
+    <span class="mod-icon">🌳</span>
+  </div>
+
+  <div class="top-bar">
+    <h1 id="gameTitle">表内乘法(1~6) ⚔️ PK对战</h1>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tt">7</span> 轮</span>
+    <span class="timer">⏱ <span id="tm">18</span>s</span>
+  </div>
+
+  <div class="arena">
+    <div class="player left" id="p1">
+      <div class="player-name">🔴 红方玩家</div>
+      <div class="player-score" id="s1">0</div>
+      <div class="streak" id="st1"></div>
+      <div class="first-badge" id="fb1b"></div>
+      <div class="progress-dots" id="pd1"></div>
+      <div class="question-box" id="q1">准备开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="p2">
+      <div class="player-name">🔵 蓝方玩家</div>
+      <div class="player-score" id="s2">0</div>
+      <div class="streak" id="st2"></div>
+      <div class="first-badge" id="fb2b"></div>
+      <div class="progress-dots" id="pd2"></div>
+      <div class="question-box" id="q2">准备开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="ctrl-btn start" id="btnStart" style="display:none">⚔️ 开始对战</button>
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+    <button class="ctrl-btn back" onclick="goToMenu()">🏠 返回主界面</button>
+  </div>
+</div>
+
+<!-- ===== 结算弹窗 ===== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-detail" id="winDetail"></div>
+  <div class="win-btns">
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 再来一局</button>
+    <button class="ctrl-btn back" onclick="goToMenu()">🏠 返回主界面</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 苏教版 二年级上册 第一单元：表内乘法(1~6)
+// 模块一：认识几个几 → 加法 → 乘法 → 交换律
+// 模块二：乘法口诀速记
+// ============================================================
+
+var ALL_Q = [
+  // ===== 模块一：认识乘法 =====
+  {
+    q: "🍬 桌上有3个盘子，每个盘子放4颗糖。<br>这是几个几？",
+    o: ["3个4", "4个3", "3个3", "4个4"],
+    a: 0,
+    mod: 1,
+    explain: "3个盘子，每盘4颗 = 3个4"
+  },
+  {
+    q: "求3个4一共是多少，<br>用加法算式表示是？",
+    o: ["4+4+4=12", "3+3+3+3=12", "3+4=7", "4×3=12"],
+    a: 0,
+    mod: 1,
+    explain: "3个4相加 = 4+4+4=12"
+  },
+  {
+    q: "5+5+5+5 这个加法算式，<br>用乘法算式表示是？",
+    o: ["5×4 或 4×5", "5+4", "5×5", "4+4+4+4+4"],
+    a: 0,
+    mod: 1,
+    explain: "4个5相加 = 5×4 或 4×5"
+  },
+  {
+    q: "6×3 表示什么意思？",
+    o: ["6个3相加", "6加3", "6个6相加", "3个3相加"],
+    a: 0,
+    mod: 1,
+    explain: "6×3 表示 6个3相加（或3个6相加）"
+  },
+  {
+    q: "🏫 排队做操：横着看每排5人共3排，<br>竖着看每列3人共5列。<br>5×3和3×5是什么关系？",
+    o: ["结果相等", "5×3更大", "3×5更大", "没有关系"],
+    a: 0,
+    mod: 1,
+    explain: "5×3=15, 3×5=15, 结果相等！（乘法交换律）"
+  },
+  {
+    q: "🐰 一只兔子4条腿，<br>5只兔子一共有多少条腿？<br>用乘法算式表示？",
+    o: ["4×5=20（条）", "4+5=9（条）", "5×5=25（条）", "5+4=10（条）"],
+    a: 0,
+    mod: 1,
+    explain: "每只4条腿，5只 = 4×5=20条腿"
+  },
+  {
+    q: "🍎 看图：横着3排每排2个苹果，<br>竖着2列每列3个苹果。<br>横着看是___，竖着看是___？",
+    o: ["横3个2，竖2个3", "横2个3，竖3个2", "横3个3，竖2个2", "都一样，没有区别"],
+    a: 0,
+    mod: 1,
+    explain: "横着：3个2 (2×3)；竖着：2个3 (3×2)，结果都是6！"
+  },
+
+  // ===== 模块二：乘法口诀速记 =====
+  {
+    q: "📝 口诀填空：<br>三五（  ）",
+    o: ["十五", "二十", "十二", "十八"],
+    a: 0,
+    mod: 2,
+    explain: "三五十五，3×5=15, 5×3=15"
+  },
+  {
+    q: "📝 口诀填空：<br>二六（  ）",
+    o: ["十二", "十六", "十八", "十四"],
+    a: 0,
+    mod: 2,
+    explain: "二六十二，2×6=12, 6×2=12"
+  },
+  {
+    q: "🔍 计算4×5和5×4时，<br>用的是同一句口诀吗？哪一句？",
+    o: ["是，四五二十", "不是，各用各的", "是，五四二十", "是，四乘五"],
+    a: 0,
+    mod: 2,
+    explain: "4×5和5×4都用口诀「四五二十」！一句口诀两道题。"
+  },
+  {
+    q: "⚡ 速算：4×6 = ？",
+    o: ["24", "20", "28", "22"],
+    a: 0,
+    mod: 2,
+    explain: "四六二十四，4×6=24"
+  },
+  {
+    q: "🔢 找规律填空：<br>1×3=3, 2×3=6, 3×3=9, 4×3=?",
+    o: ["12", "13", "10", "15"],
+    a: 0,
+    mod: 2,
+    explain: "每次加3：3→6→9→12，规律是几个3就加几次3"
+  },
+  {
+    q: "💡 已经知道 2×6=12，<br>那么 6×2 = ？",
+    o: ["12", "8", "14", "16"],
+    a: 0,
+    mod: 2,
+    explain: "交换因数，积不变！2×6=6×2=12"
+  },
+  {
+    q: "⚖️ 比较大小：<br>3×4 ○ 2×6",
+    o: ["=", ">", "<", "无法比较"],
+    a: 0,
+    mod: 2,
+    explain: "3×4=12, 2×6=12，两边相等！"
+  },
+  {
+    q: "🏆 终极挑战：<br>小明买了4袋糖果，每袋5颗，<br>一共多少颗？用哪句口诀？",
+    o: ["20颗，四五二十", "25颗，五五二十五", "15颗，三五十五", "9颗，四加五"],
+    a: 0,
+    mod: 2,
+    explain: "4个5 = 4×5 = 20，口诀：四五二十！"
+  },
+
+  // ===== 模块三：棋盘摆子（物体排列） =====
+  {
+    q: "🧩 请在棋盘上摆出<br><b>3个4</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 3, M: 4,
+    mod: 3,
+    explain: "3行每行4个，或4列每列3个，共12个"
+  },
+  {
+    q: "🧩 请在棋盘上摆出<br><b>2个5</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 2, M: 5,
+    mod: 3,
+    explain: "2行每行5个，或5列每列2个，共10个"
+  },
+  {
+    q: "🧩 请在棋盘上摆出<br><b>4个3</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 4, M: 3,
+    mod: 3,
+    explain: "4行每行3个，或3列每列4个，共12个"
+  },
+  {
+    q: "🧩 请在棋盘上摆出<br><b>5个2</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 5, M: 2,
+    mod: 3,
+    explain: "5行每行2个，或2列每列5个，共10个"
+  },
+  {
+    q: "🧩 请在棋盘上摆出<br><b>3个6</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 3, M: 6,
+    mod: 3,
+    explain: "3行每行6个，或6列每列3个，共18个"
+  },
+  {
+    q: "🧩 请在棋盘上摆出<br><b>6个3</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 6, M: 3,
+    mod: 3,
+    explain: "6行每行3个，或3列每列6个，共18个"
+  },
+  {
+    q: "🧩 请在棋盘上摆出<br><b>4个4</b><br><small>（点击格子放置/移除，摆好后点提交）</small>",
+    N: 4, M: 4,
+    mod: 3,
+    explain: "4行每行4个，共16个"
+  },
+
+  // ===== 模块四：天降口诀 =====
+  {
+    q: "🌠 3×5 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["15", "8", "12", "18"],
+    a: 0,
+    mod: 4,
+    explain: "3×5=15，口诀：三五十五"
+  },
+  {
+    q: "🌠 4×6 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["24", "20", "28", "22"],
+    a: 0,
+    mod: 4,
+    explain: "4×6=24，口诀：四六二十四"
+  },
+  {
+    q: "🌠 2×6 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["12", "16", "14", "18"],
+    a: 0,
+    mod: 4,
+    explain: "2×6=12，口诀：二六十二"
+  },
+  {
+    q: "🌠 5×5 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["25", "20", "30", "15"],
+    a: 0,
+    mod: 4,
+    explain: "5×5=25，口诀：五五二十五"
+  },
+  {
+    q: "🌠 3×6 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["18", "15", "21", "24"],
+    a: 0,
+    mod: 4,
+    explain: "3×6=18，口诀：三六十八"
+  },
+  {
+    q: "🌠 4×4 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["16", "12", "20", "14"],
+    a: 0,
+    mod: 4,
+    explain: "4×4=16，口诀：四四十六"
+  },
+  {
+    q: "🌠 6×3 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["18", "15", "21", "12"],
+    a: 0,
+    mod: 4,
+    explain: "6×3=18，口诀：三六十八"
+  },
+  {
+    q: "🌠 2×5 = ？<br><small>点击掉落的正确答案！</small>",
+    o: ["10", "12", "8", "15"],
+    a: 0,
+    mod: 4,
+    explain: "2×5=10，口诀：二五一十"
+  }
+];
+
+var Q=[], sc=[0,0], cr=0, tr=0, tm=15, baseTm=15, ti=null, go=false, ans=[false,false];
+var streak=[0,0], firstToAnswer=null, currentMod=0;
+var baseSk='pk_mul_table_v2';
+var musicOn=true, actx=null;
+var gridState=[null,null], gridSubmitted=[false,false];
+var fallItems=[null,null], fallSpawners=[null,null];
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+
+function sfxCorrect(){playTone(523,0.12,'square',0.08);setTimeout(function(){playTone(659,0.12,'square',0.08);},90);setTimeout(function(){playTone(784,0.18,'square',0.08);},180);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<8;i++){setTimeout(function(){playTone(440+Math.random()*440,0.15,'square',0.07);},i*120);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function sfxFirst(){playTone(880,0.1,'square',0.07);setTimeout(function(){playTone(1100,0.15,'square',0.07);},80);}
+
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.1,'sine',0.05);}}
+
+function updateProgressDots(){
+  for(var p=1;p<=2;p++){
+    var h='';
+    for(var i=0;i<tr;i++){
+      var cls='progress-dot';
+      if(i<cr)cls+=' done p'+p;
+      if(i===cr)cls+=' current';
+      h+='<div class="'+cls+'"></div>';
+    }
+    document.getElementById('pd'+p).innerHTML=h;
+  }
+  document.getElementById('tt').textContent=tr;
+}
+
+// ===== 模块三：棋盘摆子 =====
+function createGridBoard(pn, N, M){
+  var gridCols = Math.max(N, M);
+  var gridRows = Math.max(N, M);
+  if (gridCols < 4) gridCols = 4;
+  if (gridRows < 4) gridRows = 4;
+  if (gridCols > 6) gridCols = 6;
+  if (gridRows > 6) gridRows = 6;
+
+  gridState[pn-1] = [];
+  for (var r = 0; r < gridRows; r++) {
+    gridState[pn-1][r] = [];
+    for (var c = 0; c < gridCols; c++) {
+      gridState[pn-1][r][c] = false;
+    }
+  }
+
+  var h = '<div class="grid-board" style="grid-template-columns:repeat(' + gridCols + ',1fr)" id="gridBoard' + pn + '">';
+  for (var r = 0; r < gridRows; r++) {
+    for (var c = 0; c < gridCols; c++) {
+      h += '<div class="grid-cell" data-r="' + r + '" data-c="' + c + '" onclick="toggleCell(' + pn + ',' + r + ',' + c + ')" id="gc' + pn + '_' + r + '_' + c + '"></div>';
+    }
+  }
+  h += '</div>';
+  h += '<div class="grid-controls">';
+  h += '<button class="grid-btn submit" onclick="submitGrid(' + pn + ')" id="gridSubmit' + pn + '">✅ 提交</button>';
+  h += '<button class="grid-btn clear" onclick="clearGrid(' + pn + ')">🔄 清除</button>';
+  h += '</div>';
+
+  document.getElementById('op' + pn).innerHTML = h;
+  document.getElementById('op' + pn).style.display = '';
+  gridSubmitted[pn-1] = false;
+}
+
+function toggleCell(pn, r, c){
+  if (!go || gridSubmitted[pn-1] || ans[pn-1]) return;
+  var cell = document.getElementById('gc' + pn + '_' + r + '_' + c);
+  if (!cell) return;
+  gridState[pn-1][r][c] = !gridState[pn-1][r][c];
+  if (gridState[pn-1][r][c]) {
+    cell.classList.add('filled');
+    cell.textContent = '⚫';
+    playTone(600, 0.06, 'sine', 0.05);
+  } else {
+    cell.classList.remove('filled');
+    cell.textContent = '';
+  }
+}
+
+function clearGrid(pn){
+  if (!go || gridSubmitted[pn-1] || ans[pn-1]) return;
+  for (var r = 0; r < gridState[pn-1].length; r++) {
+    for (var c = 0; c < gridState[pn-1][r].length; c++) {
+      gridState[pn-1][r][c] = false;
+      var cell = document.getElementById('gc' + pn + '_' + r + '_' + c);
+      if (cell) { cell.classList.remove('filled'); cell.textContent = ''; }
+    }
+  }
+  playTone(300, 0.08, 'sine', 0.04);
+}
+
+function validateGrid(pn, N, M){
+  var g = gridState[pn-1];
+  var rows = g.length;
+  var cols = g[0].length;
+
+  // Check rows pattern: exactly N rows with M consecutive filled cells
+  var validRows = 0;
+  for (var r = 0; r < rows; r++) {
+    var filled = 0;
+    var started = false;
+    var ended = false;
+    for (var c = 0; c < cols; c++) {
+      if (g[r][c]) {
+        if (ended) return false; // gap in row
+        started = true;
+        filled++;
+      } else {
+        if (started) ended = true;
+      }
+    }
+    if (filled === M) validRows++;
+    else if (filled > 0) return false;
+  }
+  if (validRows === N) return true;
+
+  // Check columns pattern: exactly M columns with N consecutive filled cells
+  var validCols = 0;
+  for (var c = 0; c < cols; c++) {
+    var filled = 0;
+    var started = false;
+    var ended = false;
+    for (var r = 0; r < rows; r++) {
+      if (g[r][c]) {
+        if (ended) return false;
+        started = true;
+        filled++;
+      } else {
+        if (started) ended = true;
+      }
+    }
+    if (filled === N) validCols++;
+    else if (filled > 0) return false;
+  }
+  if (validCols === M) return true;
+
+  return false;
+}
+
+function submitGrid(pn){
+  if (!go || gridSubmitted[pn-1] || ans[pn-1]) return;
+  var q = Q[cr];
+  var correct = validateGrid(pn, q.N, q.M);
+
+  if (correct) {
+    gridSubmitted[pn-1] = true;
+    ans[pn-1] = true;
+
+    // Highlight all filled cells
+    for (var r = 0; r < gridState[pn-1].length; r++) {
+      for (var c = 0; c < gridState[pn-1][r].length; c++) {
+        if (gridState[pn-1][r][c]) {
+          var cell = document.getElementById('gc' + pn + '_' + r + '_' + c);
+          if (cell) cell.classList.add('correct-cell');
+        }
+      }
+    }
+
+    // Disable grid
+    var cells = document.querySelectorAll('#op' + pn + ' .grid-cell');
+    cells.forEach(function(cell){ cell.style.pointerEvents = 'none'; });
+    var btns = document.querySelectorAll('#op' + pn + ' .grid-btn');
+    btns.forEach(function(b){ b.disabled = true; });
+
+    var baseScore = 10;
+    var streakBonus = 0;
+    var firstBonus = 0;
+
+    streak[pn-1]++;
+    if (streak[pn-1] >= 3) {
+      streakBonus = 2;
+      document.getElementById('st' + pn).textContent = '🔥 ' + streak[pn-1] + '连击！+' + streakBonus;
+    } else {
+      document.getElementById('st' + pn).textContent = streak[pn-1] >= 2 ? '💪 摆对了！' : '✅ 摆对了！';
+    }
+
+    if (firstToAnswer === null) {
+      firstToAnswer = pn;
+      firstBonus = 3;
+      document.getElementById('fb' + pn + 'b').textContent = '⚡ 率先完成！+' + firstBonus;
+      sfxFirst();
+    }
+
+    var total = baseScore + streakBonus + firstBonus;
+    sc[pn-1] += total;
+    document.getElementById('s' + pn).textContent = sc[pn-1];
+    document.getElementById('fb' + pn).innerHTML = '✅ 正确！+' + total + ' <small style="color:#aaa">(' + q.explain + ')</small>';
+    sfxCorrect();
+
+    // Lock both players and advance immediately
+    go = false;
+    var otherPn = pn === 1 ? 2 : 1;
+    var otherCells = document.querySelectorAll('#op' + otherPn + ' .grid-cell');
+    otherCells.forEach(function(c){ c.style.pointerEvents = 'none'; });
+    var otherBtns = document.querySelectorAll('#op' + otherPn + ' .grid-btn');
+    otherBtns.forEach(function(b){ b.disabled = true; });
+    if (!ans[otherPn-1]) document.getElementById('fb' + otherPn).innerHTML = '⏩ 对方已摆对，进入下一题';
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){ nextRound(); }, 2500);
+
+  } else {
+    // Wrong submission
+    streak[pn-1] = 0;
+    sc[pn-1] = Math.max(0, sc[pn-1] - 2);
+    document.getElementById('s' + pn).textContent = sc[pn-1];
+    document.getElementById('st' + pn).textContent = '';
+    document.getElementById('fb' + pn).innerHTML = '❌ 摆错了，再试试！<small style="color:#aaa">（-2分）</small>';
+    sfxWrong();
+
+    // Flash the grid red briefly
+    var board = document.getElementById('gridBoard' + pn);
+    if (board) {
+      board.style.borderColor = '#EF4444';
+      board.style.boxShadow = '0 0 20px rgba(239,68,68,0.5)';
+      setTimeout(function(){
+        board.style.borderColor = 'rgba(255,255,255,0.15)';
+        board.style.boxShadow = '';
+      }, 600);
+    }
+  }
+}
+
+// ===== 模块四：天降口诀 =====
+function renderFallPlayer(pn, q){
+  var qEl = document.getElementById('q' + pn);
+  var tag = '<span class="q-tag" style="background:rgba(0,188,212,0.25)">🌠 天降口诀</span><br>';
+  qEl.innerHTML = tag + '第' + (cr+1) + '题：' + q.q;
+
+  // Create drop zone with shuffled options
+  var dropH = '<div class="drop-zone" id="dropZone' + pn + '"></div>';
+  document.getElementById('op' + pn).innerHTML = dropH;
+  document.getElementById('op' + pn).style.display = '';
+  document.getElementById('fb' + pn).textContent = '';
+  document.getElementById('fb' + pn + 'b').textContent = '';
+  document.getElementById('st' + pn).textContent = '';
+
+  fallItems[pn-1] = [];
+  if (fallSpawners[pn-1]) clearInterval(fallSpawners[pn-1]);
+
+  // Determine the 4 options (including correct one)
+  var opts = q.o.slice(); // copy
+  var correctAnswer = opts[q.a];
+  // Shuffle for spawn order
+  var spawnQueue = [];
+  // Always include correct answer in first 4 spawns
+  spawnQueue.push({text: correctAnswer, isCorrect: true});
+  for (var i = 0; i < opts.length; i++) {
+    if (i !== q.a) spawnQueue.push({text: opts[i], isCorrect: false});
+  }
+  // Shuffle
+  for (var i = spawnQueue.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = spawnQueue[i]; spawnQueue[i] = spawnQueue[j]; spawnQueue[j] = t;
+  }
+  // Ensure correct is in first 3
+  var ci = -1;
+  for (var i = 0; i < spawnQueue.length; i++) {
+    if (spawnQueue[i].isCorrect) { ci = i; break; }
+  }
+  if (ci > 2) {
+    var tmp = spawnQueue[ci];
+    spawnQueue[ci] = spawnQueue[1];
+    spawnQueue[1] = tmp;
+  }
+
+  var spawnIdx = 0;
+  var zoneEl = document.getElementById('dropZone' + pn);
+
+  function spawnOne(){
+    if (!go || ans[pn-1] || spawnIdx >= spawnQueue.length) return;
+    var item = spawnQueue[spawnIdx];
+    spawnIdx++;
+    spawnFallItem(pn, item.text, item.isCorrect, zoneEl);
+
+    // Spawn again with remaining items (cycle if needed)
+    if (spawnIdx < spawnQueue.length) {
+      // continue spawning
+    } else if (!ans[pn-1] && go) {
+      // Reshuffle and continue
+      spawnQueue = [];
+      for (var i = 0; i < opts.length; i++) {
+        spawnQueue.push({text: opts[i], isCorrect: i === q.a});
+      }
+      for (var i = spawnQueue.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = spawnQueue[i]; spawnQueue[i] = spawnQueue[j]; spawnQueue[j] = t;
+      }
+      spawnIdx = 0;
+    }
+  }
+
+  // Spawn first item immediately
+  spawnOne();
+
+  // Continue spawning every 1.2-1.8 seconds
+  fallSpawners[pn-1] = setInterval(function(){
+    if (!go || ans[pn-1]) {
+      clearInterval(fallSpawners[pn-1]);
+      return;
+    }
+    spawnOne();
+  }, 1200 + Math.random() * 600);
+}
+
+function spawnFallItem(pn, text, isCorrect, zoneEl){
+  if (!zoneEl) zoneEl = document.getElementById('dropZone' + pn);
+  if (!zoneEl) return;
+
+  var item = document.createElement('div');
+  item.className = 'fall-item';
+  item.textContent = text;
+  item.setAttribute('data-correct', isCorrect ? '1' : '0');
+  item.setAttribute('data-pn', pn);
+
+  // Random horizontal position (5% to 72% of zone width, leave room for text)
+  var leftPct = 5 + Math.random() * 68;
+  item.style.left = leftPct + '%';
+
+  // Random fall duration between 4 and 6 seconds (slower for easier clicking)
+  var dur = 4 + Math.random() * 2;
+  item.style.setProperty('--fall-dur', dur + 's');
+
+  // Click handler
+  item.addEventListener('click', function(e){
+    e.stopPropagation();
+    handleFallClick(pn, isCorrect, item);
+  });
+
+  // Remove when animation ends
+  item.addEventListener('animationend', function(){
+    if (item.parentNode) {
+      item.remove();
+      // Remove from tracking
+      var idx = fallItems[pn-1].indexOf(item);
+      if (idx >= 0) fallItems[pn-1].splice(idx, 1);
+    }
+  });
+
+  zoneEl.appendChild(item);
+  fallItems[pn-1].push(item);
+}
+
+function handleFallClick(pn, isCorrect, itemEl){
+  if (!go || ans[pn-1]) return;
+  ans[pn-1] = true;
+
+  // Stop spawning for this player
+  if (fallSpawners[pn-1]) {
+    clearInterval(fallSpawners[pn-1]);
+    fallSpawners[pn-1] = null;
+  }
+
+  // Disable all remaining falling items for this player
+  var zone = document.getElementById('dropZone' + pn);
+  if (zone) {
+    var allItems = zone.querySelectorAll('.fall-item');
+    allItems.forEach(function(it){ it.style.pointerEvents = 'none'; });
+  }
+
+  var q = Q[cr];
+
+  if (isCorrect) {
+    itemEl.classList.add('caught-correct');
+
+    var baseScore = 10;
+    var streakBonus = 0;
+    var firstBonus = 0;
+
+    streak[pn-1]++;
+    if (streak[pn-1] >= 3) {
+      streakBonus = 2;
+      document.getElementById('st' + pn).textContent = '🔥 ' + streak[pn-1] + '连击！+' + streakBonus;
+    } else {
+      document.getElementById('st' + pn).textContent = streak[pn-1] >= 2 ? '💪 抓住了！' : '✅ 抓住了！';
+    }
+
+    if (firstToAnswer === null) {
+      firstToAnswer = pn;
+      firstBonus = 3;
+      document.getElementById('fb' + pn + 'b').textContent = '⚡ 手速最快！+' + firstBonus;
+      sfxFirst();
+    }
+
+    var total = baseScore + streakBonus + firstBonus;
+    sc[pn-1] += total;
+    document.getElementById('s' + pn).textContent = sc[pn-1];
+    document.getElementById('fb' + pn).innerHTML = '✅ 正确！+' + total + ' <small style="color:#aaa">(' + q.explain + ')</small>';
+    sfxCorrect();
+
+    // Lock both players and advance immediately
+    go = false;
+    var otherPn = pn === 1 ? 2 : 1;
+    if (fallSpawners[otherPn-1]) {
+      clearInterval(fallSpawners[otherPn-1]);
+      fallSpawners[otherPn-1] = null;
+    }
+    var otherZone = document.getElementById('dropZone' + otherPn);
+    if (otherZone) {
+      var otherItems = otherZone.querySelectorAll('.fall-item');
+      otherItems.forEach(function(it){ it.style.pointerEvents = 'none'; });
+    }
+    if (!ans[otherPn-1]) document.getElementById('fb' + otherPn).innerHTML = '⏩ 对方已答对，进入下一题';
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){ nextRound(); }, 1800);
+
+  } else {
+    itemEl.classList.add('caught-wrong');
+    streak[pn-1] = 0;
+    sc[pn-1] = Math.max(0, sc[pn-1] - 3);
+    document.getElementById('s' + pn).textContent = sc[pn-1];
+    document.getElementById('st' + pn).textContent = '';
+    document.getElementById('fb' + pn).innerHTML = '❌ 点错了！-3分 <small style="color:#aaa">(' + q.explain + ')</small>';
+    sfxWrong();
+
+    // Highlight correct answer among remaining items
+    if (zone) {
+      var allItems2 = zone.querySelectorAll('.fall-item');
+      allItems2.forEach(function(it){
+        if (it.getAttribute('data-correct') === '1') {
+          it.style.borderColor = '#10B981';
+          it.style.background = 'rgba(16,185,129,0.3)';
+          it.style.animationPlayState = 'paused';
+        }
+      });
+    }
+
+    // If both answered wrong, advance
+    if (ans[0] && ans[1]) {
+      clearInterval(ti);
+      cr++;
+      setTimeout(function(){ nextRound(); }, 1800);
+    }
+  }
+}
+
+function clearFallItems(pn){
+  if (fallSpawners[pn-1]) {
+    clearInterval(fallSpawners[pn-1]);
+    fallSpawners[pn-1] = null;
+  }
+  var zone = document.getElementById('dropZone' + pn);
+  if (zone) zone.innerHTML = '';
+  fallItems[pn-1] = [];
+}
+
+// ===== 启动游戏 =====
+function startGame(mod){
+  initAudio();
+  currentMod=mod;
+
+  // Filter questions for selected module
+  Q=[];
+  for(var i=0;i<ALL_Q.length;i++){
+    if(ALL_Q[i].mod===mod)Q.push(ALL_Q[i]);
+  }
+  Q=sf(Q);
+  tr=Q.length;
+  if (mod === 1) baseTm = 18;
+  else if (mod === 2) baseTm = 12;
+  else if (mod === 3) baseTm = 25;
+  else baseTm = 15;
+  tm = baseTm;
+
+  // Update UI for module
+  var banner=document.getElementById('modBanner');
+  var label=document.getElementById('modLabel');
+  var title=document.getElementById('gameTitle');
+  if(mod===1){
+    banner.className='mod-banner m1';
+    label.textContent='模块一：认识乘法 — 几个几的秘密';
+    title.textContent='模块一 · 认识乘法 ⚔️ PK对战';
+  } else if(mod===2){
+    banner.className='mod-banner m2';
+    label.textContent='模块二：口诀城堡 — 速记乘法口诀';
+    title.textContent='模块二 · 口诀城堡 ⚔️ PK对战';
+  } else if(mod===3){
+    banner.className='mod-banner m3';
+    label.textContent='模块三：棋盘摆子 — 动手摆一摆';
+    title.textContent='模块三 · 棋盘摆子 ⚔️ PK对战';
+  } else {
+    banner.className='mod-banner m4';
+    label.textContent='模块四：天降口诀 — 眼明手快';
+    title.textContent='模块四 · 天降口诀 ⚔️ PK对战';
+  }
+
+  // Switch screens
+  document.getElementById('menuScreen').classList.add('hide');
+  document.getElementById('gameScreen').classList.add('show');
+  document.getElementById('winOverlay').classList.remove('show');
+
+  // Reset game state
+  sc=[0,0]; cr=0; ans=[false,false]; streak=[0,0]; firstToAnswer=null;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('fb1b').textContent='';
+  document.getElementById('fb2b').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('q1').textContent='准备开始...';
+  document.getElementById('q2').textContent='准备开始...';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('tm').parentElement.className='timer';
+  document.getElementById('btnStart').style.display='none';
+
+  go=true;
+  updateProgressDots();
+  nextRound();
+}
+
+// ===== 返回主界面 =====
+function goToMenu(){
+  clearInterval(ti); go=false;
+  clearFallItems(1);
+  clearFallItems(2);
+  gridState=[null,null];
+  gridSubmitted=[false,false];
+  document.getElementById('menuScreen').classList.remove('hide');
+  document.getElementById('gameScreen').classList.remove('show');
+  document.getElementById('winOverlay').classList.remove('show');
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+
+  // Reset timer for new round
+  tm = baseTm;
+
+  // Clean up module-specific state
+  clearFallItems(1);
+  clearFallItems(2);
+  gridState=[null,null];
+  gridSubmitted=[false,false];
+
+  var q=Q[cr];
+  ans=[false,false]; firstToAnswer=null;
+  document.getElementById('rn').textContent=cr+1;
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('tm').parentElement.className='timer';
+
+  updateProgressDots();
+  renderBothPlayers(q);
+
+  go = true;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent=tm;
+    if(tm<=5){sfxTick();document.getElementById('tm').parentElement.className='timer urgent';}
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+function renderBothPlayers(q){
+  if (currentMod === 3) {
+    // Clean up previous module 4 state
+    clearFallItems(1);
+    clearFallItems(2);
+    renderGridPlayer(1, q);
+    renderGridPlayer(2, q);
+  } else if (currentMod === 4) {
+    // Clean up previous module 3 state
+    gridState = [null, null];
+    gridSubmitted = [false, false];
+    renderFallPlayer(1, q);
+    renderFallPlayer(2, q);
+  } else {
+    // Clean up mod 3/4 state
+    clearFallItems(1);
+    clearFallItems(2);
+    gridState = [null, null];
+    gridSubmitted = [false, false];
+    renderPlayer(1, q);
+    renderPlayer(2, q);
+  }
+}
+
+function renderGridPlayer(pn, q){
+  var qEl = document.getElementById('q' + pn);
+  var tag = '<span class="q-tag" style="background:rgba(156,39,176,0.25)">🧩 棋盘摆子</span><br>';
+  qEl.innerHTML = tag + '第' + (cr+1) + '题：' + q.q;
+  document.getElementById('fb' + pn).textContent = '';
+  document.getElementById('fb' + pn + 'b').textContent = '';
+  document.getElementById('st' + pn).textContent = '';
+  createGridBoard(pn, q.N, q.M);
+}
+
+function renderPlayer(pn,q){
+  var qEl=document.getElementById('q'+pn);
+  var tag='';
+  if(currentMod===1)tag='<span class="q-tag" style="background:rgba(76,175,80,0.25)">🌳 认识乘法</span><br>';
+  else if(currentMod===2)tag='<span class="q-tag" style="background:rgba(255,152,0,0.25)">🏰 口诀速记</span><br>';
+  else if(currentMod===3)tag='<span class="q-tag" style="background:rgba(156,39,176,0.25)">🧩 棋盘摆子</span><br>';
+  else tag='<span class="q-tag" style="background:rgba(0,188,212,0.25)">🌠 天降口诀</span><br>';
+  qEl.innerHTML=tag+'第'+(cr+1)+'题：'+q.q;
+
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+
+  var lb=['A','B','C','D'];
+  var h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+q.a+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+q.o[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('fb'+pn+'b').textContent='';
+  document.getElementById('st'+pn).textContent='';
+
+  qEl.style.display='';
+  document.getElementById('op'+pn).style.display='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  var correct=oi===ai;
+  var q=Q[cr];
+
+  if(correct){
+    btn.classList.add('correct');
+
+    var baseScore=10;
+    var streakBonus=0;
+    var firstBonus=0;
+
+    streak[pn-1]++;
+    if(streak[pn-1]>=3){
+      streakBonus=2;
+      document.getElementById('st'+pn).textContent='🔥 '+streak[pn-1]+'连击！+'+streakBonus;
+    } else {
+      document.getElementById('st'+pn).textContent=streak[pn-1]>=2?'💪 答对了！':'✅ 答对了！';
+    }
+
+    if(firstToAnswer===null){
+      firstToAnswer=pn;
+      firstBonus=3;
+      document.getElementById('fb'+pn+'b').textContent='⚡ 抢答成功！+'+firstBonus;
+      sfxFirst();
+    }
+
+    var total=baseScore+streakBonus+firstBonus;
+    sc[pn-1]+=total;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+'+total+' <small style="color:#aaa">('+q.explain+')</small>';
+    sfxCorrect();
+
+    // Lock both players and advance immediately
+    go=false;
+    var otherPn=pn===1?2:1;
+    var otherBs=document.querySelectorAll('#op'+otherPn+' .p-opt');
+    otherBs.forEach(function(b){b.disabled=true;});
+    if(!ans[otherPn-1])document.getElementById('fb'+otherPn).innerHTML='⏩ 对方已答对，进入下一题';
+    clearInterval(ti);
+    cr++;
+    var delay=(currentMod===3)?2500:1800;
+    setTimeout(function(){nextRound();},delay);
+
+  } else {
+    btn.classList.add('wrong');
+    streak[pn-1]=0;
+    document.getElementById('st'+pn).textContent='';
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了 <small style="color:#aaa">('+q.explain+')</small>';
+    sfxWrong();
+
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+
+    // If both answered wrong, advance
+    if(ans[0]&&ans[1]){
+      clearInterval(ti);
+      cr++;
+      setTimeout(function(){nextRound();},1800);
+    }
+  }
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      if (currentMod === 3) {
+        // Disable grid
+        var cells = document.querySelectorAll('#op' + p + ' .grid-cell');
+        cells.forEach(function(c){ c.style.pointerEvents = 'none'; });
+        var btns = document.querySelectorAll('#op' + p + ' .grid-btn');
+        btns.forEach(function(b){ b.disabled = true; });
+      } else if (currentMod === 4) {
+        // Stop spawning and disable items
+        if (fallSpawners[p-1]) { clearInterval(fallSpawners[p-1]); fallSpawners[p-1] = null; }
+        var zone = document.getElementById('dropZone' + p);
+        if (zone) {
+          var allItems = zone.querySelectorAll('.fall-item');
+          allItems.forEach(function(it){ it.style.pointerEvents = 'none'; });
+        }
+      } else {
+        var bs = document.querySelectorAll('#op' + p + ' .p-opt');
+        bs.forEach(function(b){ b.disabled = true; });
+      }
+      document.getElementById('fb' + p).innerHTML = '⏰ 时间到！';
+      streak[p-1]=0;
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},1200);
+}
+
+function endGame(){
+  go=false; clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+
+  var modName='';
+  if (currentMod===1) modName='模块一·认识乘法';
+  else if (currentMod===2) modName='模块二·口诀城堡';
+  else if (currentMod===3) modName='模块三·棋盘摆子';
+  else modName='模块四·天降口诀';
+  var detail='';
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    detail=modName+' — 红方是乘法小达人！';
+  } else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    detail=modName+' — 蓝方是乘法小达人！';
+  } else {
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分';
+    detail=modName+' — 旗鼓相当！再来一局分出胜负吧！';
+  }
+  document.getElementById('winDetail').textContent=detail;
+  sfxWin();
+  spawnConfetti();
+
+  var sk=baseSk+'_m'+currentMod;
+  var best=parseInt(localStorage.getItem(sk)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5','#4CAF50'];
+  for(var i=0;i<80;i++){
+    var d=document.createElement('div');
+    d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*12+6)+'px';
+    d.style.height=(Math.random()*12+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2.5+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},5000);
+  }
+}
+
+function restartGame(){
+  if(currentMod===0)return;
+  clearInterval(ti); go=false;
+  clearFallItems(1);
+  clearFallItems(2);
+  gridState=[null,null];
+  gridSubmitted=[false,false];
+  sc=[0,0]; cr=0; ans=[false,false]; streak=[0,0]; firstToAnswer=null;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('fb1b').textContent='';
+  document.getElementById('fb2b').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('tm').parentElement.className='timer';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('q1').textContent='准备开始...';
+  document.getElementById('q2').textContent='准备开始...';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('pd1').innerHTML='';
+  document.getElementById('pd2').innerHTML='';
+  Q=sf(Q);
+  updateProgressDots();
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});
+  go=true;
+  nextRound();
+}
+</script>
+</body>
+</html>

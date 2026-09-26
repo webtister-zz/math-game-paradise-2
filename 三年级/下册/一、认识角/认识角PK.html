@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>认识角 - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:16px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1.2em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.module-tabs{display:flex;gap:6px}
+.mtab{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#ccc;font-size:0.8em;cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap}
+.mtab:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5)}
+.mtab.active{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;border-color:#FFD700;font-weight:bold}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:60px;text-align:center}
+.round-info{font-size:0.85em;color:#aaa}
+.arena{display:flex;flex:1;height:calc(100vh - 180px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 6px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.8em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.75em;color:#FFD700;min-height:18px}
+.canvas-wrap{position:relative;width:100%;max-width:500px;margin:4px 0}
+canvas{width:100%;height:auto;border-radius:12px;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.15);display:block;touch-action:none}
+.feedback{font-size:0.85em;font-weight:bold;min-height:22px;text-align:center;margin:2px 0}
+.instruction{font-size:0.75em;color:#aaa;text-align:center;min-height:18px}
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:10px 22px;border-radius:20px;border:none;font-size:0.9em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.82);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+.opt-row{display:flex;gap:6px;width:100%;margin:4px 0;flex-wrap:wrap;justify-content:center}
+.p-opt{padding:8px 14px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;min-width:60px}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:6px 4px}
+  .vs-badge{font-size:1.3em;top:50%}
+  .player-score{font-size:1.3em}
+  .win-title{font-size:1.6em}
+  .canvas-wrap{max-width:100%}
+  .top-bar h1{font-size:1em}
+  .mtab{padding:4px 10px;font-size:0.7em}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>📐 认识角 ⚔️ PK对战</h1>
+  <div class="module-tabs">
+    <button class="mtab active" onclick="switchModule(1)">模块一：标线段</button>
+    <button class="mtab" onclick="switchModule(2)">模块二：圆规测角</button>
+    <button class="mtab" onclick="switchModule(3)">模块三：量角器读数</button>
+    <button class="mtab" onclick="switchModule(4)">模块四：认识角类型</button>
+  </div>
+  <span class="round-info">第 <span id="rn">1</span>/5 轮</span>
+  <span class="timer">⏱ <span id="tm">20</span>s</span>
+</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="canvas-wrap"><canvas id="cv1" width="500" height="380"></canvas></div>
+    <div class="instruction" id="ins1">点击两个顶点，标出最长的线段</div>
+    <div class="feedback" id="fb1"></div>
+    <div class="opt-row" id="op1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="canvas-wrap"><canvas id="cv2" width="500" height="380"></canvas></div>
+    <div class="instruction" id="ins2">点击两个顶点，标出最长的线段</div>
+    <div class="feedback" id="fb2"></div>
+    <div class="opt-row" id="op2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.2em;padding:14px 36px">🔄 再来一局</button>
+</div>
+
+<script>
+// ==================== AUDIO ====================
+var musicOn=true,actx=null;
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.05);}
+
+// ==================== STATE ====================
+var sc=[0,0],cr=0,tr=5,tm=20,ti=null,go=false,curModule=1;
+var p1Done=false,p2Done=false,p1Result=0,p2Result=0;
+var sk='pk_js_'+window.location.pathname.replace(/[\/\.\s]/g,'_').replace(/^_+|_+$/g,'');
+
+// ==================== MODULE SWITCHING ====================
+function switchModule(m){
+  if(go)return;
+  curModule=m;
+  var tabs=document.querySelectorAll('.mtab');
+  tabs.forEach(function(t){t.classList.remove('active');});
+  tabs[m===2?1:m===3?2:m===4?3:0].classList.add('active');
+  p1Done=false;p2Done=false;
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  drawPlaceholders();
+}
+
+// ==================== CANVAS UTILS ====================
+function getCtx(pn){return document.getElementById('cv'+pn).getContext('2d');}
+function clearCv(pn){
+  var cv=document.getElementById('cv'+pn);
+  var ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+}
+
+// ==================== DRAW PLACEHOLDERS ====================
+function drawPlaceholders(){
+  for(var p=1;p<=2;p++){
+    clearCv(p);
+    var ctx=getCtx(p);
+    ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.font='bold 18px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.fillText('点击"开始对战"开始',250,190);
+  }
+  document.getElementById('ins1').textContent=getModuleInstruction();
+  document.getElementById('ins2').textContent=getModuleInstruction();
+}
+
+function getModuleInstruction(){
+  if(curModule===1)return '点击两个顶点，标出最长的线段';
+  if(curModule===2)return '拖拽圆规测量角度，点击最大的角';
+  if(curModule===3)return '读取量角器上的角度，选择正确答案';
+  return '观察角的图形，选择正确的角类型';
+}
+
+// ==================== GAME CONTROL ====================
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display='none';
+  go=true;sc=[0,0];cr=0;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  p1Done=false;p2Done=false;p1Result=0;p2Result=0;
+  document.getElementById('rn').textContent=cr+1;
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('ins1').textContent=getModuleInstruction();
+  document.getElementById('ins2').textContent=getModuleInstruction();
+  tm=20;
+  document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent=tm;
+    if(tm<=5)sfxTick();
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+  if(curModule===1)initModule1();
+  else if(curModule===2)initModule2();
+  else if(curModule===3)initModule3();
+  else initModule4();
+}
+
+function timeUp(){
+  if(curModule===1)timeUpM1();
+  else if(curModule===2)timeUpM2();
+  else if(curModule===3)timeUpM3();
+  else timeUpM4();
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  }else{
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best)localStorage.setItem(sk,mx);
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;
+  sc=[0,0];cr=0;p1Done=false;p2Done=false;p1Result=0;p2Result=0;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent='20';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  drawPlaceholders();
+  var cf=document.querySelectorAll('.confetti');
+  cf.forEach(function(c){c.remove();});
+}
+
+// ==================== MODULE 1: 标线段 ====================
+var m1Shapes=[];
+var m1Sel=[[],[]]; // selected vertices for each player [v1, v2]
+
+function initModule1(){
+  m1Sel=[[],[]];
+  generateM1Shape();
+  drawM1Both();
+}
+
+function generateM1Shape(){
+  // Generate a random 3D shape with vertices
+  var shapes=[
+    {name:'正方体', w:1, h:1, d:1, label:'正方体 (棱长=1)'},
+    {name:'长方体', w:2, h:1, d:1, label:'长方体 2×1×1'},
+    {name:'长方体', w:2, h:1.5, d:1, label:'长方体 2×1.5×1'},
+    {name:'正方体', w:1.5, h:1.5, d:1.5, label:'正方体 (棱长=1.5)'},
+    {name:'长方体', w:3, h:1, d:1, label:'长方体 3×1×1'}
+  ];
+  m1Shapes=[shapes[cr%shapes.length],shapes[(cr+1)%shapes.length]];
+}
+
+// 3D → 2D isometric projection
+function project3D(x,y,z,cx,cy,scale){
+  var sx=cx+(x-y)*Math.cos(Math.PI/6)*scale;
+  var sy=cy+(x+y)*Math.sin(Math.PI/6)*scale-z*scale;
+  return {x:sx,y:sy};
+}
+
+function getM1Vertices(sh){
+  var w=sh.w,h=sh.h,d=sh.d;
+  return [
+    {x:0,y:0,z:0,label:'A'},{x:w,y:0,z:0,label:'B'},
+    {x:w,y:d,z:0,label:'C'},{x:0,y:d,z:0,label:'D'},
+    {x:0,y:0,z:h,label:'E'},{x:w,y:0,z:h,label:'F'},
+    {x:w,y:d,z:h,label:'G'},{x:0,y:d,z:h,label:'H'}
+  ];
+}
+
+function drawM1Shape(cvId,shapeIdx,selVerts,disabled){
+  var sh=m1Shapes[shapeIdx];
+  var cv=document.getElementById('cv'+cvId);
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  var cx=W/2,cy=H/2+20,scale=Math.min(W,H)/4.5;
+  var verts=getM1Vertices(sh);
+  var pts=verts.map(function(v){return project3D(v.x,v.y,v.z,cx,cy,scale);});
+
+  // Edges of the cuboid
+  var edges=[
+    [0,1],[1,2],[2,3],[3,0], // bottom face
+    [4,5],[5,6],[6,7],[7,4], // top face
+    [0,4],[1,5],[2,6],[3,7]  // vertical edges
+  ];
+
+  // Draw faces (translucent)
+  var faces=[[0,1,2,3],[4,5,6,7],[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7]];
+  var faceColors=['rgba(255,150,100,0.2)','rgba(255,200,150,0.25)','rgba(150,200,255,0.2)',
+                  'rgba(100,255,180,0.15)','rgba(200,150,255,0.2)','rgba(255,255,150,0.15)'];
+  for(var f=0;f<faces.length;f++){
+    ctx.beginPath();
+    ctx.moveTo(pts[faces[f][0]].x,pts[faces[f][0]].y);
+    for(var fi=1;fi<4;fi++)ctx.lineTo(pts[faces[f][fi]].x,pts[faces[f][fi]].y);
+    ctx.closePath();
+    ctx.fillStyle=faceColors[f];
+    ctx.fill();
+  }
+
+  // Draw edges
+  for(var e=0;e<edges.length;e++){
+    ctx.beginPath();
+    ctx.moveTo(pts[edges[e][0]].x,pts[edges[e][0]].y);
+    ctx.lineTo(pts[edges[e][1]].x,pts[edges[e][1]].y);
+    ctx.strokeStyle='rgba(255,255,255,0.5)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+  }
+
+  // Draw selected segment if both vertices chosen
+  if(selVerts.length===2){
+    ctx.beginPath();
+    ctx.moveTo(pts[selVerts[0]].x,pts[selVerts[0]].y);
+    ctx.lineTo(pts[selVerts[1]].x,pts[selVerts[1]].y);
+    ctx.strokeStyle=cvId===1?'#FF6B6B':'#4ECDC4';
+    ctx.lineWidth=3.5;
+    ctx.setLineDash([6,3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Calculate length
+    var v1=verts[selVerts[0]],v2=verts[selVerts[1]];
+    var dx=v2.x-v1.x,dy=v2.y-v1.y,dz=v2.z-v1.z;
+    var len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    ctx.fillStyle='#FFD700';
+    ctx.font='bold 16px "Microsoft YaHei"';
+    ctx.fillText('长度: '+len.toFixed(2),pts[selVerts[0]].x+(pts[selVerts[1]].x-pts[selVerts[0]].x)/2,
+                 pts[selVerts[0]].y+(pts[selVerts[1]].y-pts[selVerts[0]].y)/2-10);
+  }
+
+  // Draw vertices
+  for(var i=0;i<pts.length;i++){
+    var isSel=selVerts.indexOf(i)>=0;
+    ctx.beginPath();
+    ctx.arc(pts[i].x,pts[i].y,isSel?12:8,0,Math.PI*2);
+    ctx.fillStyle=isSel?(cvId===1?'#FF6B6B':'#4ECDC4'):'rgba(255,255,255,0.8)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.6)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.fillStyle='#000';
+    ctx.font='bold 14px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(verts[i].label,pts[i].x,pts[i].y);
+  }
+
+  // Shape label
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.font='13px "Microsoft YaHei"';
+  ctx.fillText(sh.label,cx,H-15);
+
+  return {verts:verts,pts:pts};
+}
+
+function drawM1Both(){
+  var d1=m1Sel[0]||[];
+  var d2=m1Sel[1]||[];
+  drawM1Shape(1,0,d1,false);
+  drawM1Shape(2,1,d2,false);
+}
+
+function handleM1Click(pn,e){
+  if(!go||curModule!==1)return;
+  var idx=pn-1;
+  if(p1Done&&pn===1)return;
+  if(p2Done&&pn===2)return;
+  if(m1Sel[idx].length>=2)return;
+
+  var cv=document.getElementById('cv'+pn);
+  var rect=cv.getBoundingClientRect();
+  var scaleX=cv.width/rect.width;
+  var scaleY=cv.height/rect.height;
+  var mx=(e.clientX-rect.left)*scaleX;
+  var my=(e.clientY-rect.top)*scaleY;
+
+  var sh=m1Shapes[idx];
+  var cx=cv.width/2,cy=cv.height/2+20,s=Math.min(cv.width,cv.height)/4.5;
+  var verts=getM1Vertices(sh);
+  var pts=verts.map(function(v){return project3D(v.x,v.y,v.z,cx,cy,s);});
+
+  var minDist=25,closest=-1;
+  for(var i=0;i<pts.length;i++){
+    var dx=mx-pts[i].x,dy=my-pts[i].y;
+    var dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<minDist){minDist=dist;closest=i;}
+  }
+
+  if(closest>=0&&m1Sel[idx].indexOf(closest)<0){
+    m1Sel[idx].push(closest);
+    drawM1Shape(pn,idx,m1Sel[idx],false);
+    if(m1Sel[idx].length===2){
+      // Calculate segment length
+      var v1=verts[m1Sel[idx][0]],v2=verts[m1Sel[idx][1]];
+      var dx=v2.x-v1.x,dy=v2.y-v1.y,dz=v2.z-v1.z;
+      var len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+      if(pn===1){p1Result=len;p1Done=true;}
+      else{p2Result=len;p2Done=true;}
+      document.getElementById('fb'+pn).innerHTML='✅ 已选择! 长度: '+len.toFixed(2);
+      sfxCorrect();
+      if(p1Done&&p2Done)resolveM1Round();
+    }
+  }
+}
+
+function resolveM1Round(){
+  clearInterval(ti);
+  if(p1Result>p2Result){
+    sc[0]+=10;
+    document.getElementById('st1').textContent='🏆 更长! +10';
+    document.getElementById('st2').textContent='';
+    document.getElementById('fb1').innerHTML='✅ '+p1Result.toFixed(2)+' > '+p2Result.toFixed(2)+'  🏆+10';
+    document.getElementById('fb2').innerHTML='❌ '+p2Result.toFixed(2)+' < '+p1Result.toFixed(2);
+  }else if(p2Result>p1Result){
+    sc[1]+=10;
+    document.getElementById('st2').textContent='🏆 更长! +10';
+    document.getElementById('st1').textContent='';
+    document.getElementById('fb1').innerHTML='❌ '+p1Result.toFixed(2)+' < '+p2Result.toFixed(2);
+    document.getElementById('fb2').innerHTML='✅ '+p2Result.toFixed(2)+' > '+p1Result.toFixed(2)+'  🏆+10';
+  }else{
+    sc[0]+=5;sc[1]+=5;
+    document.getElementById('st1').textContent='🤝 平局 +5';
+    document.getElementById('st2').textContent='🤝 平局 +5';
+    document.getElementById('fb1').innerHTML='🤝 平局! 都是 '+p1Result.toFixed(2);
+    document.getElementById('fb2').innerHTML='🤝 平局! 都是 '+p2Result.toFixed(2);
+  }
+  document.getElementById('s1').textContent=sc[0];
+  document.getElementById('s2').textContent=sc[1];
+  cr++;
+  setTimeout(function(){nextRound();},1600);
+}
+
+function timeUpM1(){
+  // Auto-select whatever vertices each player has (if only 1, pick the farthest)
+  for(var p=1;p<=2;p++){
+    var idx=p-1;
+    if(m1Sel[idx].length===0){
+      // Auto-select two farthest vertices
+      var sh=m1Shapes[idx];
+      var verts=getM1Vertices(sh);
+      var maxDist=0,best=[0,1];
+      for(var i=0;i<verts.length;i++){
+        for(var j=i+1;j<verts.length;j++){
+          var dx=verts[j].x-verts[i].x,dy=verts[j].y-verts[i].y,dz=verts[j].z-verts[i].z;
+          var d=Math.sqrt(dx*dx+dy*dy+dz*dz);
+          if(d>maxDist){maxDist=d;best=[i,j];}
+        }
+      }
+      m1Sel[idx]=best;
+    }else if(m1Sel[idx].length===1){
+      // Pick the farthest vertex from the selected one
+      var sh=m1Shapes[idx];
+      var verts=getM1Vertices(sh);
+      var v1=verts[m1Sel[idx][0]];
+      var maxDist=0,bestV=-1;
+      for(var i=0;i<verts.length;i++){
+        if(i===m1Sel[idx][0])continue;
+        var dx=verts[i].x-v1.x,dy=verts[i].y-v1.y,dz=verts[i].z-v1.z;
+        var d=Math.sqrt(dx*dx+dy*dy+dz*dz);
+        if(d>maxDist){maxDist=d;bestV=i;}
+      }
+      m1Sel[idx].push(bestV);
+    }
+    // Calculate length
+    var verts2=getM1Vertices(m1Shapes[idx]);
+    var v1=verts2[m1Sel[idx][0]],v2=verts2[m1Sel[idx][1]];
+    var dx=v2.x-v1.x,dy=v2.y-v1.y,dz=v2.z-v1.z;
+    var len=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    if(p===1){p1Result=len;p1Done=true;}
+    else{p2Result=len;p2Done=true;}
+    document.getElementById('fb'+p).innerHTML='⏰ 自动选择! 长度: '+len.toFixed(2);
+  }
+  drawM1Both();
+  resolveM1Round();
+}
+
+// ==================== MODULE 2: 圆规测角 ====================
+var m2Angles=[];     // [{cx,cy,angle,startAngle,label}] - angles drawn on screen
+var m2Compass={x:0,y:0,angle:30}; // compass state for each player
+var m2DragMode=[null,null]; // null, 'move', 'rotate'
+var m2Compasses=[{x:250,y:180,angle:40},{x:250,y:180,angle:40}];
+var m2Selected=[-1,-1];
+
+function initModule2(){
+  m2Selected=[-1,-1];
+  p1Done=false;p2Done=false;
+  m2Compasses=[{x:250,y:280,angle:35},{x:250,y:280,angle:35}];
+  m2DragMode=[null,null];
+  generateM2Angles();
+  drawM2Both();
+}
+
+function generateM2Angles(){
+  // Generate 4 angles of different sizes spread around canvas
+  var angles=[];
+  var sizes=[25,55,80,110,140];
+  // Shuffle and pick 4
+  for(var i=sizes.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=sizes[i];sizes[i]=sizes[j];sizes[j]=t;}
+  var positions=[
+    {cx:100,cy:100},{cx:380,cy:100},{cx:100,cy:260},{cx:380,cy:260}
+  ];
+  for(var i=0;i<4;i++){
+    angles.push({
+      cx:positions[i].cx,cy:positions[i].cy,
+      size:sizes[i],
+      startAngle:Math.random()*Math.PI*2,
+      label:String.fromCharCode(65+i)
+    });
+  }
+  m2Angles=angles;
+}
+
+function drawM2Both(){
+  for(var p=1;p<=2;p++){
+    drawM2Canvas(p);
+  }
+}
+
+function drawM2Canvas(pn){
+  var cv=document.getElementById('cv'+pn);
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Draw fixed angles
+  for(var i=0;i<m2Angles.length;i++){
+    var a=m2Angles[i];
+    var isSel=m2Selected[pn-1]===i;
+    var r=50;
+    var startA=a.startAngle;
+    var endA=startA+(a.size*Math.PI/180);
+
+    // Draw angle arc
+    ctx.beginPath();
+    ctx.moveTo(a.cx,a.cy);
+    ctx.arc(a.cx,a.cy,r,startA,endA);
+    ctx.closePath();
+    ctx.fillStyle=isSel?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.08)';
+    ctx.fill();
+    ctx.strokeStyle=isSel?'#FFD700':'rgba(255,255,255,0.5)';
+    ctx.lineWidth=isSel?3:2;
+    ctx.stroke();
+
+    // Draw angle arms
+    ctx.beginPath();
+    ctx.moveTo(a.cx,a.cy);
+    ctx.lineTo(a.cx+Math.cos(startA)*r,a.cy+Math.sin(startA)*r);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(a.cx,a.cy);
+    ctx.lineTo(a.cx+Math.cos(endA)*r,a.cy+Math.sin(endA)*r);
+    ctx.strokeStyle=isSel?'#FFD700':'rgba(255,255,255,0.5)';
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle='#fff';
+    ctx.font='bold 16px "Microsoft YaHei"';
+    ctx.textAlign='center';
+    ctx.fillText(a.label, a.cx+Math.cos(startA+a.size*Math.PI/360)*r*1.4, a.cy+Math.sin(startA+a.size*Math.PI/360)*r*1.4);
+  }
+
+  // Draw compass (圆规)
+  var comp=m2Compasses[pn-1];
+  var cx=comp.x,cy=comp.y,ca=comp.angle*Math.PI/180;
+  var compLen=45;
+
+  // Compass pivot
+  ctx.beginPath();
+  ctx.arc(cx,cy,6,0,Math.PI*2);
+  ctx.fillStyle='#FFD700';
+  ctx.fill();
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // Compass arms
+  var startAng=-Math.PI/2;
+  var arm1End={x:cx+Math.cos(startAng)*compLen,y:cy+Math.sin(startAng)*compLen};
+  var arm2End={x:cx+Math.cos(startAng+ca)*compLen,y:cy+Math.sin(startAng+ca)*compLen};
+
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(arm1End.x,arm1End.y);
+  ctx.strokeStyle='#FFD700';
+  ctx.lineWidth=3;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(arm2End.x,arm2End.y);
+  ctx.strokeStyle='#FFD700';
+  ctx.lineWidth=3;
+  ctx.stroke();
+
+  // Angle arc on compass
+  ctx.beginPath();
+  ctx.arc(cx,cy,18,startAng,startAng+ca);
+  ctx.strokeStyle='rgba(255,215,0,0.8)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // Compass angle label
+  ctx.fillStyle='#FFD700';
+  ctx.font='bold 13px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  ctx.fillText(comp.angle.toFixed(0)+'°',cx,cy-20);
+
+  // Drag handles
+  ctx.beginPath();
+  ctx.arc(arm2End.x,arm2End.y,8,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,215,0,0.4)';
+  ctx.fill();
+  ctx.strokeStyle='#FFD700';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  // Instruction text at bottom
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.font='13px "Microsoft YaHei"';
+  ctx.fillText('拖拽金色圆规测量角度 | 点击最大的角',W/2,H-10);
+}
+
+function handleM2Down(pn,e){
+  if(!go||curModule!==2)return;
+  var idx=pn-1;
+  if((idx===0&&p1Done)||(idx===1&&p2Done))return;
+  var cv=document.getElementById('cv'+pn);
+  var rect=cv.getBoundingClientRect();
+  var scaleX=cv.width/rect.width;
+  var scaleY=cv.height/rect.height;
+  var mx=(e.clientX-rect.left)*scaleX;
+  var my=(e.clientY-rect.top)*scaleY;
+
+  // Check if clicking on compass handle (rotate arm)
+  var comp=m2Compasses[idx];
+  var startAng=-Math.PI/2;
+  var ca=comp.angle*Math.PI/180;
+  var handleX=comp.x+Math.cos(startAng+ca)*45;
+  var handleY=comp.y+Math.sin(startAng+ca)*45;
+  var hDist=Math.sqrt((mx-handleX)*(mx-handleX)+(my-handleY)*(my-handleY));
+  if(hDist<18){
+    m2DragMode[idx]='rotate';
+    return;
+  }
+
+  // Check if clicking on compass center (move)
+  var cDist=Math.sqrt((mx-comp.x)*(mx-comp.x)+(my-comp.y)*(my-comp.y));
+  if(cDist<20){
+    m2DragMode[idx]='move';
+    return;
+  }
+
+  // Check if clicking on an angle
+  for(var i=0;i<m2Angles.length;i++){
+    var a=m2Angles[i];
+    var d=Math.sqrt((mx-a.cx)*(mx-a.cx)+(my-a.cy)*(my-a.cy));
+    if(d<55){
+      m2Selected[idx]=i;
+      if(idx===0)p1Done=true;else p2Done=true;
+      document.getElementById('fb'+pn).innerHTML='已选择 角'+a.label;
+      sfxCorrect();
+      drawM2Canvas(pn);
+      if(p1Done&&p2Done)resolveM2Round();
+      return;
+    }
+  }
+}
+
+function handleM2Move(pn,e){
+  if(!go||curModule!==2)return;
+  var idx=pn-1;
+  if(m2DragMode[idx]===null)return;
+  e.preventDefault();
+  var cv=document.getElementById('cv'+pn);
+  var rect=cv.getBoundingClientRect();
+  var scaleX=cv.width/rect.width;
+  var scaleY=cv.height/rect.height;
+  var mx=(e.clientX-rect.left)*scaleX;
+  var my=(e.clientY-rect.top)*scaleY;
+
+  if(m2DragMode[idx]==='move'){
+    m2Compasses[idx].x=Math.max(30,Math.min(cv.width-30,mx));
+    m2Compasses[idx].y=Math.max(30,Math.min(cv.height-30,my));
+  }else if(m2DragMode[idx]==='rotate'){
+    var comp=m2Compasses[idx];
+    var startAng=-Math.PI/2;
+    var da=Math.atan2(my-comp.y,mx-comp.x)-startAng;
+    if(da<0)da+=Math.PI*2;
+    var deg=Math.round(da*180/Math.PI);
+    deg=Math.max(5,Math.min(175,deg));
+    m2Compasses[idx].angle=deg;
+  }
+  drawM2Canvas(pn);
+}
+
+function handleM2Up(pn){
+  m2DragMode[pn-1]=null;
+}
+
+function resolveM2Round(){
+  clearInterval(ti);
+  // Find the actual largest angle
+  var maxSize=0,maxIdx=0;
+  for(var i=0;i<m2Angles.length;i++){
+    if(m2Angles[i].size>maxSize){maxSize=m2Angles[i].size;maxIdx=i;}
+  }
+  // Score player 1
+  if(m2Selected[0]===maxIdx){
+    sc[0]+=10;
+    document.getElementById('st1').textContent='🏆 找到最大角! +10';
+    document.getElementById('fb1').innerHTML='✅ 角'+m2Angles[maxIdx].label+'='+m2Angles[maxIdx].size+'° 最大! +10';
+  }else{
+    document.getElementById('fb1').innerHTML='❌ 角'+m2Angles[m2Selected[0]].label+'='+m2Angles[m2Selected[0]].size+'° 最大是角'+m2Angles[maxIdx].label;
+  }
+  // Score player 2
+  if(m2Selected[1]===maxIdx){
+    sc[1]+=10;
+    document.getElementById('st2').textContent='🏆 找到最大角! +10';
+    document.getElementById('fb2').innerHTML='✅ 角'+m2Angles[maxIdx].label+'='+m2Angles[maxIdx].size+'° 最大! +10';
+  }else{
+    document.getElementById('fb2').innerHTML='❌ 角'+m2Angles[m2Selected[1]].label+'='+m2Angles[m2Selected[1]].size+'° 最大是角'+m2Angles[maxIdx].label;
+  }
+  document.getElementById('s1').textContent=sc[0];
+  document.getElementById('s2').textContent=sc[1];
+  if(m2Selected[0]===maxIdx||m2Selected[1]===maxIdx)sfxCorrect();else sfxWrong();
+  cr++;
+  setTimeout(function(){nextRound();},1800);
+}
+
+function timeUpM2(){
+  for(var p=1;p<=2;p++){
+    var idx=p-1;
+    if(m2Selected[idx]<0){
+      m2Selected[idx]=Math.floor(Math.random()*4);
+      document.getElementById('fb'+p).innerHTML='⏰ 随机选择!';
+    }
+    if(p===1)p1Done=true;else p2Done=true;
+  }
+  drawM2Both();
+  resolveM2Round();
+}
+
+// ==================== MODULE 3: 量角器读数 ====================
+// m3Angle[p]: the actual angle value (e.g. 45)
+// m3FromZero[p]: true=measure from 0° side (read inner scale directly)
+//                 false=measure from 180° side (need 180°-innerReading or read outer scale)
+var m3Angle=[0,0];
+var m3FromZero=[true,true];
+
+function initModule3(){
+  p1Done=false;p2Done=false;
+  for(var i=0;i<2;i++){
+    m3Angle[i]=Math.floor(Math.random()*17+2)*5; // 10-90 in steps of 5
+    m3FromZero[i]=Math.random()<0.5;
+  }
+  generateM3Options();
+  drawM3Both();
+}
+
+function generateM3Options(){
+  for(var p=1;p<=2;p++){
+    var correct=m3Angle[p-1];
+    // wrong reading if student uses the opposite scale: always 180-correct
+    var wrongScale=180-correct;
+    var wrongs=[];
+    // Only add wrongScale if it differs from correct (skip when correct=90)
+    if(wrongScale!==correct)wrongs.push(wrongScale);
+    var offsets=[5,-5,10,-10,15,-15];
+    for(var k=0;k<offsets.length&&wrongs.length<3;k++){
+      var w=correct+offsets[k];
+      if(w>=5&&w<=175&&w!==correct&&w!==wrongScale&&wrongs.indexOf(w)<0)wrongs.push(w);
+    }
+    while(wrongs.length<3){
+      var w2=Math.floor(Math.random()*34+2)*5;
+      if(w2>=5&&w2<=175&&w2!==correct&&wrongs.indexOf(w2)<0)wrongs.push(w2);
+    }
+    wrongs=wrongs.slice(0,3);
+    var allOpts=[correct].concat(wrongs);
+    // Final dedup: ensure 4 unique values
+    var seen={},unique=[];
+    for(var i=0;i<allOpts.length;i++){
+      if(!seen[allOpts[i]]){seen[allOpts[i]]=true;unique.push(allOpts[i]);}
+    }
+    while(unique.length<4){
+      var w3=Math.floor(Math.random()*34+2)*5;
+      if(w3>=5&&w3<=175&&unique.indexOf(w3)<0)unique.push(w3);
+    }
+    allOpts=unique.slice(0,4);
+    for(var i=allOpts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=allOpts[i];allOpts[i]=allOpts[j];allOpts[j]=t;}
+    var ci=allOpts.indexOf(correct);
+    var labels=['A','B','C','D'];
+    var h='';
+    for(var i=0;i<4;i++)h+='<button class="p-opt" onclick="answerM3('+p+','+i+','+ci+',this)">'+labels[i]+'. '+allOpts[i]+'°</button>';
+    document.getElementById('op'+p).innerHTML=h;
+  }
+}
+
+function drawM3Both(){
+  for(var p=1;p<=2;p++)drawM3Canvas(p);
+}
+
+function drawM3Canvas(pn){
+  var cv=document.getElementById('cv'+pn);
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  var cx=W/2,cy=H-48;
+  var r=185;
+  var angle=m3Angle[pn-1];
+  var fromZero=m3FromZero[pn-1];
+
+  // ---- Draw protractor ----
+  // Semicircle body
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,Math.PI,0);
+  ctx.fillStyle='rgba(255,255,255,0.04)';
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.45)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // Inner scale ring (arc line)
+  ctx.beginPath();
+  ctx.arc(cx,cy,r-22,Math.PI,0);
+  ctx.strokeStyle='rgba(255,255,255,0.15)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+
+  // Tick marks & inner scale numbers (0→180, left to right)
+  for(var deg=0;deg<=180;deg+=10){
+    var rad=(180-deg)*Math.PI/180;
+    var outerX=cx+Math.cos(rad)*r;
+    var outerY=cy-Math.sin(rad)*r;
+    var tickLen=deg%30===0?16:8;
+    var innerX=cx+Math.cos(rad)*(r-tickLen);
+    var innerY=cy-Math.sin(rad)*(r-tickLen);
+    ctx.beginPath();
+    ctx.moveTo(outerX,outerY);
+    ctx.lineTo(innerX,innerY);
+    ctx.strokeStyle=deg%30===0?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.35)';
+    ctx.lineWidth=deg%30===0?2:1;
+    ctx.stroke();
+
+    if(deg%30===0){
+      ctx.fillStyle='#FFD700';
+      ctx.font='bold 11px "Microsoft YaHei"';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(deg+'',cx+Math.cos(rad)*(r-24),cy-Math.sin(rad)*(r-24));
+    }
+  }
+
+  // Outer scale numbers (180→0 left to right)
+  for(var deg=0;deg<=180;deg+=10){
+    var outerDeg=180-deg;
+    if(outerDeg%30===0&&outerDeg>0&&outerDeg<180){
+      var rad=(180-deg)*Math.PI/180;
+      ctx.fillStyle='rgba(255,255,255,0.45)';
+      ctx.font='9px "Microsoft YaHei"';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(outerDeg+'',cx+Math.cos(rad)*(r-36),cy-Math.sin(rad)*(r-36));
+    }
+  }
+
+  // ---- Draw angle ON the protractor ----
+  // Bottom arm = part of the protractor baseline
+  // Vertex at center (cx, cy)
+  var armLen=r-40;
+  var aRad=angle*Math.PI/180;
+
+  if(fromZero){
+    // Measure from 0° side: bottom arm extends LEFT along baseline toward 0° mark
+    // Upper arm goes UP-LEFT, crossing inner scale at the angle mark
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx-armLen,cy);
+    ctx.strokeStyle='#FF6B6B';
+    ctx.lineWidth=4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx-armLen*Math.cos(aRad),cy-armLen*Math.sin(aRad));
+    ctx.strokeStyle='#4ECDC4';
+    ctx.lineWidth=4;
+    ctx.stroke();
+
+    // Arc from left (PI) going CW (upward) by angle
+    ctx.beginPath();
+    ctx.arc(cx,cy,45,Math.PI,Math.PI+aRad,false);
+    ctx.strokeStyle='#FFD700';
+    ctx.lineWidth=3;
+    ctx.stroke();
+  }else{
+    // Measure from 180° side: bottom arm extends RIGHT along baseline toward 180°/outer 0° mark
+    // Upper arm goes UP-RIGHT, crossing the scale (need outer scale or 180°-inner reading)
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+armLen,cy);
+    ctx.strokeStyle='#FF6B6B';
+    ctx.lineWidth=4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+armLen*Math.cos(aRad),cy-armLen*Math.sin(aRad));
+    ctx.strokeStyle='#4ECDC4';
+    ctx.lineWidth=4;
+    ctx.stroke();
+
+    // Arc from right (0) going CCW (upward) by angle
+    ctx.beginPath();
+    ctx.arc(cx,cy,45,0,-aRad,true);
+    ctx.strokeStyle='#FFD700';
+    ctx.lineWidth=3;
+    ctx.stroke();
+  }
+
+  // Vertex dot
+  ctx.beginPath();
+  ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='#FFD700';
+  ctx.fill();
+
+  // Hint text above protractor
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.font='13px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  ctx.textBaseline='top';
+  if(fromZero){
+    ctx.fillText('一条边与底边重合，看另一条边指的内圈刻度',cx,cy-r+8);
+  }else{
+    ctx.fillText('一条边与底边重合，看另一条边指的外圈刻度（180°−内圈读数）',cx,cy-r+8);
+  }
+}
+
+function answerM3(pn,oi,ai,btn){
+  if(!go||curModule!==3)return;
+  if(pn===1&&p1Done)return;
+  if(pn===2&&p2Done)return;
+  if(pn===1)p1Done=true;else p2Done=true;
+
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确! '+m3Angle[pn-1]+'° +10';
+    document.getElementById('st'+pn).textContent='🔥 答对了!';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 错误! 答案是 '+m3Angle[pn-1]+'°';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      if(i===ai)bs[i].classList.add('correct');
+    }
+  }
+  if(p1Done&&p2Done){clearInterval(ti);cr++;setTimeout(function(){nextRound();},1400);}
+}
+
+function timeUpM3(){
+  for(var p=1;p<=2;p++){
+    var idx=p-1;
+    if(!(idx===0?p1Done:p2Done)){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到! 答案是 '+m3Angle[idx]+'°';
+      if(p===1)p1Done=true;else p2Done=true;
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},1400);
+}
+
+// ==================== MODULE 4: 认识角类型 ====================
+var m4AngleTypes=[0,0]; // angle value for each player
+var m4TypeAnswer=['','']; // correct type label for each player
+var m4TypeLabels=['锐角','直角','钝角','平角','周角'];
+
+function initModule4(){
+  p1Done=false;p2Done=false;
+  generateM4Angles();
+  drawM4Both();
+}
+
+function generateM4Angles(){
+  // Pick random angle types for each round
+  var types=[
+    {label:'锐角', min:20, max:80, step:5},
+    {label:'直角', min:90, max:90, step:0},
+    {label:'钝角', min:100, max:170, step:5},
+    {label:'平角', min:180, max:180, step:0},
+    {label:'周角', min:360, max:360, step:0}
+  ];
+  for(var p=0;p<2;p++){
+    var t=types[Math.floor(Math.random()*types.length)];
+    var angle=t.min;
+    if(t.step>0){
+      var steps=Math.floor((t.max-t.min)/t.step);
+      angle=t.min+Math.floor(Math.random()*(steps+1))*t.step;
+    }
+    m4AngleTypes[p]=angle;
+    m4TypeAnswer[p]=t.label;
+  }
+  // Generate options for each player
+  var allTypes=types.map(function(t){return t.label;});
+  for(var p=1;p<=2;p++){
+    var correct=m4TypeAnswer[p-1];
+    var opts=allTypes.slice();
+    // Shuffle
+    for(var i=opts.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=opts[i];opts[i]=opts[j];opts[j]=t;}
+    var ci=opts.indexOf(correct);
+    var labels=['A','B','C','D','E'];
+    var h='';
+    for(var i=0;i<opts.length;i++)h+='<button class="p-opt" onclick="answerM4('+p+','+i+','+ci+',this)" style="font-size:0.78em;padding:8px 11px">'+labels[i]+'. '+opts[i]+'</button>';
+    document.getElementById('op'+p).innerHTML=h;
+  }
+}
+
+function drawM4Both(){
+  for(var p=1;p<=2;p++)drawM4Canvas(p);
+}
+
+function drawM4Canvas(pn){
+  var cv=document.getElementById('cv'+pn);
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  var angle=m4AngleTypes[pn-1];
+  var cx=W/2,cy=H/2+10;
+  var r=120;
+
+  if(angle===360){
+    // 周角: draw full circle with arrow
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,0.4)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([4,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Radius line
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+r,cy);
+    ctx.strokeStyle='#FF6B6B';
+    ctx.lineWidth=3;
+    ctx.stroke();
+    // Arc from 0 to near 360
+    ctx.beginPath();
+    ctx.arc(cx,cy,40,0,Math.PI*1.95);
+    ctx.strokeStyle='#FFD700';
+    ctx.lineWidth=2.5;
+    ctx.stroke();
+    // Arrow head
+    var tip=Math.PI*1.95;
+    var ax=cx+Math.cos(tip)*40,ay=cy-Math.sin(tip)*40;
+    ctx.beginPath();
+    ctx.moveTo(ax,ay);
+    ctx.lineTo(ax-8,ay-12);
+    ctx.lineTo(ax+8,ay-12);
+    ctx.closePath();
+    ctx.fillStyle='#FFD700';
+    ctx.fill();
+  }else{
+    // Draw angle with two arms
+    var baseAngle=-Math.PI/2; // pointing up
+    var angleRad=angle*Math.PI/180;
+    var tipAngle=baseAngle+angleRad;
+
+    // Base arm (vertical up)
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(baseAngle)*r,cy+Math.sin(baseAngle)*r);
+    ctx.strokeStyle='#FF6B6B';
+    ctx.lineWidth=3;
+    ctx.stroke();
+
+    // Measured arm
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(tipAngle)*r,cy+Math.sin(tipAngle)*r);
+    ctx.strokeStyle='#4ECDC4';
+    ctx.lineWidth=3;
+    ctx.stroke();
+
+    // Angle arc
+    var clockwise=angle>180;
+    ctx.beginPath();
+    ctx.arc(cx,cy,40,baseAngle,tipAngle,angle>180);
+    ctx.strokeStyle='#FFD700';
+    ctx.lineWidth=2.5;
+    ctx.stroke();
+  }
+
+  // Center point
+  ctx.beginPath();
+  ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='#FFD700';
+  ctx.fill();
+
+  // Instruction
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.font='14px "Microsoft YaHei"';
+  ctx.textAlign='center';
+  ctx.fillText('观察这个角，判断它是什么类型的角',W/2,H-15);
+}
+
+function answerM4(pn,oi,ai,btn){
+  if(!go||curModule!==4)return;
+  if(pn===1&&p1Done)return;
+  if(pn===2&&p2Done)return;
+  if(pn===1)p1Done=true;else p2Done=true;
+
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确! 这是'+m4TypeAnswer[pn-1]+' +10';
+    document.getElementById('st'+pn).textContent='🔥 答对了!';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 错误! 这是'+m4TypeAnswer[pn-1];
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      if(i===ai)bs[i].classList.add('correct');
+    }
+  }
+  if(p1Done&&p2Done){clearInterval(ti);cr++;setTimeout(function(){nextRound();},1400);}
+}
+
+function timeUpM4(){
+  for(var p=1;p<=2;p++){
+    var idx=p-1;
+    if(!(idx===0?p1Done:p2Done)){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到! 这是'+m4TypeAnswer[idx];
+      // Find and highlight correct
+      for(var i=0;i<bs.length;i++){
+        var labels=['A','B','C','D','E'];
+        if(bs[i].textContent.indexOf(m4TypeAnswer[idx])>=0)bs[i].classList.add('correct');
+      }
+      if(p===1)p1Done=true;else p2Done=true;
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},1400);
+}
+
+// ==================== EVENT HANDLERS ====================
+function handleCanvasClick(pn,e){
+  if(curModule===1)handleM1Click(pn,e);
+}
+
+function handleCanvasDown(pn,e){
+  if(e.preventDefault)e.preventDefault();
+  if(curModule===2)handleM2Down(pn,e);
+}
+
+function handleCanvasMove(pn,e){
+  if(curModule===2)handleM2Move(pn,e);
+}
+
+function handleCanvasUp(pn){
+  if(curModule===2)handleM2Up(pn);
+}
+
+// ==================== INITIALIZATION ====================
+function init(){
+  // Set up canvas event handlers
+  for(var p=1;p<=2;p++){
+    var cv=document.getElementById('cv'+p);
+    cv.addEventListener('click',(function(pn){return function(e){handleCanvasClick(pn,e);}})(p));
+    cv.addEventListener('mousedown',(function(pn){return function(e){handleCanvasDown(pn,e);}})(p));
+    cv.addEventListener('mousemove',(function(pn){return function(e){handleCanvasMove(pn,e);}})(p));
+    cv.addEventListener('mouseup',(function(pn){return function(){handleCanvasUp(pn);}})(p));
+    cv.addEventListener('mouseleave',(function(pn){return function(){handleCanvasUp(pn);}})(p));
+    // Touch events
+    cv.addEventListener('touchstart',(function(pn){return function(e){e.preventDefault();var t=e.touches[0];handleCanvasDown(pn,{clientX:t.clientX,clientY:t.clientY});}})(p));
+    cv.addEventListener('touchmove',(function(pn){return function(e){e.preventDefault();var t=e.touches[0];handleCanvasMove(pn,{clientX:t.clientX,clientY:t.clientY});}})(p));
+    cv.addEventListener('touchend',(function(pn){return function(e){handleCanvasUp(pn);}})(p));
+  }
+  drawPlaceholders();
+}
+
+// ==================== STARTUP ====================
+window.addEventListener('DOMContentLoaded',function(){init();});
+window.addEventListener('load',function(){initAudio();});
+</script>
+</body>
+</html>

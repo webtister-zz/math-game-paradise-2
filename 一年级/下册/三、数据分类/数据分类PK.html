@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数据分类PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* 主页 */
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:999;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)}
+.menu-screen h1{font-size:2.5em;margin-bottom:8px;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.menu-screen .subtitle{font-size:0.95em;color:#aaa;margin-bottom:30px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;max-width:650px;width:90%;margin-bottom:25px}
+.menu-btn{background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.2);border-radius:18px;padding:22px 16px;color:#fff;cursor:pointer;font-size:1em;font-weight:bold;text-align:center;transition:all 0.3s;font-family:inherit}
+.menu-btn:hover,.menu-btn.selected{background:rgba(255,255,255,0.18);border-color:#FFD700;transform:translateY(-3px);box-shadow:0 6px 20px rgba(255,215,0,0.2)}
+.menu-btn.selected{border-color:#FFD700;box-shadow:0 0 20px rgba(255,215,0,0.4)}
+.menu-btn .icon{font-size:2.2em;display:block;margin-bottom:6px}
+.menu-btn .label{font-size:1.1em}
+.menu-btn .desc{font-size:0.7em;color:#aaa;margin-top:4px}
+.start-btn{padding:14px 60px;border-radius:30px;border:none;font-size:1.3em;font-weight:bold;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;transition:all 0.3s;box-shadow:0 5px 20px rgba(255,215,0,0.3)}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(255,215,0,0.5)}
+.start-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+
+/* 顶栏 */
+.top-bar{display:none;align-items:center;justify-content:center;padding:8px 12px;gap:12px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar .info-box{background:rgba(255,255,255,0.12);padding:6px 16px;border-radius:20px;font-size:0.85em;font-weight:bold;white-space:nowrap}
+.top-bar .timer{font-size:1.6em;font-weight:bold;color:#FFD700;min-width:55px;text-align:center}
+.home-btn{padding:6px 14px;border-radius:18px;border:1px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;font-size:0.85em;transition:all 0.2s;font-family:inherit}
+.home-btn:hover{background:rgba(255,255,255,0.25)}
+
+/* 对战场地 */
+.arena{display:none;flex:1;height:calc(100vh - 120px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 6px;position:relative;overflow-y:auto}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-header{text-align:center;margin-bottom:6px}
+.player-name{font-size:1em;font-weight:bold}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.8em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+
+/* 选择题样式 */
+.question-box{background:rgba(255,255,255,0.1);border-radius:12px;padding:12px 8px;margin:6px 0;width:95%;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;font-size:0.95em;line-height:1.4}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:95%;margin:6px 0}
+.opt-btn{padding:10px 5px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:42px}
+.opt-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.03)}
+.opt-btn:active{transform:scale(0.95)}
+.opt-btn.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.opt-btn.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.opt-btn:disabled{pointer-events:none;opacity:0.5}
+.left .opt-btn.correct{box-shadow:0 0 15px rgba(255,107,107,0.5)}
+.right .opt-btn.correct{box-shadow:0 0 15px rgba(78,205,196,0.5)}
+.feedback{font-size:0.8em;font-weight:bold;min-height:20px;text-align:center;margin:3px 0}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* 拖动分类样式 */
+.drag-instruction{background:rgba(255,255,255,0.08);padding:6px 12px;border-radius:10px;font-size:0.75em;color:#ccc;text-align:center;width:95%;margin:4px 0}
+.items-pool{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px;width:95%;min-height:55px;background:rgba(255,255,255,0.05);border-radius:10px;margin:4px 0}
+.drag-item{width:58px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,0.15);border-radius:10px;cursor:grab;transition:transform 0.15s,opacity 0.2s;border:2px solid rgba(255,255,255,0.2);position:relative;z-index:1}
+.drag-item:hover{transform:scale(1.08)}
+.drag-item:active{cursor:grabbing}
+.drag-item .item-emoji{font-size:26px;line-height:1}
+.drag-item .item-label{font-size:9px;color:#ccc;margin-top:1px}
+.drag-item.used{opacity:0.35;transform:scale(0.85)}
+.drag-item.wrong-place{border-color:#EF4444!important;box-shadow:0 0 10px rgba(239,68,68,0.5)}
+.categories-row{display:flex;gap:6px;width:95%;margin:6px 0;justify-content:center;flex-wrap:wrap}
+.cat-box{flex:1;min-width:80px;min-height:90px;background:rgba(255,255,255,0.05);border:2px dashed rgba(255,255,255,0.25);border-radius:12px;padding:8px;text-align:center;transition:all 0.25s}
+.cat-box.drag-over{background:rgba(255,215,0,0.1);border-color:#FFD700;transform:scale(1.03)}
+.cat-box .cat-emoji{font-size:22px;display:block}
+.cat-box .cat-name{font-size:0.7em;color:#ccc;margin:2px 0}
+.cat-box .cat-items{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;min-height:35px}
+.cat-box .cat-items .drag-item{width:36px;height:36px;padding:2px;cursor:pointer}
+.cat-box .cat-items .drag-item:hover{transform:scale(1.15);border-color:#FFD700}
+.cat-box .cat-items .drag-item.used{opacity:1;transform:none;pointer-events:auto}
+.cat-box .cat-items .drag-item .item-emoji{font-size:18px}
+.cat-box .cat-items .drag-item .item-label{display:none}
+.left .cat-box.drag-over{border-color:#FF6B6B;background:rgba(255,107,107,0.12)}
+.right .cat-box.drag-over{border-color:#4ECDC4;background:rgba(78,205,196,0.12)}
+.confirm-btn{padding:8px 22px;border-radius:20px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;margin:6px 0}
+.left .confirm-btn{background:#FF6B6B;color:#fff}
+.right .confirm-btn{background:#4ECDC4;color:#fff}
+.confirm-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.confirm-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+
+/* VS标志 */
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 25px rgba(255,215,0,0.7);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+/* 底栏 */
+.bottom-bar{display:none;align-items:center;justify-content:center;gap:12px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:10px 20px;border-radius:20px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+
+/* 胜利弹窗 */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.lw .wscore{color:#FF6B6B}
+.win-player.rw .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* 拖动幽灵元素 */
+.drag-ghost{position:fixed;pointer-events:none;z-index:9999;opacity:0.85;transform:translate(-50%,-50%)scale(1.1);width:55px;height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,215,0,0.2);border:2px solid #FFD700;border-radius:10px}
+.drag-ghost .item-emoji{font-size:28px}
+.drag-ghost .item-label{font-size:9px;color:#FFD700}
+
+@media(max-width:650px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:6px 3px}
+  .menu-grid{grid-template-columns:1fr}
+  .menu-screen h1{font-size:1.7em}
+  .drag-item{width:46px;height:46px}
+  .drag-item .item-emoji{font-size:22px}
+  .cat-box{min-height:65px}
+  .vs-badge{font-size:1.3em}
+  .player-score{font-size:1.4em}
+  .question-box{font-size:0.8em;min-height:35px}
+  .opt-btn{font-size:0.7em;padding:8px 4px;min-height:35px}
+}
+</style>
+</head>
+<body>
+
+<!-- 主页 -->
+<div class="menu-screen" id="menuScreen">
+  <h1>📊 数据分类PK</h1>
+  <p class="subtitle">苏教版一年级下册 · 双人对战</p>
+  <div class="menu-grid">
+    <button class="menu-btn" id="btn-mod1-type1" onclick="selectGame('分类整理','选择')">
+      <span class="icon">🧩</span><span class="label">分类整理 · 选择题</span>
+      <span class="desc">按不同标准分类，快速选择正确答案</span>
+    </button>
+    <button class="menu-btn" id="btn-mod1-type2" onclick="selectGame('分类整理','拖动')">
+      <span class="icon">🤏</span><span class="label">分类整理 · 拖动分类</span>
+      <span class="desc">将物品拖放到正确的分类框中</span>
+    </button>
+    <button class="menu-btn" id="btn-mod2-type1" onclick="selectGame('数据分析','选择')">
+      <span class="icon">📈</span><span class="label">数据分析 · 选择题</span>
+      <span class="desc">分析统计图表，回答数据分析问题</span>
+    </button>
+    <button class="menu-btn" id="btn-mod2-type2" onclick="selectGame('数据分析','拖动')">
+      <span class="icon">📊</span><span class="label">数据分析 · 拖动分类</span>
+      <span class="desc">分类统计+图表分析，综合挑战</span>
+    </button>
+  </div>
+  <button class="start-btn" id="startGameBtn" disabled onclick="startGame()">⚔️ 开始对战</button>
+</div>
+
+<!-- 顶栏 -->
+<div class="top-bar" id="topBar">
+  <span class="info-box" id="moduleLabel">分类整理</span>
+  <span class="info-box" id="typeLabel">选择题</span>
+  <span class="info-box">第 <span id="rn">1</span>/<span id="tr">8</span> 轮</span>
+  <span class="timer">⏱ <span id="tm">20</span>s</span>
+  <button class="home-btn" onclick="goHome()">🏠 主页</button>
+</div>
+
+<!-- 对战场地 -->
+<div class="arena" id="arena">
+  <div class="player left" id="p1">
+    <div class="player-header"><div class="player-name">🔴 红方玩家</div><div class="player-score" id="s1">0</div></div>
+    <div id="p1content"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-header"><div class="player-name">🔵 蓝方玩家</div><div class="player-score" id="s2">0</div></div>
+    <div id="p2content"></div>
+  </div>
+</div>
+
+<!-- 底栏 -->
+<div class="bottom-bar" id="bottomBar">
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<!-- 胜利弹窗 -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div><div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player lw"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player rw"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.2em;padding:14px 36px">🔄 再来一局</button>
+  <button class="ctrl-btn music" onclick="goHome()" style="font-size:1em;padding:10px 24px;margin-top:12px;background:rgba(255,255,255,0.15);color:#fff">🏠 返回主页</button>
+</div>
+
+<script>
+// ============ 游戏数据 ============
+
+// 分类整理-选择题
+var choiceQ1 = [
+  {q:"按颜色分：🍎🔴🍎🔴 红色的有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"按形状分：■●■● 正方形有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"按大小分：🐘🐭🐘🐭 大的有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"动物和水果：🐱🍎🐶🍊 动物有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"玩具和食物：🚗🍞🧸🍰 玩具有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"会飞的和不会飞的：🐦🐕🦋🐟 会飞的有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"按种类分：🐱🐱🐶🐶🐱 猫有几只？",o:["1只","2只","3只","4只"],a:2},
+  {q:"文具和食物：✏️🍪📏🍬 文具有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"穿衣服的和不穿的：👕👖🐱🐶 穿衣的有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"陆地和水生：🐕🐟🐰🐠 陆地动物有几个？",o:["1个","2个","3个","4个"],a:1}
+];
+
+// 数据分析-选择题
+var choiceQ2 = [
+  {q:"水果篮：🍎🍊🍎🍋🍎 哪种最多？",o:["苹果","橘子","柠檬","一样多"],a:0},
+  {q:"形状统计：■●■▲●■ ●有几个？",o:["1个","2个","3个","4个"],a:1},
+  {q:"小明有5支✏️3支🖍️，哪种多？",o:["铅笔","蜡笔","一样多","不确定"],a:0},
+  {q:"统计：🐱3只🐶5只🐰2只，哪种最少？",o:["🐱","🐶","🐰","一样多"],a:2},
+  {q:"一班12人二班15人，哪个班人多？",o:["一班","二班","一样多","不确定"],a:1},
+  {q:"水果：🍎8个🍊5个🍋3个，共几个？",o:["15个","16个","17个","18个"],a:1},
+  {q:"📚比📖多5本，📚12本，📖几本？",o:["5本","6本","7本","8本"],a:2},
+  {q:"会游泳18人不会12人，全班几人？",o:["28人","29人","30人","31人"],a:2},
+  {q:"☀️5天🌧3天☁️4天，哪种最少？",o:["晴天","雨天","多云","一样多"],a:1},
+  {q:"正方形4个，圆形比正方形多3个，圆形几个？",o:["5个","6个","7个","8个"],a:2}
+];
+
+// 分类整理-拖动分类
+var dragLv1 = [
+  {title:"按种类分类",inst:"把物品拖到正确的分类框中",time:60,
+   items:[
+    {e:"🧸",n:"小熊",c:"玩具"},{e:"🚗",n:"汽车",c:"玩具"},{e:"🍎",n:"苹果",c:"水果"},
+    {e:"🎈",n:"气球",c:"玩具"},{e:"🍌",n:"香蕉",c:"水果"},{e:"🍇",n:"葡萄",c:"水果"},
+    {e:"🎨",n:"画板",c:"文具"},{e:"✏️",n:"铅笔",c:"文具"},{e:"🎲",n:"骰子",c:"玩具"},
+    {e:"📐",n:"尺子",c:"文具"},{e:"🍊",n:"橙子",c:"水果"},{e:"🖍️",n:"蜡笔",c:"文具"}
+   ],cats:["玩具","水果","文具"]},
+  {title:"按颜色分类",inst:"观察颜色，拖到对应框中",time:55,
+   items:[
+    {e:"🍎",n:"苹果",c:"红色"},{e:"🍌",n:"香蕉",c:"黄色"},{e:"🍇",n:"葡萄",c:"紫色"},
+    {e:"🍊",n:"橙子",c:"橙色"},{e:"🍓",n:"草莓",c:"红色"},{e:"🍋",n:"柠檬",c:"黄色"},
+    {e:"🍆",n:"茄子",c:"紫色"},{e:"🥕",n:"胡萝卜",c:"橙色"},{e:"🌶️",n:"辣椒",c:"红色"},
+    {e:"🌽",n:"玉米",c:"黄色"},{e:"🫐",n:"蓝莓",c:"紫色"},{e:"🎃",n:"南瓜",c:"橙色"}
+   ],cats:["红色","黄色","紫色","橙色"]},
+  {title:"动物和植物",inst:"区分动物和植物",time:50,
+   items:[
+    {e:"🐕",n:"小狗",c:"动物"},{e:"🐱",n:"小猫",c:"动物"},{e:"🌺",n:"花",c:"植物"},
+    {e:"🐰",n:"兔子",c:"动物"},{e:"🌳",n:"树",c:"植物"},{e:"🐦",n:"小鸟",c:"动物"},
+    {e:"🌻",n:"向日葵",c:"植物"},{e:"🐟",n:"小鱼",c:"动物"},{e:"🌵",n:"仙人掌",c:"植物"},
+    {e:"🐘",n:"大象",c:"动物"}
+   ],cats:["动物","植物"]},
+  {title:"会飞和不会飞",inst:"区分会飞的和不会飞的",time:50,
+   items:[
+    {e:"🐦",n:"小鸟",c:"会飞"},{e:"🦋",n:"蝴蝶",c:"会飞"},{e:"🐕",n:"小狗",c:"不会飞"},
+    {e:"🦅",n:"老鹰",c:"会飞"},{e:"🐱",n:"小猫",c:"不会飞"},{e:"🐝",n:"蜜蜂",c:"会飞"},
+    {e:"🐟",n:"小鱼",c:"不会飞"},{e:"🦇",n:"蝙蝠",c:"会飞"},{e:"🐰",n:"兔子",c:"不会飞"},
+    {e:"🦉",n:"猫头鹰",c:"会飞"}
+   ],cats:["会飞","不会飞"]},
+  {title:"学习用品和生活用品",inst:"整理书包，分类放好",time:55,
+   items:[
+    {e:"📚",n:"课本",c:"学习"},{e:"🍎",n:"苹果",c:"生活"},{e:"✏️",n:"铅笔",c:"学习"},
+    {e:"🥤",n:"水杯",c:"生活"},{e:"📐",n:"尺子",c:"学习"},{e:"🍪",n:"饼干",c:"生活"},
+    {e:"🧻",n:"纸巾",c:"生活"},{e:"🖍️",n:"蜡笔",c:"学习"},{e:"🥪",n:"三明治",c:"生活"},
+    {e:"🎒",n:"书包",c:"学习"},{e:"🧃",n:"果汁",c:"生活"},{e:"🧼",n:"肥皂",c:"生活"}
+   ],cats:["学习","生活"]}
+];
+
+// 数据分析-拖动分类
+var dragLv2 = [
+  {title:"统计动物数量",inst:"先分类再统计，完成后查看图表",time:65,showChart:true,
+   items:[
+    {e:"🐕",n:"小狗",c:"陆地"},{e:"🐱",n:"小猫",c:"陆地"},{e:"🐟",n:"小鱼",c:"水生"},
+    {e:"🐕",n:"小狗",c:"陆地"},{e:"🐠",n:"热带鱼",c:"水生"},{e:"🐰",n:"小兔",c:"陆地"},
+    {e:"🐟",n:"小鱼",c:"水生"},{e:"🐱",n:"小猫",c:"陆地"},{e:"🐠",n:"热带鱼",c:"水生"},
+    {e:"🐰",n:"小兔",c:"陆地"},{e:"🐕",n:"小狗",c:"陆地"},{e:"🐟",n:"小鱼",c:"水生"}
+   ],cats:["陆地","水生"]},
+  {title:"按颜色统计水果",inst:"分类后统计每种颜色数量",time:60,showChart:true,
+   items:[
+    {e:"🍎",n:"苹果",c:"红色"},{e:"🍌",n:"香蕉",c:"黄色"},{e:"🍇",n:"葡萄",c:"紫色"},
+    {e:"🍊",n:"橙子",c:"橙色"},{e:"🍓",n:"草莓",c:"红色"},{e:"🍋",n:"柠檬",c:"黄色"},
+    {e:"🍆",n:"茄子",c:"紫色"},{e:"🥕",n:"胡萝卜",c:"橙色"},{e:"🌶️",n:"辣椒",c:"红色"},
+    {e:"🌽",n:"玉米",c:"黄色"}
+   ],cats:["红色","黄色","紫色","橙色"]},
+  {title:"整理班级物品",inst:"分类统计班级物品数量",time:60,showChart:true,
+   items:[
+    {e:"📚",n:"课本",c:"书籍"},{e:"✏️",n:"铅笔",c:"文具"},{e:"📖",n:"故事书",c:"书籍"},
+    {e:"🖍️",n:"蜡笔",c:"文具"},{e:"📕",n:"字典",c:"书籍"},{e:"📐",n:"尺子",c:"文具"},
+    {e:"📗",n:"绘本",c:"书籍"},{e:"✂️",n:"剪刀",c:"文具"},{e:"📘",n:"练习册",c:"书籍"},
+    {e:"📏",n:"三角尺",c:"文具"}
+   ],cats:["书籍","文具"]},
+  {title:"统计天气",inst:"分类统计一周天气情况",time:55,showChart:true,
+   items:[
+    {e:"☀️",n:"晴天",c:"晴"},{e:"☀️",n:"晴天",c:"晴"},{e:"☀️",n:"晴天",c:"晴"},
+    {e:"☀️",n:"晴天",c:"晴"},{e:"☀️",n:"晴天",c:"晴"},{e:"🌧️",n:"雨天",c:"雨"},
+    {e:"🌧️",n:"雨天",c:"雨"},{e:"🌧️",n:"雨天",c:"雨"},{e:"☁️",n:"多云",c:"多云"},
+    {e:"☁️",n:"多云",c:"多云"},{e:"☁️",n:"多云",c:"多云"},{e:"☁️",n:"多云",c:"多云"}
+   ],cats:["晴","雨","多云"]},
+  {title:"综合分类挑战",inst:"按种类分类并统计数量",time:65,showChart:true,
+   items:[
+    {e:"🧸",n:"小熊",c:"玩具"},{e:"🍎",n:"苹果",c:"水果"},{e:"📚",n:"课本",c:"书籍"},
+    {e:"🚗",n:"汽车",c:"玩具"},{e:"🍌",n:"香蕉",c:"水果"},{e:"✏️",n:"铅笔",c:"文具"},
+    {e:"🎈",n:"气球",c:"玩具"},{e:"🍇",n:"葡萄",c:"水果"},{e:"📖",n:"故事书",c:"书籍"},
+    {e:"🎲",n:"骰子",c:"玩具"},{e:"🍊",n:"橙子",c:"水果"},{e:"📐",n:"尺子",c:"文具"}
+   ],cats:["玩具","水果","书籍","文具"]}
+];
+
+// ============ 游戏状态 ============
+var curModule='', curType='', curRound=0, totalRounds=0, roundTime=20;
+var scores=[0,0], timerId=null, gameOn=false, answered=[false,false];
+var dragData=null;
+var dragState={1:null,2:null}; // {playerId: {itemEl, touchId, startX, startY, origRect}}
+var playerPlaced={1:{},2:{}}; // {playerId: {itemIndex: categoryName}}
+var musicOn=true, actx=null;
+
+// ============ 音效 ============
+function initAudio(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator(),g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.12,'square',0.07);setTimeout(function(){playTone(659,0.12,'square',0.07);},80);setTimeout(function(){playTone(784,0.18,'square',0.07);},160);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.05);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.06);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.03);}
+function sfxDrop(){playTone(600,0.08,'sine',0.05);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.04);}
+
+// ============ 菜单 ============
+function selectGame(mod,typ){
+  curModule=mod; curType=typ;
+  document.querySelectorAll('.menu-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('btn-'+ (mod==='分类整理'?'mod1':'mod2') +'-'+ (typ==='选择'?'type1':'type2')).classList.add('selected');
+  document.getElementById('startGameBtn').disabled=false;
+}
+function goHome(){
+  clearInterval(timerId); gameOn=false;
+  document.getElementById('topBar').style.display='none';
+  document.getElementById('arena').style.display='none';
+  document.getElementById('bottomBar').style.display='none';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('menuScreen').style.display='flex';
+  document.getElementById('startGameBtn').disabled=false;
+  curModule=''; curType='';
+  cleanupDragEvents();
+}
+
+// ============ 开始游戏 ============
+function startGame(){
+  initAudio();
+  if(!curModule||!curType)return;
+  document.getElementById('menuScreen').style.display='none';
+  document.getElementById('topBar').style.display='flex';
+  document.getElementById('arena').style.display='flex';
+  document.getElementById('bottomBar').style.display='flex';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('moduleLabel').textContent=curModule;
+  document.getElementById('typeLabel').textContent=curType==='选择'?'选择题':'拖动分类';
+  scores=[0,0]; curRound=0; gameOn=true;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  totalRounds=curType==='选择'?8:5;
+  roundTime=curType==='选择'?20:60;
+  document.getElementById('tr').textContent=totalRounds;
+  document.getElementById('tm').textContent=roundTime;
+  nextRound();
+}
+
+// ============ 下一轮 ============
+function nextRound(){
+  if(curRound>=totalRounds){endGame();return;}
+  answered=[false,false];
+  curRound++;
+  document.getElementById('rn').textContent=curRound;
+  var t=roundTime;
+  document.getElementById('tm').textContent=t;
+  clearInterval(timerId);
+  if(curType==='选择'){
+    renderChoiceRound();
+  } else {
+    renderDragRound();
+  }
+  timerId=setInterval(function(){
+    t--; document.getElementById('tm').textContent=t;
+    if(t<=5)sfxTick();
+    if(t<=0){clearInterval(timerId);timeUp();}
+  },1000);
+}
+
+// ============ 选择题渲染 ============
+function renderChoiceRound(){
+  var pool=(curModule==='分类整理'?choiceQ1:choiceQ2);
+  var q=pool[curRound%pool.length];
+  for(var p=1;p<=2;p++){
+    var ix=[0,1,2,3];
+    for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+    var lb=['A','B','C','D'],h='';
+    h+='<div class="question-box">第'+curRound+'题：'+q.q+'</div>';
+    h+='<div class="options-grid">';
+    for(var i=0;i<4;i++){
+      var oi=ix[i];
+      h+='<button class="opt-btn" onclick="answerChoice('+p+','+oi+','+q.a+',this)" id="ob'+p+'_'+i+'">'+lb[i]+'. '+q.o[oi]+'</button>';
+    }
+    h+='</div><div class="feedback" id="fb'+p+'"></div>';
+    document.getElementById('p'+p+'content').innerHTML=h;
+  }
+}
+
+function answerChoice(pn,oi,ai,btn){
+  if(!gameOn||answered[pn-1])return;
+  answered[pn-1]=true;
+  var bs=document.querySelectorAll('#p'+pn+'content .opt-btn');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');
+    var bonus=(answered[0]&&answered[1]&&pn===1)?5:0;
+    if(!answered[2-pn])bonus=5;
+    scores[pn-1]+=10+bonus;
+    document.getElementById('s'+pn).textContent=scores[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！'+(bonus?' +'+(10+bonus):'+10');
+    sfxCorrect();
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      if(bs[i].textContent.trim().charAt(0)===String.fromCharCode(65+ai))bs[i].classList.add('correct');
+    }
+  }
+  if(answered[0]&&answered[1]){clearInterval(timerId);setTimeout(function(){nextRound();},1200);}
+}
+
+// ============ 拖动分类渲染 ============
+function renderDragRound(){
+  var pool=(curModule==='分类整理'?dragLv1:dragLv2);
+  dragData=pool[curRound%pool.length];
+  roundTime=dragData.time;
+  document.getElementById('tm').textContent=roundTime;
+  playerPlaced={1:{},2:{}};
+  for(var p=1;p<=2;p++){
+    var items=shuffleArr([].concat(dragData.items.map(function(it,i){return{c:it.c,e:it.e,n:it.n,idx:i};})));
+    var cats=shuffleArr([].concat(dragData.cats));
+    var h='';
+    h+='<div class="drag-instruction">'+dragData.title+'：'+dragData.inst+'</div>';
+    h+='<div class="items-pool" id="pool'+p+'">';
+    items.forEach(function(it,idx){
+      h+='<div class="drag-item" data-idx="'+it.idx+'" data-cat="'+it.c+'" id="item'+p+'_'+it.idx+'" onmousedown="startDrag('+p+',this,event)" ontouchstart="startDrag('+p+',this,event)"><span class="item-emoji">'+it.e+'</span><span class="item-label">'+it.n+'</span></div>';
+    });
+    h+='</div>';
+    h+='<div class="categories-row" id="cats'+p+'">';
+    cats.forEach(function(cn){
+      h+='<div class="cat-box" data-cat="'+cn+'" id="cat'+p+'_'+cn+'"><span class="cat-emoji">📦</span><span class="cat-name">'+cn+'</span><div class="cat-items"></div></div>';
+    });
+    h+='</div>';
+    h+='<button class="confirm-btn" onclick="confirmDrag('+p+')" id="confirmBtn'+p+'">✅ 确认答案</button>';
+    h+='<div class="feedback" id="fb'+p+'"></div>';
+    document.getElementById('p'+p+'content').innerHTML=h;
+  }
+}
+
+// ============ 拖动事件 ============
+function startDrag(pn,el,e){
+  if(!gameOn||dragState[pn])return;
+  if(el.classList.contains('used')&&answered[pn-1])return;
+  e.preventDefault();
+  e.stopPropagation();
+  var isTouch=e.type.includes('touch');
+  var clientX=isTouch?e.touches[0].clientX:e.clientX;
+  var clientY=isTouch?e.touches[0].clientY:e.clientY;
+  // 如果物品在分类框中，先从分类记录中移除
+  if(el.classList.contains('used')){
+    delete playerPlaced[pn][el.dataset.idx];
+    el.classList.remove('used','wrong-place');
+    el.onclick=null;
+    el.style.cursor='';
+    el.title='';
+    updateDragConfirmBtns(pn);
+    document.getElementById('fb'+pn).innerHTML='';
+  }
+  var ghost=document.createElement('div');
+  ghost.className='drag-ghost';
+  ghost.innerHTML='<span class="item-emoji">'+el.querySelector('.item-emoji').textContent+'</span><span class="item-label">'+el.querySelector('.item-label').textContent+'</span>';
+  ghost.style.left=clientX+'px';
+  ghost.style.top=clientY+'px';
+  ghost.id='ghost'+pn;
+  document.body.appendChild(ghost);
+  dragState[pn]={itemEl:el,ghost:ghost,startX:clientX,startY:clientY,touchId:isTouch?e.touches[0].identifier:null};
+  el.style.opacity='0.3';
+}
+
+function onDragMove(e){
+  for(var p=1;p<=2;p++){
+    var ds=dragState[p];
+    if(!ds)continue;
+    var clientX,clientY;
+    if(e.type.includes('touch')){
+      var found=false;
+      for(var i=0;i<e.touches.length;i++){
+        if(e.touches[i].identifier===ds.touchId){clientX=e.touches[i].clientX;clientY=e.touches[i].clientY;found=true;break;}
+      }
+      if(!found)continue;
+    } else {
+      clientX=e.clientX; clientY=e.clientY;
+    }
+    ds.ghost.style.left=clientX+'px';
+    ds.ghost.style.top=clientY+'px';
+    highlightCatBox(p,clientX,clientY);
+  }
+}
+
+function onDragEnd(e){
+  for(var p=1;p<=2;p++){
+    var ds=dragState[p];
+    if(!ds)continue;
+    var clientX,clientY,ended=false;
+    if(e.type.includes('touch')){
+      for(var i=0;i<e.changedTouches.length;i++){
+        if(e.changedTouches[i].identifier===ds.touchId){clientX=e.changedTouches[i].clientX;clientY=e.changedTouches[i].clientY;ended=true;break;}
+      }
+    } else {
+      clientX=e.clientX; clientY=e.clientY; ended=true;
+    }
+    if(!ended)continue;
+    // 清除高亮
+    document.querySelectorAll('#cats'+p+' .cat-box').forEach(function(b){b.classList.remove('drag-over');});
+    // 检测落在哪个分类框
+    var targetCat=null;
+    document.querySelectorAll('#cats'+p+' .cat-box').forEach(function(b){
+      var r=b.getBoundingClientRect();
+      if(clientX>=r.left&&clientX<=r.right&&clientY>=r.top&&clientY<=r.bottom)targetCat=b.dataset.cat;
+    });
+    // 移除ghost
+    if(ds.ghost&&ds.ghost.parentNode)ds.ghost.parentNode.removeChild(ds.ghost);
+    if(targetCat){
+      moveItemToCategory(p,ds.itemEl,targetCat);
+      sfxDrop();
+    } else {
+      // 拖到分类框外 → 回到待拖区
+      returnItemToPool(p,ds.itemEl);
+    }
+    dragState[p]=null;
+    updateDragConfirmBtns(p);
+  }
+}
+
+function moveItemToCategory(pn,itemEl,catName){
+  var catBox=document.getElementById('cat'+pn+'_'+catName);
+  if(!catBox)return;
+  var catItems=catBox.querySelector('.cat-items');
+  catItems.appendChild(itemEl);
+  itemEl.style.opacity='1';
+  itemEl.classList.add('used');
+  itemEl.onclick=null;
+  itemEl.style.cursor='pointer';
+  itemEl.title='拖拽或点击移回';
+  // 支持从分类框直接拖拽
+  itemEl.onmousedown=function(ev){startDrag(pn,itemEl,ev);};
+  itemEl.ontouchstart=function(ev){startDrag(pn,itemEl,ev);};
+  playerPlaced[pn][itemEl.dataset.idx]=catName;
+}
+
+function returnItemToPool(pn,el){
+  if(!gameOn||answered[pn-1])return;
+  delete playerPlaced[pn][el.dataset.idx];
+  el.classList.remove('used','wrong-place');
+  el.onclick=null;
+  el.onmousedown=null; el.ontouchstart=null;
+  el.style.cursor='';
+  el.title='';
+  var pool=document.getElementById('pool'+pn);
+  pool.appendChild(el);
+  el.style.opacity='1';
+  el.onmousedown=function(ev){startDrag(pn,el,ev);};
+  el.ontouchstart=function(ev){startDrag(pn,el,ev);};
+  el.style.animation='pop 0.3s ease';
+  setTimeout(function(){el.style.animation='';},300);
+}
+
+function highlightCatBox(pn,cx,cy){
+  document.querySelectorAll('#cats'+pn+' .cat-box').forEach(function(b){
+    var r=b.getBoundingClientRect();
+    b.classList.toggle('drag-over',cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom);
+  });
+}
+
+function updateDragConfirmBtns(pn){
+  var total=Object.keys(playerPlaced[pn]||{}).length;
+  var need=dragData.items.length;
+  var btn=document.getElementById('confirmBtn'+pn);
+  if(btn){btn.disabled=total<need;btn.textContent=total<need?'✅ 确认答案 ('+total+'/'+need+')':'✅ 确认答案';}
+}
+
+function confirmDrag(pn){
+  if(!gameOn||answered[pn-1])return;
+  var allCorrect=true;
+  var wrongItems=[];
+  for(var idx in playerPlaced[pn]){
+    var cat=playerPlaced[pn][idx];
+    var item=dragData.items[parseInt(idx)];
+    if(item.c!==cat){allCorrect=false;wrongItems.push(idx);}
+  }
+  if(allCorrect){
+    answered[pn-1]=true;
+    var bonus=(answered[0]&&answered[1]&&pn===1)?0:30;
+    if(!answered[2-pn])bonus=30;
+    scores[pn-1]+=dragData.items.length*10+bonus;
+    document.getElementById('s'+pn).textContent=scores[pn-1];
+    document.getElementById('fb'+pn).innerHTML='🎉 全部分类正确！+'+(dragData.items.length*10+bonus);
+    document.getElementById('confirmBtn'+pn).disabled=true;
+    sfxCorrect();
+    if(answered[0]&&answered[1]){clearInterval(timerId);setTimeout(function(){nextRound();},1500);}
+  } else {
+    // 标记错误的物品，保持标记直到用户移回
+    wrongItems.forEach(function(idx){
+      var el=document.getElementById('item'+pn+'_'+idx);
+      if(el){el.classList.add('wrong-place');}
+    });
+    document.getElementById('fb'+pn).innerHTML='❌ 有 '+wrongItems.length+' 件物品分类不对，<b>点错放物品移回</b>后重新拖放';
+    sfxWrong();
+  }
+}
+
+function cleanupDragEvents(){
+  dragState={1:null,2:null};
+  var ghosts=document.querySelectorAll('.drag-ghost');
+  ghosts.forEach(function(g){g.remove();});
+}
+
+// ============ 辅助 ============
+function shuffleArr(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+// ============ 超时处理 ============
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!answered[p-1]){
+      if(curType==='选择'){
+        var bs=document.querySelectorAll('#p'+p+'content .opt-btn');
+        bs.forEach(function(b){b.disabled=true;});
+        document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+      } else {
+        // 自动检查拖动分类
+        autoCheckDrag(p);
+      }
+    }
+  }
+  setTimeout(function(){nextRound();},1200);
+}
+
+function autoCheckDrag(pn){
+  var correct=0, total=dragData.items.length;
+  for(var idx in playerPlaced[pn]){
+    var cat=playerPlaced[pn][idx];
+    if(dragData.items[parseInt(idx)].c===cat)correct++;
+  }
+  scores[pn-1]+=correct*10;
+  document.getElementById('s'+pn).textContent=scores[pn-1];
+  document.getElementById('fb'+pn).innerHTML='⏰ 时间到！正确'+correct+'/'+total+' (+'+correct*10+')';
+  document.getElementById('confirmBtn'+pn).disabled=true;
+  answered[pn-1]=true;
+}
+
+// ============ 结束 ============
+function endGame(){
+  gameOn=false; clearInterval(timerId); cleanupDragEvents();
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=scores[0];
+  document.getElementById('ws2').textContent=scores[1];
+  if(scores[0]>scores[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+scores[0]+' : '+scores[1]+' 蓝方';
+    sfxWin();
+  } else if(scores[1]>scores[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+scores[1]+' : '+scores[0]+' 红方';
+    sfxWin();
+  } else {
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+scores[0]+' 分';
+    playTone(523,0.3,'sine',0.07);
+  }
+  spawnConfetti();
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');
+    d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';
+    d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(timerId); gameOn=false; cleanupDragEvents();
+  scores=[0,0]; curRound=0;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent=roundTime;
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+  startGame();
+}
+
+// ============ 全局事件 ============
+document.addEventListener('mousemove',function(e){if(dragState[1]||dragState[2])onDragMove(e);});
+document.addEventListener('touchmove',function(e){if(dragState[1]||dragState[2]){e.preventDefault();onDragMove(e);}},{passive:false});
+document.addEventListener('mouseup',function(e){if(dragState[1]||dragState[2])onDragEnd(e);});
+document.addEventListener('touchend',function(e){if(dragState[1]||dragState[2])onDragEnd(e);});
+</script>
+</body>
+</html>

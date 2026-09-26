@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>混合运算与数量关系（一）- PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主页 ===== */
+.home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.home-title{font-size:1.8em;font-weight:bold;margin-bottom:8px;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.home-subtitle{font-size:1em;color:#aaa;margin-bottom:30px;text-align:center}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+.module-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent;position:relative;overflow:hidden}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.4)}
+.module-card:active{transform:scale(0.96)}
+.module-card .card-icon{font-size:2.8em;margin-bottom:8px;display:block}
+.module-card .card-title{font-size:1.15em;font-weight:bold;margin-bottom:4px}
+.module-card .card-desc{font-size:0.75em;opacity:0.8;line-height:1.5}
+.card-m1{background:linear-gradient(135deg,rgba(255,152,0,0.25),rgba(255,87,34,0.3));border-color:#FF9800}
+.card-m2{background:linear-gradient(135deg,rgba(33,150,243,0.25),rgba(25,118,210,0.3));border-color:#2196F3}
+.card-m1 .card-icon{color:#FF9800}
+.card-m2 .card-icon{color:#2196F3}
+
+/* ===== 游戏页 ===== */
+.game-page{display:none;flex-direction:column;height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 10px;gap:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.btn-back{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.btn-back:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.6)}
+.module-label{font-size:0.95em;font-weight:bold;color:#FFD700;white-space:nowrap}
+.round-info{font-size:0.8em;color:#aaa;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;min-width:55px;text-align:center;white-space:nowrap}
+.timer.urgent{color:#EF4444;animation:timerPulse 0.5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 6px;position:relative;overflow:hidden}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.25));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.25));border-left:3px solid #4ECDC4}
+.player-header{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-shrink:0}
+.left .player-name{color:#FF6B6B;font-weight:bold;font-size:1em}
+.right .player-name{color:#4ECDC4;font-weight:bold;font-size:1em}
+.player-score{font-weight:bold;font-size:1.3em}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.combo-text{font-size:0.7em;color:#FFD700;min-height:16px;flex-shrink:0}
+.question-display{background:rgba(255,255,255,0.12);border-radius:12px;padding:10px 8px;margin:4px 0;width:95%;text-align:center;font-size:0.92em;font-weight:bold;flex-shrink:0;min-height:48px;display:flex;align-items:center;justify-content:center;line-height:1.4}
+
+.drop-zone{flex:1;width:100%;position:relative;overflow:hidden;margin-top:4px;border-radius:12px;background:rgba(0,0,0,0.15)}
+.falling-num{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;font-weight:bold;color:#fff;cursor:pointer;z-index:5;transition:transform 0.1s;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:auto;-webkit-tap-highlight-color:transparent}
+.falling-num:active{transform:scale(1.3);box-shadow:0 0 20px rgba(255,255,255,0.5)}
+.falling-num.popped{animation:popBurst 0.4s forwards;pointer-events:none}
+.falling-num.wrong-pop{animation:wrongShake 0.4s forwards;pointer-events:none}
+.falling-num.correct-glow{box-shadow:0 0 25px rgba(255,215,0,0.9)!important;animation:correctFlash 0.5s forwards}
+@keyframes popBurst{0%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.7}100%{transform:scale(0);opacity:0}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}100%{transform:scale(0);opacity:0}}
+@keyframes correctFlash{0%{transform:scale(1)}50%{transform:scale(1.25);background:#FFD700!important}100%{transform:scale(1);opacity:0.8}}
+
+.score-pop{position:absolute;font-size:1.4em;font-weight:bold;color:#FFD700;pointer-events:none;z-index:20;animation:floatUp 1s forwards;text-shadow:0 0 10px rgba(255,215,0,0.8)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.round-overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:15;pointer-events:none;font-size:2em;font-weight:bold;opacity:0;transition:opacity 0.3s}
+.round-overlay.show{opacity:1}
+.round-overlay.correct-overlay{background:rgba(16,185,129,0.3);color:#10B981;text-shadow:0 0 20px rgba(16,185,129,0.6)}
+.round-overlay.timeout-overlay{background:rgba(239,68,68,0.3);color:#EF4444;text-shadow:0 0 20px rgba(239,68,68,0.6)}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:36px;margin-bottom:18px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-win{padding:12px 28px;border-radius:22px;border:none;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn-win.again{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.btn-win.home{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.3)}
+.btn-win:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .home-title{font-size:1.4em}
+  .module-grid{gap:10px;padding:0 8px}
+  .module-card{padding:16px 10px}
+  .module-card .card-icon{font-size:2em}
+  .module-card .card-title{font-size:0.95em}
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{flex:1;min-height:0}
+  .drop-zone{min-height:120px}
+  .falling-num{width:52px;height:52px;font-size:1.05em}
+  .vs-badge{font-size:1.3em}
+  .top-bar{gap:5px;padding:6px}
+  .top-bar .module-label{font-size:0.78em}
+  .timer{font-size:1.1em}
+  .question-display{font-size:0.8em;min-height:40px;padding:8px}
+  .win-title{font-size:1.5em}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 主页 ==================== -->
+<div class="home-page" id="homePage">
+  <div class="home-title">🧮 混合运算与数量关系（一）</div>
+  <div class="home-subtitle">两人对战 · 抓住正确数字得分 · 每题20秒</div>
+  <div class="module-grid">
+    <div class="module-card card-m1" onclick="startModule(1)">
+      <span class="card-icon">✖️➕</span>
+      <div class="card-title">模块一 · 乘除与加减<br>两步混合运算</div>
+      <div class="card-desc">先乘除后加减<br>生活中的实际运用<br>例：买3本笔记本每本5元，<br>又买钢笔8元，共？元</div>
+    </div>
+    <div class="module-card card-m2" onclick="startModule(2)">
+      <span class="card-icon">📐</span>
+      <div class="card-title">模块二 · 带括号的<br>两步混合运算</div>
+      <div class="card-desc">先算括号里的<br>生活中的实际运用<br>例：有30元，买12元的文具盒<br>和8元的笔，剩？元</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 游戏页 ==================== -->
+<div class="game-page" id="gamePage">
+  <div class="top-bar">
+    <button class="btn-back" onclick="goHome()">← 返回主页</button>
+    <span class="module-label" id="moduleLabel">模块一</span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">15</span> 关</span>
+    <span class="timer" id="timerDisplay">⏱ 20s</span>
+  </div>
+  <div class="arena">
+    <div class="player left" id="player1">
+      <div class="player-header">
+        <span class="player-name">🔴 红方</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div class="combo-text" id="combo1"></div>
+      <div class="question-display" id="q1">准备开始...</div>
+      <div class="drop-zone" id="dropZone1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="player2">
+      <div class="player-header">
+        <span class="player-name">🔵 蓝方</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+      <div class="combo-text" id="combo2"></div>
+      <div class="question-display" id="q2">准备开始...</div>
+      <div class="drop-zone" id="dropZone2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 结算弹窗 ==================== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="btn-win again" onclick="restartModule()">🔄 再来一局</button>
+    <button class="btn-win home" onclick="goHome()">🏠 返回主页</button>
+  </div>
+</div>
+
+<script>
+// ==================== 题库 ====================
+var QUESTION_BANKS = {
+  // 模块1：乘除与加减两步混合运算（无括号）— 生活中的实际运用
+  1: [
+    {q:"小明买3本笔记本每本5元，又买一支钢笔8元，一共花了多少元？", a:23},
+    {q:"妈妈买4斤苹果每斤6元，付了50元，应找回多少元？", a:26},
+    {q:"有48个同学，每6人一组做游戏，已经走了2组，还剩几组？", a:6},
+    {q:"小红带了20元，买了2个面包每个3元，还剩多少元？", a:14},
+    {q:"学校买5盒粉笔每盒8支，用了12支，还剩多少支？", a:28},
+    {q:"李阿姨买2千克肉每千克15元，又买10元蔬菜，一共花了多少元？", a:40},
+    {q:"果园有9行苹果树每行4棵，砍掉了8棵，还剩多少棵？", a:28},
+    {q:"王老师买8瓶水每瓶2元，付了20元，应找回多少元？", a:4},
+    {q:"公交车上原有25人，到站下去2组人每组4人，车上还有多少人？", a:17},
+    {q:"图书角有63本书，每7本放一层书架，已经放了5层，还需放几层？", a:4},
+    {q:"小华收集6套邮票每套8张，送给朋友10张，还剩多少张？", a:38},
+    {q:"食堂买3袋大米每袋25千克，用了40千克，还剩多少千克？", a:35},
+    {q:"商店有56个玩具，每8个装一盒，卖了3盒，还剩几盒？", a:4},
+    {q:"爸爸买4张电影票每张9元，又买一桶爆米花14元，一共花了多少元？", a:50},
+    {q:"一条绳子长72米，每8米剪一段，用了3段，还剩几段？", a:6}
+  ],
+  // 模块2：带括号的两步混合运算 — 生活中的实际运用
+  2: [
+    {q:"小明有30元，买12元的文具盒和8元的笔，还剩多少元？", a:10},
+    {q:"图书馆原有45本书，上午借走16本，下午借走9本，还剩多少本？", a:20},
+    {q:"花店有红玫瑰18枝、白玫瑰12枝，平均扎成5束，每束几枝？", a:6},
+    {q:"做操每行站8人，男生有3行，女生有2行，一共有多少人？", a:40},
+    {q:"妈妈买苹果花15元，买橘子花9元，付30元，应找回多少元？", a:6},
+    {q:"三年级跳绳的24人，跑步的16人，平均分成5组，每组几人？", a:8},
+    {q:"王阿姨买3千克苹果和2千克梨，每千克都6元，一共花多少元？", a:30},
+    {q:"食堂运来大米50千克，第一周吃22千克，第二周吃18千克，还剩多少千克？", a:10},
+    {q:"有36个气球，红色14个，蓝色10个，其余黄色，黄色有几个？", a:12},
+    {q:"故事书5捆每捆8本，科技书3捆每捆8本，共有多少本？", a:64},
+    {q:"池塘有35条鱼，第一次捞走12条，第二次捞走8条，还剩多少条？", a:15},
+    {q:"教室有3排座位，每排有4张桌子加3张桌子，共有多少张桌子？", a:21},
+    {q:"水果店运来苹果52箱，香蕉20箱，梨15箱，苹果比香蕉和梨的总数多几箱？", a:17},
+    {q:"一根绳子长90米，第一次剪30米，第二次剪20米，还剩多少米？", a:40},
+    {q:"小明看一本70页的书，第一天看25页，第二天看15页，还剩多少页？", a:30}
+  ]
+};
+
+var MODULE_NAMES = ['', '模块一 · 乘除与加减两步混合运算', '模块二 · 带括号的两步混合运算'];
+var DROP_COLORS = [
+  'linear-gradient(135deg,#FF6B6B,#ee5a5a)',
+  'linear-gradient(135deg,#4ECDC4,#44b3ab)',
+  'linear-gradient(135deg,#FF9800,#F57C00)',
+  'linear-gradient(135deg,#9C27B0,#7B1FA2)',
+  'linear-gradient(135deg,#66BB6A,#43A047)',
+  'linear-gradient(135deg,#42A5F5,#1E88E5)',
+  'linear-gradient(135deg,#EC407A,#D81B60)',
+  'linear-gradient(135deg,#FFD54F,#FFB300)'
+];
+
+// ==================== 游戏状态 ====================
+var G = {
+  module: 0,
+  round: 0,
+  totalRounds: 15,
+  scores: [0, 0],
+  combos: [0, 0],
+  timer: 20,
+  timerInterval: null,
+  active: false,
+  roundActive: false,
+  answered: [false, false],
+  questions: [],
+  currentQ: null,
+  falling: [[], []],
+  animFrame: null,
+  spawnTimers: []
+};
+
+// ==================== 工具函数 ====================
+function shuffle(a) {
+  var r = a.slice();
+  for (var i = r.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = r[i]; r[i] = r[j]; r[j] = t;
+  }
+  return r;
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randFloat(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function generateWrongAnswers(correct, count) {
+  var wrongs = [];
+  var offsets = [-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10,11,12];
+  offsets = shuffle(offsets);
+  for (var i = 0; i < offsets.length && wrongs.length < count; i++) {
+    var val = correct + offsets[i];
+    if (val >= 0 && val !== correct && wrongs.indexOf(val) === -1) {
+      if (correct < 20 && val > 30) continue;
+      if (correct < 10 && val > 20) continue;
+      wrongs.push(val);
+    }
+  }
+  while (wrongs.length < count) {
+    var v = correct + rand(-12, 12);
+    if (v >= 0 && v !== correct && wrongs.indexOf(v) === -1) wrongs.push(v);
+  }
+  return wrongs;
+}
+
+// ==================== 音效 ====================
+var actx = null;
+function initAudio() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+}
+function playTone(f, d, ty, vol) {
+  if (!actx) return;
+  try {
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = ty || 'sine';
+    o.frequency.setValueAtTime(f, actx.currentTime);
+    g.gain.setValueAtTime(vol || 0.08, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + d);
+  } catch(e) {}
+}
+function sfxCorrect() {
+  playTone(523, 0.12, 'square', 0.07);
+  setTimeout(function(){playTone(659, 0.12, 'square', 0.07);}, 80);
+  setTimeout(function(){playTone(784, 0.18, 'square', 0.07);}, 160);
+}
+function sfxWrong() { playTone(200, 0.25, 'sawtooth', 0.05); }
+function sfxTick() { playTone(800, 0.04, 'sine', 0.03); }
+function sfxRoundStart() { playTone(600, 0.1, 'sine', 0.05); playTone(900, 0.15, 'sine', 0.05); }
+function sfxWin() {
+  for (var i = 0; i < 5; i++) {
+    setTimeout(function(){ playTone(523 + Math.random() * 500, 0.18, 'square', 0.06); }, i * 130);
+  }
+}
+
+// ==================== 主页 → 游戏导航 ====================
+function startModule(modId) {
+  initAudio();
+  G.module = modId;
+  G.questions = shuffle(QUESTION_BANKS[modId]);
+  G.totalRounds = G.questions.length;
+  G.scores = [0, 0];
+  G.combos = [0, 0];
+  G.round = 0;
+
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('gamePage').style.display = 'flex';
+  document.getElementById('moduleLabel').textContent = MODULE_NAMES[modId];
+  document.getElementById('tr').textContent = G.totalRounds;
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('combo1').textContent = '';
+  document.getElementById('combo2').textContent = '';
+  document.getElementById('winOverlay').classList.remove('show');
+
+  nextRound();
+}
+
+function goHome() {
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  G.active = false;
+  G.roundActive = false;
+  G.spawnTimers.forEach(function(t){ clearTimeout(t); });
+  G.spawnTimers = [];
+  clearAllFalling();
+
+  document.getElementById('gamePage').style.display = 'none';
+  document.getElementById('homePage').style.display = 'flex';
+  document.getElementById('winOverlay').classList.remove('show');
+
+  document.querySelectorAll('.confetti').forEach(function(c){ c.remove(); });
+}
+
+function restartModule() {
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){ c.remove(); });
+  startModule(G.module);
+}
+
+// ==================== 游戏核心 ====================
+function clearAllFalling() {
+  for (var p = 0; p < 2; p++) {
+    var nums = G.falling[p];
+    for (var i = 0; i < nums.length; i++) {
+      if (nums[i].el && nums[i].el.parentNode) nums[i].el.remove();
+    }
+    G.falling[p] = [];
+  }
+}
+
+function nextRound() {
+  if (G.round >= G.totalRounds) { endGame(); return; }
+
+  clearAllFalling();
+  G.answered = [false, false];
+  G.roundActive = true;
+  G.timer = 20;
+
+  G.currentQ = G.questions[G.round];
+  document.getElementById('rn').textContent = G.round + 1;
+
+  document.getElementById('q1').textContent = G.currentQ.q;
+  document.getElementById('q2').textContent = G.currentQ.q;
+
+  var td = document.getElementById('timerDisplay');
+  td.textContent = '⏱ 20s';
+  td.classList.remove('urgent');
+
+  clearInterval(G.timerInterval);
+  G.timerInterval = setInterval(function() {
+    G.timer--;
+    var tEl = document.getElementById('timerDisplay');
+    tEl.textContent = '⏱ ' + G.timer + 's';
+    if (G.timer <= 5 && G.timer > 0) {
+      tEl.classList.add('urgent');
+      sfxTick();
+    }
+    if (G.timer <= 0) {
+      clearInterval(G.timerInterval);
+      tEl.classList.remove('urgent');
+      timeUp();
+    }
+  }, 1000);
+
+  spawnRoundNumbers();
+
+  cancelAnimationFrame(G.animFrame);
+  G.animFrame = requestAnimationFrame(gameLoop);
+
+  sfxRoundStart();
+}
+
+function spawnRoundNumbers() {
+  var correct = G.currentQ.a;
+  var wrongs = generateWrongAnswers(correct, 4);
+  var allVals = wrongs.concat([correct]);
+  allVals = shuffle(allVals);
+
+  G.spawnTimers.forEach(function(t){ clearTimeout(t); });
+  G.spawnTimers = [];
+
+  var lanes = [8, 26, 44, 62, 80];
+
+  for (var p = 0; p < 2; p++) {
+    (function(playerIdx) {
+      var pvals = shuffle(allVals.slice());
+      var pLanes = shuffle(lanes.slice());
+      for (var i = 0; i < pvals.length; i++) {
+        (function(val, idx, laneX) {
+          var delay = idx * 1900 + Math.random() * 300;
+          var t = setTimeout(function() {
+            if (!G.roundActive) return;
+            spawnNumber(playerIdx, val, val === correct, laneX);
+          }, delay);
+          G.spawnTimers.push(t);
+        })(pvals[i], i, pLanes[i]);
+      }
+    })(p);
+  }
+}
+
+function spawnNumber(playerIdx, value, isCorrect, laneX) {
+  var dz = document.getElementById('dropZone' + (playerIdx + 1));
+  if (!dz) return;
+
+  var el = document.createElement('div');
+  el.className = 'falling-num';
+  el.textContent = value;
+  el.style.background = DROP_COLORS[Math.floor(Math.random() * DROP_COLORS.length)];
+
+  el.style.left = laneX + '%';
+  el.style.top = '2px';
+
+  var handled = false;
+  function onTap(e) {
+    if (handled) return;
+    handled = true;
+    e.stopPropagation();
+    e.preventDefault();
+    handleAnswer(playerIdx, value, isCorrect, el);
+  }
+  el.addEventListener('touchstart', onTap, {passive: false});
+  el.addEventListener('mousedown', onTap);
+
+  dz.appendChild(el);
+
+  var numObj = {
+    el: el,
+    value: value,
+    isCorrect: isCorrect,
+    y: 2,
+    speed: randFloat(0.2, 0.45),
+    baseX: laneX,
+    wobblePhase: Math.random() * Math.PI * 2,
+    color: el.style.background
+  };
+
+  G.falling[playerIdx].push(numObj);
+}
+
+function handleAnswer(playerIdx, value, isCorrect, el) {
+  if (!G.roundActive) return;
+  if (G.answered[playerIdx]) return;
+  if (el.classList.contains('wrong-pop') || el.classList.contains('correct-glow')) return;
+
+  if (isCorrect) {
+    G.answered[playerIdx] = true;
+    G.roundActive = false;
+    clearInterval(G.timerInterval);
+
+    G.scores[playerIdx] += 10;
+    G.combos[playerIdx]++;
+    document.getElementById('s' + (playerIdx + 1)).textContent = G.scores[playerIdx];
+
+    var comboEl = document.getElementById('combo' + (playerIdx + 1));
+    if (G.combos[playerIdx] >= 3) {
+      comboEl.textContent = '🔥 ' + G.combos[playerIdx] + '连击！';
+    } else if (G.combos[playerIdx] >= 1) {
+      comboEl.textContent = '✅ 连续答对';
+    }
+
+    var otherIdx = playerIdx === 0 ? 1 : 0;
+    G.combos[otherIdx] = 0;
+    document.getElementById('combo' + (otherIdx + 1)).textContent = '';
+
+    el.classList.add('correct-glow');
+    sfxCorrect();
+
+    showScorePop(playerIdx, '+10');
+
+    G.answered[otherIdx] = true;
+
+    freezeAllNumbers();
+
+    document.getElementById('q' + (otherIdx + 1)).textContent = G.currentQ.q + ' 答案：' + G.currentQ.a;
+
+    setTimeout(function() {
+      G.round++;
+      nextRound();
+    }, 1200);
+
+  } else {
+    el.classList.add('wrong-pop');
+    sfxWrong();
+    removeFallingNum(playerIdx, el);
+    setTimeout(function() {
+      if (el.parentNode) el.remove();
+    }, 400);
+  }
+}
+
+function showScorePop(playerIdx, text) {
+  var dz = document.getElementById('dropZone' + (playerIdx + 1));
+  var pop = document.createElement('div');
+  pop.className = 'score-pop';
+  pop.textContent = text;
+  pop.style.left = '50%';
+  pop.style.top = '40%';
+  pop.style.transform = 'translateX(-50%)';
+  dz.appendChild(pop);
+  setTimeout(function(){ pop.remove(); }, 1000);
+}
+
+function freezeAllNumbers() {
+  for (var p = 0; p < 2; p++) {
+    var nums = G.falling[p];
+    for (var i = 0; i < nums.length; i++) {
+      nums[i].el.style.pointerEvents = 'none';
+      nums[i].el.style.opacity = '0.5';
+    }
+  }
+}
+
+function removeFallingNum(playerIdx, el) {
+  var nums = G.falling[playerIdx];
+  for (var i = nums.length - 1; i >= 0; i--) {
+    if (nums[i].el === el) {
+      nums.splice(i, 1);
+      break;
+    }
+  }
+}
+
+function timeUp() {
+  if (!G.roundActive) return;
+  G.roundActive = false;
+  G.answered = [true, true];
+  G.combos = [0, 0];
+  document.getElementById('combo1').textContent = '';
+  document.getElementById('combo2').textContent = '';
+
+  document.getElementById('q1').textContent = G.currentQ.q + ' 答案：' + G.currentQ.a;
+  document.getElementById('q2').textContent = G.currentQ.q + ' 答案：' + G.currentQ.a;
+
+  freezeAllNumbers();
+
+  setTimeout(function() {
+    G.round++;
+    nextRound();
+  }, 1500);
+}
+
+// ==================== 动画循环 ====================
+function gameLoop() {
+  if (!G.roundActive && G.falling[0].length === 0 && G.falling[1].length === 0) {
+    return;
+  }
+
+  var now = Date.now();
+
+  for (var p = 0; p < 2; p++) {
+    var dz = document.getElementById('dropZone' + (p + 1));
+    if (!dz) continue;
+    var maxY = dz.clientHeight + 10;
+    var nums = G.falling[p];
+
+    for (var i = nums.length - 1; i >= 0; i--) {
+      var n = nums[i];
+      n.y += n.speed;
+      n.el.style.top = n.y + 'px';
+
+      var wobble = Math.sin(now / 400 + n.wobblePhase) * 0.6;
+      n.el.style.left = (n.baseX + wobble) + '%';
+
+      if (n.y > maxY) {
+        n.el.remove();
+        nums.splice(i, 1);
+      }
+    }
+  }
+
+  G.animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ==================== 游戏结束 ====================
+function endGame() {
+  G.active = false;
+  G.roundActive = false;
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  clearAllFalling();
+
+  var ov = document.getElementById('winOverlay');
+  ov.classList.add('show');
+
+  document.getElementById('ws1').textContent = G.scores[0];
+  document.getElementById('ws2').textContent = G.scores[1];
+
+  var wt = document.getElementById('winTitle');
+  var ws = document.getElementById('winSub');
+
+  if (G.scores[0] > G.scores[1]) {
+    wt.innerHTML = '🔴 红方获胜！';
+    wt.style.color = '#FF6B6B';
+    ws.textContent = '红方 ' + G.scores[0] + ' : ' + G.scores[1] + ' 蓝方';
+  } else if (G.scores[1] > G.scores[0]) {
+    wt.innerHTML = '🔵 蓝方获胜！';
+    wt.style.color = '#4ECDC4';
+    ws.textContent = '蓝方 ' + G.scores[1] + ' : ' + G.scores[0] + ' 红方';
+  } else {
+    wt.innerHTML = '🤝 平局！';
+    wt.style.color = '#FFD700';
+    ws.textContent = '双方都是 ' + G.scores[0] + ' 分';
+  }
+
+  sfxWin();
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  var colors = ['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for (var i = 0; i < 60; i++) {
+    var d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random() * 100 + '%';
+    d.style.top = -(Math.random() * 50 + 10) + 'px';
+    d.style.width = (Math.random() * 10 + 6) + 'px';
+    d.style.height = (Math.random() * 10 + 6) + 'px';
+    d.style.background = colors[Math.floor(Math.random() * colors.length)];
+    d.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    d.style.animationDelay = Math.random() * 1.5 + 's';
+    d.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.remove(); }, 4000);
+  }
+}
+
+// ==================== 初始化 ====================
+document.getElementById('homePage').style.display = 'flex';
+document.getElementById('gamePage').style.display = 'none';
+</script>
+</body>
+</html>

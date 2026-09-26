@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>二年级数学PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主页 ===== */
+.home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.home-title{font-size:2em;font-weight:bold;margin-bottom:8px;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.home-subtitle{font-size:1em;color:#aaa;margin-bottom:30px;text-align:center}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+.module-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent;position:relative;overflow:hidden}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.4)}
+.module-card:active{transform:scale(0.96)}
+.module-card .card-icon{font-size:2.8em;margin-bottom:8px;display:block}
+.module-card .card-title{font-size:1.15em;font-weight:bold;margin-bottom:4px}
+.module-card .card-desc{font-size:0.72em;opacity:0.8;line-height:1.4}
+.card-m1{background:linear-gradient(135deg,rgba(76,175,80,0.25),rgba(56,142,60,0.3));border-color:#4CAF50}
+.card-m2{background:linear-gradient(135deg,rgba(255,152,0,0.25),rgba(245,124,0,0.3));border-color:#FF9800}
+.card-m1 .card-icon{color:#4CAF50}
+.card-m2 .card-icon{color:#FF9800}
+
+/* ===== 游戏页 ===== */
+.game-page{display:none;flex-direction:column;height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 10px;gap:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.btn-back{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.btn-back:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.6)}
+.module-label{font-size:0.95em;font-weight:bold;color:#FFD700;white-space:nowrap}
+.round-info{font-size:0.8em;color:#aaa;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;min-width:55px;text-align:center;white-space:nowrap}
+.timer.urgent{color:#EF4444;animation:timerPulse 0.5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 6px;position:relative;overflow:hidden}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.25));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.25));border-left:3px solid #4ECDC4}
+.player-header{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-shrink:0}
+.left .player-name{color:#FF6B6B;font-weight:bold;font-size:1em}
+.right .player-name{color:#4ECDC4;font-weight:bold;font-size:1em}
+.player-score{font-weight:bold;font-size:1.3em}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.combo-text{font-size:0.7em;color:#FFD700;min-height:16px;flex-shrink:0}
+.question-display{background:rgba(255,255,255,0.12);border-radius:12px;padding:6px 8px;margin:2px 0;width:95%;text-align:center;font-size:1em;font-weight:bold;flex-shrink:0;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.3;gap:4px}
+.q-text{font-size:0.95em;font-weight:bold}
+.visual-aid{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;flex-shrink:0;padding:2px 4px}
+
+.drop-zone{flex:1;width:100%;position:relative;overflow:hidden;margin-top:4px;border-radius:12px;background:rgba(0,0,0,0.15)}
+.falling-num{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;font-weight:bold;color:#fff;cursor:pointer;z-index:5;transition:transform 0.1s;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:auto;-webkit-tap-highlight-color:transparent}
+.falling-num:active{transform:scale(1.3);box-shadow:0 0 20px rgba(255,255,255,0.5)}
+.falling-num.popped{animation:popBurst 0.4s forwards;pointer-events:none}
+.falling-num.wrong-pop{animation:wrongShake 0.4s forwards;pointer-events:none}
+.falling-num.correct-glow{box-shadow:0 0 25px rgba(255,215,0,0.9)!important;animation:correctFlash 0.5s forwards}
+@keyframes popBurst{0%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.7}100%{transform:scale(0);opacity:0}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}100%{transform:scale(0);opacity:0}}
+@keyframes correctFlash{0%{transform:scale(1)}50%{transform:scale(1.25);background:#FFD700!important}100%{transform:scale(1);opacity:0.8}}
+
+.score-pop{position:absolute;font-size:1.4em;font-weight:bold;color:#FFD700;pointer-events:none;z-index:20;animation:floatUp 1s forwards;text-shadow:0 0 10px rgba(255,215,0,0.8)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+/* ===== 视觉辅助: 计数器 ===== */
+.counter-wrap{display:flex;align-items:center;gap:8px;font-size:0.72em}
+.counter-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.counter-box{border:1px solid rgba(255,255,255,0.25);border-radius:8px;padding:3px 8px;min-width:30px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.counter-dot{width:7px;height:7px;border-radius:50%;background:#FFD700;box-shadow:0 0 3px rgba(255,215,0,0.5);display:inline-block;margin:1px}
+.counter-label{font-size:0.65em;color:rgba(255,255,255,0.6)}
+
+/* ===== 视觉辅助: 算盘 ===== */
+.abacus-wrap{display:flex;gap:14px;align-items:center}
+.abacus-rod{display:flex;flex-direction:column;align-items:center;position:relative}
+.abacus-section{display:flex;flex-direction:column;align-items:center;gap:1px}
+.abacus-bead{width:18px;height:9px;border-radius:5px;margin:1px 0;background:rgba(255,255,255,0.15);transition:all 0.3s;border:1px solid rgba(255,255,255,0.1)}
+.abacus-bead.active{background:#4ECDC4;box-shadow:0 0 5px rgba(78,205,196,0.5);border-color:rgba(78,205,196,0.4)}
+.abacus-beam{width:28px;height:2px;background:rgba(255,255,255,0.35);margin:2px 0;border-radius:1px}
+.abacus-label{font-size:0.6em;color:rgba(255,255,255,0.5);margin-top:2px}
+
+/* ===== 视觉辅助: 小棒 ===== */
+.stick-wrap{display:flex;align-items:flex-end;gap:12px;padding:2px 4px}
+.stick-group{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stick-bundle{display:flex;gap:2px;position:relative;padding:0 2px}
+.stick-bundle::after{content:'';position:absolute;top:30%;left:-1px;width:calc(100% + 2px);height:3px;background:#FF9800;border-radius:1px;z-index:2}
+.stick-bundle .bs{width:3px;height:26px;background:#8B4513;border-radius:1px}
+.stick-singles{display:flex;gap:3px;align-items:flex-end}
+.stick-single{width:3px;height:26px;background:#A0522D;border-radius:1px}
+.stick-label{font-size:0.55em;color:rgba(255,255,255,0.5);text-align:center}
+
+/* ===== 视觉辅助: 小方块/小方条 ===== */
+.block-wrap{display:flex;align-items:flex-end;gap:8px;padding:2px 4px}
+.block-group{display:flex;flex-direction:column;align-items:center;gap:3px}
+.block-ten{width:34px;height:10px;background:linear-gradient(180deg,#42A5F5,#1E88E5);border-radius:2px;border:1px solid rgba(255,255,255,0.3)}
+.block-one{width:8px;height:8px;background:linear-gradient(180deg,#FF9800,#F57C00);border-radius:1px;border:1px solid rgba(255,255,255,0.2)}
+.block-ones-row{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:50px}
+.block-label{font-size:0.55em;color:rgba(255,255,255,0.5);text-align:center}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:36px;margin-bottom:18px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-win{padding:12px 28px;border-radius:22px;border:none;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn-win.again{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.btn-win.home{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.3)}
+.btn-win:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .home-title{font-size:1.5em}
+  .module-grid{gap:10px;padding:0 8px}
+  .module-card{padding:16px 10px}
+  .module-card .card-icon{font-size:2em}
+  .module-card .card-title{font-size:0.95em}
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{flex:1;min-height:0}
+  .drop-zone{min-height:120px}
+  .falling-num{width:52px;height:52px;font-size:1.05em}
+  .vs-badge{font-size:1.3em}
+  .top-bar{gap:5px;padding:6px}
+  .top-bar .module-label{font-size:0.78em}
+  .timer{font-size:1.1em}
+  .question-display{min-height:40px;font-size:0.8em;padding:5px}
+  .q-text{font-size:0.8em}
+  .visual-aid{min-height:30px;gap:4px}
+  .counter-dot{width:5px;height:5px}
+  .counter-box{padding:2px 5px;min-width:24px}
+  .abacus-bead{width:14px;height:7px}
+  .abacus-wrap{gap:10px}
+  .abacus-beam{width:22px}
+  .stick-bundle .bs{width:2px;height:20px}
+  .stick-single{width:2px;height:20px}
+  .block-ten{width:26px;height:7px}
+  .block-one{width:6px;height:6px}
+  .win-title{font-size:1.5em}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 主页 ==================== -->
+<div class="home-page" id="homePage">
+  <div class="home-title">🧮 二年级 · 两位数加减法PK对战</div>
+  <div class="home-subtitle">两人对战 · 抓住正确数字得分 · 每题20秒 · 实物教具辅助</div>
+  <div class="module-grid">
+    <div class="module-card card-m1" onclick="startModule(1)">
+      <span class="card-icon">🟢</span>
+      <div class="card-title">一 · 不进位不退位</div>
+      <div class="card-desc">两位数相加减<br>不需要进位和退位<br>例：23+15=38</div>
+    </div>
+    <div class="module-card card-m2" onclick="startModule(2)">
+      <span class="card-icon">🟠</span>
+      <div class="card-title">二 · 进位退位</div>
+      <div class="card-desc">两位数相加减<br>需要进位或退位<br>例：28+15=43</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 游戏页 ==================== -->
+<div class="game-page" id="gamePage">
+  <div class="top-bar">
+    <button class="btn-back" onclick="goHome()">← 返回主页</button>
+    <span class="module-label" id="moduleLabel">不进位不退位</span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">20</span> 关</span>
+    <span class="timer" id="timerDisplay">⏱ 20s</span>
+  </div>
+  <div class="arena">
+    <div class="player left" id="player1">
+      <div class="player-header">
+        <span class="player-name">🔴 红方</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div class="combo-text" id="combo1"></div>
+      <div class="question-display" id="q1">
+        <span class="q-text">准备开始...</span>
+        <div class="visual-aid" id="visual1"></div>
+      </div>
+      <div class="drop-zone" id="dropZone1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="player2">
+      <div class="player-header">
+        <span class="player-name">🔵 蓝方</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+      <div class="combo-text" id="combo2"></div>
+      <div class="question-display" id="q2">
+        <span class="q-text">准备开始...</span>
+        <div class="visual-aid" id="visual2"></div>
+      </div>
+      <div class="drop-zone" id="dropZone2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 结算弹窗 ==================== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="btn-win again" onclick="restartModule()">🔄 再来一局</button>
+    <button class="btn-win home" onclick="goHome()">🏠 返回主页</button>
+  </div>
+</div>
+
+<script>
+// ==================== 题库 ====================
+var QUESTION_BANKS = {
+  // 模块1：不进位不退位（加减法各10题混合）
+  1: [
+    // 加法不进位
+    {q:"23 + 15 = ?", a:38},{q:"34 + 25 = ?", a:59},{q:"42 + 36 = ?", a:78},
+    {q:"51 + 27 = ?", a:78},{q:"16 + 42 = ?", a:58},{q:"61 + 17 = ?", a:78},
+    {q:"72 + 25 = ?", a:97},{q:"35 + 43 = ?", a:78},{q:"24 + 53 = ?", a:77},
+    {q:"45 + 32 = ?", a:77},
+    // 减法不退位
+    {q:"47 - 23 = ?", a:24},{q:"68 - 35 = ?", a:33},{q:"79 - 46 = ?", a:33},
+    {q:"58 - 26 = ?", a:32},{q:"86 - 54 = ?", a:32},{q:"59 - 37 = ?", a:22},
+    {q:"77 - 45 = ?", a:32},{q:"84 - 63 = ?", a:21},{q:"96 - 74 = ?", a:22},
+    {q:"78 - 56 = ?", a:22}
+  ],
+  // 模块2：进位退位（加减法各10题混合）
+  2: [
+    // 加法进位
+    {q:"28 + 15 = ?", a:43},{q:"37 + 26 = ?", a:63},{q:"49 + 38 = ?", a:87},
+    {q:"56 + 27 = ?", a:83},{q:"68 + 19 = ?", a:87},{q:"75 + 18 = ?", a:93},
+    {q:"23 + 68 = ?", a:91},{q:"47 + 36 = ?", a:83},{q:"58 + 34 = ?", a:92},
+    {q:"65 + 27 = ?", a:92},
+    // 减法退位
+    {q:"42 - 27 = ?", a:15},{q:"53 - 38 = ?", a:15},{q:"71 - 46 = ?", a:25},
+    {q:"60 - 37 = ?", a:23},{q:"83 - 56 = ?", a:27},{q:"92 - 68 = ?", a:24},
+    {q:"74 - 59 = ?", a:15},{q:"85 - 67 = ?", a:18},{q:"51 - 34 = ?", a:17},
+    {q:"90 - 73 = ?", a:17}
+  ]
+};
+
+var MODULE_NAMES = ['', '一 · 不进位不退位', '二 · 进位退位'];
+var VISUAL_TYPES = ['counter', 'abacus', 'sticks', 'blocks'];
+var DROP_COLORS = [
+  'linear-gradient(135deg,#FF6B6B,#ee5a5a)',
+  'linear-gradient(135deg,#4ECDC4,#44b3ab)',
+  'linear-gradient(135deg,#FF9800,#F57C00)',
+  'linear-gradient(135deg,#9C27B0,#7B1FA2)',
+  'linear-gradient(135deg,#66BB6A,#43A047)',
+  'linear-gradient(135deg,#42A5F5,#1E88E5)',
+  'linear-gradient(135deg,#EC407A,#D81B60)',
+  'linear-gradient(135deg,#FFD54F,#FFB300)'
+];
+
+// ==================== 游戏状态 ====================
+var G = {
+  module: 0,
+  round: 0,
+  totalRounds: 20,
+  scores: [0, 0],
+  combos: [0, 0],
+  timer: 20,
+  timerInterval: null,
+  active: false,
+  roundActive: false,
+  answered: [false, false],
+  questions: [],
+  currentQ: null,
+  falling: [[], []],
+  animFrame: null,
+  spawnTimers: []
+};
+
+// ==================== 工具函数 ====================
+function shuffle(a) {
+  var r = a.slice();
+  for (var i = r.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = r[i]; r[i] = r[j]; r[j] = t;
+  }
+  return r;
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randFloat(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+// 生成错误答案（适配两位数范围 0~99）
+function generateWrongAnswers(correct, count) {
+  var wrongs = [];
+  var offsets = [-15,-12,-9,-8,-7,-5,-4,-3,3,4,5,7,8,9,12,15];
+  offsets = shuffle(offsets);
+  for (var i = 0; i < offsets.length && wrongs.length < count; i++) {
+    var val = correct + offsets[i];
+    if (val >= 0 && val <= 99 && val !== correct && wrongs.indexOf(val) === -1) {
+      wrongs.push(val);
+    }
+  }
+  while (wrongs.length < count) {
+    var v = correct + rand(-20, 20);
+    if (v >= 0 && v <= 99 && v !== correct && wrongs.indexOf(v) === -1)
+      wrongs.push(v);
+  }
+  return wrongs;
+}
+
+// ==================== 视觉辅助渲染 ====================
+function renderVisualAid(playerIdx, tens, ones, type) {
+  var container = document.getElementById('visual' + playerIdx);
+  if (!container) return;
+
+  var html = '';
+  switch (type) {
+    case 'counter': html = renderCounter(tens, ones); break;
+    case 'abacus':  html = renderAbacus(tens, ones); break;
+    case 'sticks':  html = renderSticks(tens, ones); break;
+    case 'blocks':  html = renderBlocks(tens, ones); break;
+    default: html = '';
+  }
+  container.innerHTML = html;
+}
+
+function renderCounter(tens, ones) {
+  var h = '<div class="counter-wrap">';
+  h += '<div class="counter-col"><span class="counter-label">十位</span><div class="counter-box">';
+  for (var i = 0; i < tens; i++) h += '<span class="counter-dot"></span>';
+  if (tens === 0) h += '<span style="font-size:0.6em;color:rgba(255,255,255,0.3)">0</span>';
+  h += '</div></div>';
+  h += '<div class="counter-col"><span class="counter-label">个位</span><div class="counter-box">';
+  for (var j = 0; j < ones; j++) h += '<span class="counter-dot"></span>';
+  if (ones === 0) h += '<span style="font-size:0.6em;color:rgba(255,255,255,0.3)">0</span>';
+  h += '</div></div>';
+  h += '</div>';
+  return h;
+}
+
+function renderAbacus(tens, ones) {
+  var h = '<div class="abacus-wrap">';
+  h += renderAbacusRod('十位', tens);
+  h += renderAbacusRod('个位', ones);
+  h += '</div>';
+  return h;
+}
+
+function renderAbacusRod(label, val) {
+  var upper = (val >= 5) ? 1 : 0;  // 上珠（代表5）
+  var lower = (val >= 5) ? val - 5 : val;  // 下珠（代表1）
+
+  var h = '<div class="abacus-rod">';
+  // 上珠区 (1颗, 值5)
+  h += '<div class="abacus-section">';
+  h += '<div class="abacus-bead' + (upper ? ' active' : '') + '" style="' + (upper ? '' : 'opacity:0.25') + '"></div>';
+  h += '</div>';
+  // 横梁
+  h += '<div class="abacus-beam"></div>';
+  // 下珠区 (4颗, 每颗值1)
+  h += '<div class="abacus-section">';
+  for (var i = 3; i >= 0; i--) {
+    h += '<div class="abacus-bead' + (i < lower ? ' active' : '') + '" style="' + (i < lower ? '' : 'opacity:0.25') + '"></div>';
+  }
+  h += '</div>';
+  h += '<div class="abacus-label">' + label + '</div>';
+  h += '</div>';
+  return h;
+}
+
+function renderSticks(tens, ones) {
+  var h = '<div class="stick-wrap">';
+  // 成捆的棒（每捆10根）
+  for (var i = 0; i < tens; i++) {
+    h += '<div class="stick-group"><div class="stick-bundle">';
+    for (var k = 0; k < 10; k++) {
+      h += '<div class="bs"></div>';
+    }
+    h += '</div><span class="stick-label">10</span></div>';
+  }
+  // 单独的棒
+  if (ones > 0) {
+    h += '<div class="stick-group"><div class="stick-singles">';
+    for (var j = 0; j < ones; j++) {
+      h += '<div class="stick-single"></div>';
+    }
+    h += '</div><span class="stick-label">' + ones + '</span></div>';
+  }
+  if (tens === 0 && ones === 0) {
+    h += '<span style="font-size:0.6em;color:rgba(255,255,255,0.3)">0</span>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderBlocks(tens, ones) {
+  var h = '<div class="block-wrap">';
+  // 十位条（每条代表10）
+  for (var i = 0; i < tens; i++) {
+    h += '<div class="block-group"><div class="block-ten"></div><span class="block-label">10</span></div>';
+  }
+  // 个位方块
+  if (ones > 0) {
+    h += '<div class="block-group"><div class="block-ones-row">';
+    for (var j = 0; j < ones; j++) {
+      h += '<div class="block-one"></div>';
+    }
+    h += '</div><span class="block-label">' + ones + '</span></div>';
+  }
+  if (tens === 0 && ones === 0) {
+    h += '<span style="font-size:0.6em;color:rgba(255,255,255,0.3)">0</span>';
+  }
+  h += '</div>';
+  return h;
+}
+
+// ==================== 音效 ====================
+var actx = null;
+function initAudio() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+}
+function playTone(f, d, ty, vol) {
+  if (!actx) return;
+  try {
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = ty || 'sine';
+    o.frequency.setValueAtTime(f, actx.currentTime);
+    g.gain.setValueAtTime(vol || 0.08, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + d);
+  } catch(e) {}
+}
+function sfxCorrect() {
+  playTone(523, 0.12, 'square', 0.07);
+  setTimeout(function(){playTone(659, 0.12, 'square', 0.07);}, 80);
+  setTimeout(function(){playTone(784, 0.18, 'square', 0.07);}, 160);
+}
+function sfxWrong() { playTone(200, 0.25, 'sawtooth', 0.05); }
+function sfxTick() { playTone(800, 0.04, 'sine', 0.03); }
+function sfxRoundStart() { playTone(600, 0.1, 'sine', 0.05); playTone(900, 0.15, 'sine', 0.05); }
+function sfxWin() {
+  for (var i = 0; i < 5; i++) {
+    setTimeout(function(){ playTone(523 + Math.random() * 500, 0.18, 'square', 0.06); }, i * 130);
+  }
+}
+
+// ==================== 导航 ====================
+function startModule(modId) {
+  initAudio();
+  G.module = modId;
+  G.questions = shuffle(QUESTION_BANKS[modId]);
+  G.totalRounds = G.questions.length;
+  G.scores = [0, 0];
+  G.combos = [0, 0];
+  G.round = 0;
+
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('gamePage').style.display = 'flex';
+  document.getElementById('moduleLabel').textContent = MODULE_NAMES[modId];
+  document.getElementById('tr').textContent = G.totalRounds;
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('combo1').textContent = '';
+  document.getElementById('combo2').textContent = '';
+  document.getElementById('winOverlay').classList.remove('show');
+
+  nextRound();
+}
+
+function goHome() {
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  G.active = false;
+  G.roundActive = false;
+  G.spawnTimers.forEach(function(t){ clearTimeout(t); });
+  G.spawnTimers = [];
+  clearAllFalling();
+
+  document.getElementById('gamePage').style.display = 'none';
+  document.getElementById('homePage').style.display = 'flex';
+  document.getElementById('winOverlay').classList.remove('show');
+
+  document.querySelectorAll('.confetti').forEach(function(c){ c.remove(); });
+}
+
+function restartModule() {
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){ c.remove(); });
+  startModule(G.module);
+}
+
+// ==================== 游戏核心 ====================
+function clearAllFalling() {
+  for (var p = 0; p < 2; p++) {
+    var nums = G.falling[p];
+    for (var i = 0; i < nums.length; i++) {
+      if (nums[i].el && nums[i].el.parentNode) nums[i].el.remove();
+    }
+    G.falling[p] = [];
+  }
+}
+
+function nextRound() {
+  if (G.round >= G.totalRounds) { endGame(); return; }
+
+  clearAllFalling();
+  G.answered = [false, false];
+  G.roundActive = true;
+  G.timer = 20;
+
+  G.currentQ = G.questions[G.round];
+  document.getElementById('rn').textContent = G.round + 1;
+
+  // 更新问题文字
+  document.getElementById('q1').querySelector('.q-text').textContent = G.currentQ.q;
+  document.getElementById('q2').querySelector('.q-text').textContent = G.currentQ.q;
+
+  // 解析题目第一个两位数用于视觉辅助
+  var match = G.currentQ.q.match(/\d+/);
+  var firstNum = match ? parseInt(match[0]) : 23;
+  var tens = Math.floor(firstNum / 10);
+  var ones = firstNum % 10;
+
+  // 随机选择视觉辅助类型
+  var visualType = VISUAL_TYPES[rand(0, VISUAL_TYPES.length - 1)];
+  renderVisualAid(1, tens, ones, visualType);
+  renderVisualAid(2, tens, ones, visualType);
+
+  // 重置计时器显示
+  var td = document.getElementById('timerDisplay');
+  td.textContent = '⏱ 20s';
+  td.classList.remove('urgent');
+
+  // 开始计时
+  clearInterval(G.timerInterval);
+  G.timerInterval = setInterval(function() {
+    G.timer--;
+    var tEl = document.getElementById('timerDisplay');
+    tEl.textContent = '⏱ ' + G.timer + 's';
+    if (G.timer <= 5 && G.timer > 0) {
+      tEl.classList.add('urgent');
+      sfxTick();
+    }
+    if (G.timer <= 0) {
+      clearInterval(G.timerInterval);
+      tEl.classList.remove('urgent');
+      timeUp();
+    }
+  }, 1000);
+
+  // 延迟生成掉落数字
+  spawnRoundNumbers();
+
+  // 开始动画循环
+  cancelAnimationFrame(G.animFrame);
+  G.animFrame = requestAnimationFrame(gameLoop);
+
+  sfxRoundStart();
+}
+
+function spawnRoundNumbers() {
+  var correct = G.currentQ.a;
+  var wrongs = generateWrongAnswers(correct, 4);
+  var allVals = wrongs.concat([correct]);
+  allVals = shuffle(allVals);
+
+  G.spawnTimers.forEach(function(t){ clearTimeout(t); });
+  G.spawnTimers = [];
+
+  var lanes = [8, 26, 44, 62, 80];
+
+  for (var p = 0; p < 2; p++) {
+    (function(playerIdx) {
+      var pvals = shuffle(allVals.slice());
+      var pLanes = shuffle(lanes.slice());
+      for (var i = 0; i < pvals.length; i++) {
+        (function(val, idx, laneX) {
+          var delay = idx * 1900 + Math.random() * 300;
+          var t = setTimeout(function() {
+            if (!G.roundActive) return;
+            spawnNumber(playerIdx, val, val === correct, laneX);
+          }, delay);
+          G.spawnTimers.push(t);
+        })(pvals[i], i, pLanes[i]);
+      }
+    })(p);
+  }
+}
+
+function spawnNumber(playerIdx, value, isCorrect, laneX) {
+  var dz = document.getElementById('dropZone' + (playerIdx + 1));
+  if (!dz) return;
+
+  var el = document.createElement('div');
+  el.className = 'falling-num';
+  el.textContent = value;
+  el.style.background = DROP_COLORS[Math.floor(Math.random() * DROP_COLORS.length)];
+
+  el.style.left = laneX + '%';
+  el.style.top = '2px';
+
+  var handled = false;
+  function onTap(e) {
+    if (handled) return;
+    handled = true;
+    e.stopPropagation();
+    e.preventDefault();
+    handleAnswer(playerIdx, value, isCorrect, el);
+  }
+  el.addEventListener('touchstart', onTap, {passive: false});
+  el.addEventListener('mousedown', onTap);
+
+  dz.appendChild(el);
+
+  var numObj = {
+    el: el,
+    value: value,
+    isCorrect: isCorrect,
+    y: 2,
+    speed: randFloat(0.2, 0.45),
+    baseX: laneX,
+    wobblePhase: Math.random() * Math.PI * 2,
+    color: el.style.background
+  };
+
+  G.falling[playerIdx].push(numObj);
+}
+
+function handleAnswer(playerIdx, value, isCorrect, el) {
+  if (!G.roundActive) return;
+  if (G.answered[playerIdx]) return;
+  if (el.classList.contains('wrong-pop') || el.classList.contains('correct-glow')) return;
+
+  if (isCorrect) {
+    G.answered[playerIdx] = true;
+    G.roundActive = false;
+    clearInterval(G.timerInterval);
+
+    G.scores[playerIdx] += 10;
+    G.combos[playerIdx]++;
+    document.getElementById('s' + (playerIdx + 1)).textContent = G.scores[playerIdx];
+
+    var comboEl = document.getElementById('combo' + (playerIdx + 1));
+    if (G.combos[playerIdx] >= 3) {
+      comboEl.textContent = '🔥 ' + G.combos[playerIdx] + '连击！';
+    } else if (G.combos[playerIdx] >= 1) {
+      comboEl.textContent = '✅ 连续答对';
+    }
+
+    var otherIdx = playerIdx === 0 ? 1 : 0;
+    G.combos[otherIdx] = 0;
+    document.getElementById('combo' + (otherIdx + 1)).textContent = '';
+
+    el.classList.add('correct-glow');
+    sfxCorrect();
+
+    showScorePop(playerIdx, '+10');
+
+    G.answered[otherIdx] = true;
+
+    freezeAllNumbers();
+
+    document.getElementById('q' + (otherIdx + 1)).querySelector('.q-text').textContent = G.currentQ.q + ' 答案：' + G.currentQ.a;
+
+    setTimeout(function() {
+      G.round++;
+      nextRound();
+    }, 1200);
+
+  } else {
+    el.classList.add('wrong-pop');
+    sfxWrong();
+    removeFallingNum(playerIdx, el);
+    setTimeout(function() {
+      if (el.parentNode) el.remove();
+    }, 400);
+  }
+}
+
+function showScorePop(playerIdx, text) {
+  var dz = document.getElementById('dropZone' + (playerIdx + 1));
+  var pop = document.createElement('div');
+  pop.className = 'score-pop';
+  pop.textContent = text;
+  pop.style.left = '50%';
+  pop.style.top = '40%';
+  pop.style.transform = 'translateX(-50%)';
+  dz.appendChild(pop);
+  setTimeout(function(){ pop.remove(); }, 1000);
+}
+
+function freezeAllNumbers() {
+  for (var p = 0; p < 2; p++) {
+    var nums = G.falling[p];
+    for (var i = 0; i < nums.length; i++) {
+      nums[i].el.style.pointerEvents = 'none';
+      nums[i].el.style.opacity = '0.5';
+    }
+  }
+}
+
+function removeFallingNum(playerIdx, el) {
+  var nums = G.falling[playerIdx];
+  for (var i = nums.length - 1; i >= 0; i--) {
+    if (nums[i].el === el) {
+      nums.splice(i, 1);
+      break;
+    }
+  }
+}
+
+function timeUp() {
+  if (!G.roundActive) return;
+  G.roundActive = false;
+  G.answered = [true, true];
+  G.combos = [0, 0];
+  document.getElementById('combo1').textContent = '';
+  document.getElementById('combo2').textContent = '';
+
+  document.getElementById('q1').querySelector('.q-text').textContent = G.currentQ.q + ' 答案：' + G.currentQ.a;
+  document.getElementById('q2').querySelector('.q-text').textContent = G.currentQ.q + ' 答案：' + G.currentQ.a;
+
+  freezeAllNumbers();
+
+  setTimeout(function() {
+    G.round++;
+    nextRound();
+  }, 1500);
+}
+
+// ==================== 动画循环 ====================
+function gameLoop() {
+  if (!G.roundActive && G.falling[0].length === 0 && G.falling[1].length === 0) {
+    return;
+  }
+
+  var now = Date.now();
+
+  for (var p = 0; p < 2; p++) {
+    var dz = document.getElementById('dropZone' + (p + 1));
+    if (!dz) continue;
+    var maxY = dz.clientHeight + 10;
+    var nums = G.falling[p];
+
+    for (var i = nums.length - 1; i >= 0; i--) {
+      var n = nums[i];
+      n.y += n.speed;
+      n.el.style.top = n.y + 'px';
+
+      var wobble = Math.sin(now / 400 + n.wobblePhase) * 0.6;
+      n.el.style.left = (n.baseX + wobble) + '%';
+
+      if (n.y > maxY) {
+        n.el.remove();
+        nums.splice(i, 1);
+      }
+    }
+  }
+
+  G.animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ==================== 游戏结束 ====================
+function endGame() {
+  G.active = false;
+  G.roundActive = false;
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  clearAllFalling();
+
+  var ov = document.getElementById('winOverlay');
+  ov.classList.add('show');
+
+  document.getElementById('ws1').textContent = G.scores[0];
+  document.getElementById('ws2').textContent = G.scores[1];
+
+  var wt = document.getElementById('winTitle');
+  var ws = document.getElementById('winSub');
+
+  if (G.scores[0] > G.scores[1]) {
+    wt.innerHTML = '🔴 红方获胜！';
+    wt.style.color = '#FF6B6B';
+    ws.textContent = '红方 ' + G.scores[0] + ' : ' + G.scores[1] + ' 蓝方';
+  } else if (G.scores[1] > G.scores[0]) {
+    wt.innerHTML = '🔵 蓝方获胜！';
+    wt.style.color = '#4ECDC4';
+    ws.textContent = '蓝方 ' + G.scores[1] + ' : ' + G.scores[0] + ' 红方';
+  } else {
+    wt.innerHTML = '🤝 平局！';
+    wt.style.color = '#FFD700';
+    ws.textContent = '双方都是 ' + G.scores[0] + ' 分';
+  }
+
+  sfxWin();
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  var colors = ['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for (var i = 0; i < 60; i++) {
+    var d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random() * 100 + '%';
+    d.style.top = -(Math.random() * 50 + 10) + 'px';
+    d.style.width = (Math.random() * 10 + 6) + 'px';
+    d.style.height = (Math.random() * 10 + 6) + 'px';
+    d.style.background = colors[Math.floor(Math.random() * colors.length)];
+    d.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    d.style.animationDelay = Math.random() * 1.5 + 's';
+    d.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.remove(); }, 4000);
+  }
+}
+
+// ==================== 初始化 ====================
+document.getElementById('homePage').style.display = 'flex';
+document.getElementById('gamePage').style.display = 'none';
+</script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>两位数乘两位数 - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:10px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:60px;text-align:center}
+.round-info{font-size:0.85em;color:#aaa}
+.module-badge{font-size:0.75em;background:rgba(255,215,0,0.2);color:#FFD700;padding:2px 10px;border-radius:10px}
+.arena{display:flex;flex:1;height:calc(100vh - 190px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1.1em;font-weight:bold;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:2em;font-weight:bold;margin:4px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.8em;color:#FFD700;min-height:20px}
+.question-box{background:rgba(255,255,255,0.1);border-radius:14px;padding:14px 10px;margin:6px 0;width:100%;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:1.05em;line-height:1.4;flex-direction:column;overflow-x:auto}
+
+/* ---- 逐位填空竖式表格 ---- */
+.vf-tbl{border-collapse:collapse;margin:8px 0;font-family:'Courier New','Consolas',monospace;font-size:1em;color:#FFD700;background:rgba(0,0,0,0.25);border-radius:10px;display:inline-table}
+.vf-tbl td{text-align:center;padding:0;vertical-align:middle;height:1.9em;line-height:1}
+.vf-tbl td.d{width:0.7em;font-weight:bold;color:#FFD700}        /* displayed digit */
+.vf-tbl td.s{width:0.4em;color:transparent}                      /* space between digits */
+.vf-tbl td.x{width:0.7em;color:#FFD700;font-weight:bold}         /* x symbol */
+.vf-tbl td.e{width:0.7em}                                        /* empty cell for padding */
+.vf-tbl td.pad{width:0.4em}                                      /* padding spacer */
+.vf-tbl td.hr{padding:2px 0}                                     /* separator line row */
+.vf-tbl td.hr hr{border:none;border-top:1.5px solid rgba(255,215,0,0.5);margin:0;width:100%}
+/* single-digit input */
+.vd-inp{width:1.5em;height:1.7em;text-align:center;font-family:'Courier New','Consolas',monospace;font-size:1em;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(255,215,0,0.55);color:#FFD700;padding:0;margin:0;border-radius:3px;outline:none;box-sizing:border-box}
+.vd-inp:focus{border-color:#FFD700;border-style:solid;background:rgba(255,215,0,0.12);box-shadow:0 0 6px rgba(255,215,0,0.35)}
+.vd-inp.correct{border-color:#10B981!important;background:rgba(16,185,129,0.3)!important;color:#10B981!important}
+.vd-inp.wrong{border-color:#EF4444!important;background:rgba(239,68,68,0.3)!important;color:#EF4444!important}
+.vf-hint{font-size:0.7em;color:#999;display:block;margin-top:2px}
+.submit-btn{margin-top:10px;padding:8px 22px;border-radius:16px;border:none;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;transition:all 0.2s}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,215,0,0.3)}
+.submit-btn:disabled{opacity:0.4;pointer-events:none}
+.left .submit-btn{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.right .submit-btn{background:linear-gradient(135deg,#4ECDC4,#2aa);color:#fff}
+.vform-step{font-size:0.78em;color:#aaa;margin-top:3px;line-height:1.3}
+
+/* ---- 选择模式 ---- */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;margin:6px 0}
+.p-opt{padding:10px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:44px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:0.85em;font-weight:bold;min-height:22px;text-align:center;margin:3px 0}
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.5em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.module-bar{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;background:rgba(0,0,0,0.3);flex-wrap:wrap}
+.mod-btn{padding:8px 14px;border-radius:18px;border:2px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.78em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.mod-btn:hover{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.1);color:#fff}
+.mod-btn.active{border-color:#FFD700!important;background:rgba(255,215,0,0.2)!important;color:#FFD700!important;box-shadow:0 0 12px rgba(255,215,0,0.3)}
+.ctrl-btn{padding:10px 22px;border-radius:20px;border:none;font-size:0.9em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+/* ---- number keypad ---- */
+.numpad{display:inline-grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:6px auto;max-width:155px;width:100%}
+.numpad button{width:100%;aspect-ratio:1.25;border-radius:8px;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.06);color:#fff;font-size:1.05em;font-weight:bold;cursor:pointer;transition:all 0.12s;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}
+.numpad button:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.5)}
+.numpad button:active{transform:scale(0.9);background:rgba(255,255,255,0.28)}
+.left .numpad button{color:#FF8A8A}
+.right .numpad button{color:#6EDCD6}
+.numpad .np-backspace{font-size:0.7em}
+.numpad .np-clear{color:#FF9800!important;font-size:0.8em}
+/* ---- 竖式乘数显示 ---- */
+/* ---- 问题卡片 ---- */
+.prob-card{font-size:1.25em;font-weight:bold;color:#fff;background:linear-gradient(135deg,rgba(255,107,107,0.25),rgba(78,205,196,0.25));padding:6px 20px;border-radius:10px;margin-bottom:8px;display:inline-block;border:2px solid rgba(255,215,0,0.35);letter-spacing:3px;box-shadow:0 2px 10px rgba(0,0,0,0.3)}
+/* ---- 竖式乘数格(高亮) ---- */
+.vf-tbl td.md{width:0.9em;font-weight:bold;color:#fff;font-size:1.2em;background:rgba(255,255,255,0.2);border-radius:3px;text-align:center;text-shadow:0 0 5px rgba(255,255,255,0.3)}
+.vf-tbl td.xx{width:0.7em;color:#fff;font-weight:bold;font-size:1.15em}
+/* ---- 填空区+键盘并排 ---- */
+.fill-wrapper{display:flex;align-items:flex-start;justify-content:center;gap:8px;flex-wrap:wrap;margin:4px 0}
+.vf-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center}
+.kp-area{flex-shrink:0;display:flex;align-items:center;justify-content:center}
+@media(max-width:600px){.fill-wrapper{flex-direction:column;align-items:center}.kp-area .numpad{max-width:200px}}
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:8px 6px}
+  .question-box{font-size:0.82em;min-height:40px;padding:8px}
+  .vf-tbl{font-size:0.82em}
+  .vd-inp{width:1.3em;height:1.5em;font-size:0.82em}
+  .p-opt{font-size:0.75em;padding:8px 4px;min-height:36px}
+  .vs-badge{font-size:1.5em;top:50%}
+  .player-score{font-size:1.4em}
+  .win-title{font-size:1.6em}
+  .options-grid{gap:4px}
+  .mod-btn{font-size:0.7em;padding:6px 10px}
+  .vf-tbl td.d,.vf-tbl td.x,.vf-tbl td.e{width:0.55em}
+  .vf-tbl td.s,.vf-tbl td.pad{width:0.3em}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>两位数乘两位数 ⚔️ PK对战</h1>
+  <span class="module-badge" id="mdBadge">模块一</span>
+  <span class="round-info">第 <span id="rn">1</span>/10 轮</span>
+  <span class="timer">⏱ <span id="tm">15</span>s</span>
+</div>
+
+<div class="module-bar" id="moduleBar">
+  <button class="mod-btn active" onclick="switchModule(0)">模块一<br>整十数乘两位数</button>
+  <button class="mod-btn" onclick="switchModule(1)">模块二<br>简单的估算</button>
+  <button class="mod-btn" onclick="switchModule(2)">模块三<br>不进位乘法(填空)</button>
+  <button class="mod-btn" onclick="switchModule(3)">模块四<br>进位乘法(填空)</button>
+  <button class="mod-btn" onclick="switchModule(4)">模块五<br>两步连乘实际问题</button>
+</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="question-box" id="q1">选择模块后<br>点击开始对战</div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="question-box" id="q2">选择模块后<br>点击开始对战</div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.2em;padding:14px 36px">🔄 再来一局</button>
+  <button class="ctrl-btn restart" onclick="backToMenu()" style="font-size:1em;padding:10px 28px;margin-top:10px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)">📋 选择其他模块</button>
+</div>
+
+<script>
+var ALL_Q = [[{"q": "10×23=？<br><span class='vform-step'>想：1个十×23=23个十 → 末尾添0得230</span>", "q1": "", "q2": "", "o1": ["230", "320", "203", "233"], "a1": 0, "o2": ["230", "320", "203", "233"], "a2": 0}, {"q": "20×15=？<br><span class='vform-step'>想：2个十×15=30个十 → 末尾添0得300</span>", "q1": "", "q2": "", "o1": ["200", "350", "300", "250"], "a1": 2, "o2": ["200", "350", "300", "250"], "a2": 2}, {"q": "30×14=？<br><span class='vform-step'>想：3个十×14=42个十 → 末尾添0得420</span>", "q1": "", "q2": "", "o1": ["320", "420", "440", "380"], "a1": 1, "o2": ["320", "420", "440", "380"], "a2": 1}, {"q": "40×22=？<br><span class='vform-step'>想：4个十×22=88个十 → 末尾添0得880</span>", "q1": "", "q2": "", "o1": ["880", "860", "840", "820"], "a1": 0, "o2": ["880", "860", "840", "820"], "a2": 0}, {"q": "50×18=？<br><span class='vform-step'>想：5个十×18=90个十 → 末尾添0得900</span>", "q1": "", "q2": "", "o1": ["850", "880", "920", "900"], "a1": 3, "o2": ["850", "880", "920", "900"], "a2": 3}, {"q": "10×45=？<br><span class='vform-step'>想：1个十×45=45个十 → 末尾添0得450</span>", "q1": "", "q2": "", "o1": ["450", "540", "405", "455"], "a1": 0, "o2": ["450", "540", "405", "455"], "a2": 0}, {"q": "20×36=？<br><span class='vform-step'>想：2个十×36=72个十 → 末尾添0得720</span>", "q1": "", "q2": "", "o1": ["620", "720", "680", "760"], "a1": 1, "o2": ["620", "720", "680", "760"], "a2": 1}, {"q": "30×25=？<br><span class='vform-step'>想：3个十×25=75个十 → 末尾添0得750</span>", "q1": "", "q2": "", "o1": ["650", "700", "750", "800"], "a1": 2, "o2": ["650", "700", "750", "800"], "a2": 2}, {"q": "60×12=？<br><span class='vform-step'>想：6个十×12=72个十 → 末尾添0得720</span>", "q1": "", "q2": "", "o1": ["620", "680", "700", "720"], "a1": 3, "o2": ["620", "680", "700", "720"], "a2": 3}, {"q": "80×11=？<br><span class='vform-step'>想：8个十×11=88个十 → 末尾添0得880</span>", "q1": "", "q2": "", "o1": ["808", "880", "888", "800"], "a1": 1, "o2": ["808", "880", "888", "800"], "a2": 1}], [{"q": "估算：21×19≈？<br><span class='vform-step'>21→20，19→20 → 20×20=400</span>", "q1": "", "q2": "", "o1": ["300", "350", "400", "450"], "a1": 2, "o2": ["300", "350", "400", "450"], "a2": 2}, {"q": "估算：48×32≈？<br><span class='vform-step'>48→50，32→30 → 50×30=1500</span>", "q1": "", "q2": "", "o1": ["1200", "1500", "1600", "1400"], "a1": 1, "o2": ["1200", "1500", "1600", "1400"], "a2": 1}, {"q": "估算：31×49≈？<br><span class='vform-step'>31→30，49→50 → 30×50=1500</span>", "q1": "", "q2": "", "o1": ["1200", "1800", "2000", "1500"], "a1": 3, "o2": ["1200", "1800", "2000", "1500"], "a2": 3}, {"q": "估算：52×28≈？<br><span class='vform-step'>52→50，28→30 → 50×30=1500</span>", "q1": "", "q2": "", "o1": ["1200", "1400", "1500", "1600"], "a1": 2, "o2": ["1200", "1400", "1500", "1600"], "a2": 2}, {"q": "估算：19×39≈？<br><span class='vform-step'>19→20，39→40 → 20×40=800</span>", "q1": "", "q2": "", "o1": ["600", "700", "800", "900"], "a1": 2, "o2": ["600", "700", "800", "900"], "a2": 2}, {"q": "估算：61×29≈？<br><span class='vform-step'>61→60，29→30 → 60×30=1800</span>", "q1": "", "q2": "", "o1": ["1200", "1500", "1800", "2000"], "a1": 2, "o2": ["1200", "1500", "1800", "2000"], "a2": 2}, {"q": "估算：42×51≈？<br><span class='vform-step'>42→40，51→50 → 40×50=2000</span>", "q1": "", "q2": "", "o1": ["1600", "1800", "2000", "2400"], "a1": 2, "o2": ["1600", "1800", "2000", "2400"], "a2": 2}, {"q": "估算：38×22≈？<br><span class='vform-step'>38→40，22→20 → 40×20=800</span>", "q1": "", "q2": "", "o1": ["600", "800", "1000", "760"], "a1": 1, "o2": ["600", "800", "1000", "760"], "a2": 1}, {"q": "估算：73×19≈？<br><span class='vform-step'>73→70，19→20 → 70×20=1400</span>", "q1": "", "q2": "", "o1": ["1200", "1300", "1400", "1500"], "a1": 2, "o2": ["1200", "1300", "1400", "1500"], "a2": 2}, {"q": "估算：89×11≈？<br><span class='vform-step'>89→90，11→10 → 90×10=900</span>", "q1": "", "q2": "", "o1": ["800", "850", "900", "990"], "a1": 2, "o2": ["800", "850", "900", "990"], "a2": 2}], [{"q": "计算：12 × 13 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">3</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 3×12</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×12</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["3","6"],["1","2","0"],["1","5","6"]]}}, {"q": "计算：21 × 14 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">2</td><td class=\"s\"> </td><td class=\"md\">1</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">4</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 4×21</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×21</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["8","4"],["2","1","0"],["2","9","4"]]}}, {"q": "计算：23 × 12 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">2</td><td class=\"s\"> </td><td class=\"md\">3</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 2×23</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×23</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["4","6"],["2","3","0"],["2","7","6"]]}}, {"q": "计算：32 × 11 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">3</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">1</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 1×32</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×32</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["3","2"],["3","2","0"],["3","5","2"]]}}, {"q": "计算：11 × 34 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">1</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">3</td><td class=\"s\"> </td><td class=\"md\">4</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 4×11</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 3×11</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["4","4"],["3","3","0"],["3","7","4"]]}}, {"q": "计算：14 × 12 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">4</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 2×14</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×14</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["2","8"],["1","4","0"],["1","6","8"]]}}, {"q": "计算：22 × 13 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">2</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">3</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 3×22</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×22</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["6","6"],["2","2","0"],["2","8","6"]]}}, {"q": "计算：31 × 12 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">3</td><td class=\"s\"> </td><td class=\"md\">1</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 2×31</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×31</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["6","2"],["3","1","0"],["3","7","2"]]}}, {"q": "计算：33 × 11 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">3</td><td class=\"s\"> </td><td class=\"md\">3</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">1</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 1×33</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×33</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["3","3"],["3","3","0"],["3","6","3"]]}}, {"q": "计算：41 × 12 = ？", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中填写计算过程：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"md\">4</td><td class=\"s\"> </td><td class=\"md\">1</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第一个乘数</td></tr>\n<tr><td class=\"xx\">×</td><td class=\"s\"> </td><td class=\"md\">1</td><td class=\"s\"> </td><td class=\"md\">2</td><td style=\"font-size:0.55em;color:#aaa;text-align:left;padding-left:6px;white-space:nowrap\">第二个乘数</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">个位 2×41</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.55em;color:#888;text-align:left;padding-left:6px;white-space:nowrap\">十位 1×41</td></tr>\n<tr><td colspan=\"6\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["8","2"],["4","1","0"],["4","9","2"]]}}], [{"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中每格填一个数字：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">2</td><td class=\"s\"> </td><td class=\"d\">8</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">1</td><td class=\"s\"> </td><td class=\"d\">5</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">个位 5×28</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">十位 1×28</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["1", "4", "0"], ["2", "8", "0"], ["4", "2", "0"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中每格填一个数字：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">3</td><td class=\"s\"> </td><td class=\"d\">6</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">2</td><td class=\"s\"> </td><td class=\"d\">4</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">个位 4×36</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">十位 2×36</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["1", "4", "4"], ["7", "2", "0"], ["8", "6", "4"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中每格填一个数字：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">4</td><td class=\"s\"> </td><td class=\"d\">7</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">1</td><td class=\"s\"> </td><td class=\"d\">9</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">个位 9×47</td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">十位 1×47</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["4", "2", "3"], ["4", "7", "0"], ["8", "9", "3"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中每格填一个数字：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">5</td><td class=\"s\"> </td><td class=\"d\">6</td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">1</td><td class=\"s\"> </td><td class=\"d\">8</td></tr>\n<tr><td colspan=\"7\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">个位 8×56</td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">十位 1×56</td></tr>\n<tr><td colspan=\"7\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"3\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["4", "4", "8"], ["5", "6", "0"], ["1", "0", "0", "8"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">请在竖式中每格填一个数字：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">4</td><td class=\"s\"> </td><td class=\"d\">5</td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">2</td><td class=\"s\"> </td><td class=\"d\">7</td></tr>\n<tr><td colspan=\"7\" class=\"hr\"><hr></td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">个位 7×45</td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"1\" data-col=\"2\"></td><td style=\"font-size:0.65em;color:#888;text-align:left;padding-left:8px;white-space:nowrap\">十位 2×45</td></tr>\n<tr><td colspan=\"7\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"2\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"2\" data-col=\"3\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["3", "1", "5"], ["9", "0", "0"], ["1", "2", "1", "5"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">简便笔算 — 先乘再补0，请填写结果：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">2</td><td class=\"s\"> </td><td class=\"d\">5</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">3</td><td class=\"s\"> </td><td class=\"d\">0</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["7", "5", "0"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">简便笔算 — 先乘再补0，请填写结果：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">1</td><td class=\"s\"> </td><td class=\"d\">6</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">4</td><td class=\"s\"> </td><td class=\"d\">0</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["6", "4", "0"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">简便笔算 — 先乘再补0，请填写结果：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">3</td><td class=\"s\"> </td><td class=\"d\">5</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">2</td><td class=\"s\"> </td><td class=\"d\">0</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["7", "0", "0"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">简便笔算 — 先乘再补0，请填写结果：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">4</td><td class=\"s\"> </td><td class=\"d\">2</td></tr>\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">3</td><td class=\"s\"> </td><td class=\"d\">0</td></tr>\n<tr><td colspan=\"7\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"3\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["1", "2", "6", "0"]]}}, {"q": "", "q1": "", "q2": "", "o1": [], "a1": 0, "o2": [], "a2": 0, "fill": {"html": "<span class=\"vform-step\">简便笔算 — 先乘再补0，请填写结果：</span>\n<table class=\"vf-tbl\">\n<tr><td class=\"e\"></td><td class=\"pad\"></td><td class=\"d\">1</td><td class=\"s\"> </td><td class=\"d\">8</td></tr>\n<tr><td class=\"x\">×</td><td class=\"s\"> </td><td class=\"d\">5</td><td class=\"s\"> </td><td class=\"d\">0</td></tr>\n<tr><td colspan=\"5\" class=\"hr\"><hr></td></tr>\n<tr><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"0\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"1\"></td><td class=\"s\"> </td><td><input class=\"vd-inp\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" data-row=\"0\" data-col=\"2\"></td></tr>\n</table>\n<span class=\"vform-step\">填完后点击\"提交答案\"</span>", "ans": [["9", "0", "0"]]}}], [{"q": "学校买3箱书，每箱5包，每包12本。<br>一共买了多少本？<br><span class='vform-step'>12×5=60（本/箱），60×3=180（本）</span>", "q1": "", "q2": "", "o1": ["150本", "180本", "200本", "160本"], "a1": 1, "o2": ["150本", "180本", "200本", "160本"], "a2": 1}, {"q": "每排种8棵树，种15排，每棵树4元。<br>一共花了多少元？<br><span class='vform-step'>8×15=120（棵），120×4=480（元）</span>", "q1": "", "q2": "", "o1": ["400元", "440元", "480元", "520元"], "a1": 2, "o2": ["400元", "440元", "480元", "520元"], "a2": 2}, {"q": "每班12人，每年级5个班，共6个年级。<br>全校一共多少人？<br><span class='vform-step'>12×5=60（人/年级），60×6=360（人）</span>", "q1": "", "q2": "", "o1": ["300人", "340人", "360人", "380人"], "a1": 2, "o2": ["300人", "340人", "360人", "380人"], "a2": 2}, {"q": "每盒6支笔，每箱8盒，买4箱。<br>一共多少支笔？<br><span class='vform-step'>6×8=48（支/箱），48×4=192（支）</span>", "q1": "", "q2": "", "o1": ["172支", "182支", "192支", "202支"], "a1": 2, "o2": ["172支", "182支", "192支", "202支"], "a2": 2}, {"q": "每个书架3层，每层25本，有5个书架。<br>一共放多少本？<br><span class='vform-step'>25×3=75（本/架），75×5=375（本）</span>", "q1": "", "q2": "", "o1": ["325本", "350本", "375本", "400本"], "a1": 2, "o2": ["325本", "350本", "375本", "400本"], "a2": 2}, {"q": "每袋5kg大米，每车20袋，运3车。<br>一共多少千克？<br><span class='vform-step'>5×20=100（kg/车），100×3=300（kg）</span>", "q1": "", "q2": "", "o1": ["250kg", "280kg", "300kg", "320kg"], "a1": 2, "o2": ["250kg", "280kg", "300kg", "320kg"], "a2": 2}, {"q": "每天15道题，每周5天，坚持4周。<br>一共做了多少题？<br><span class='vform-step'>15×5=75（题/周），75×4=300（题）</span>", "q1": "", "q2": "", "o1": ["280题", "290题", "300题", "310题"], "a1": 2, "o2": ["280题", "290题", "300题", "310题"], "a2": 2}, {"q": "每行12人，共8行，每人2个气球。<br>一共需要多少个气球？<br><span class='vform-step'>12×8=96（人），96×2=192（个）</span>", "q1": "", "q2": "", "o1": ["172个", "182个", "192个", "202个"], "a1": 2, "o2": ["172个", "182个", "192个", "202个"], "a2": 2}, {"q": "4个货架，每架6层，每层14瓶饮料。<br>一共多少瓶？<br><span class='vform-step'>14×6=84（瓶/架），84×4=336（瓶）</span>", "q1": "", "q2": "", "o1": ["316瓶", "326瓶", "336瓶", "346瓶"], "a1": 2, "o2": ["316瓶", "326瓶", "336瓶", "346瓶"], "a2": 2}, {"q": "每本3元，每人买2本，全班45人。<br>一共花多少元？<br><span class='vform-step'>3×2=6（元/人），6×45=270（元）</span>", "q1": "", "q2": "", "o1": ["250元", "260元", "270元", "280元"], "a1": 2, "o2": ["250元", "260元", "270元", "280元"], "a2": 2}]];
+
+var Q = [];
+var curModule = 0;
+var sc=[0,0],cr=0,tr=10,tm=15,ti=null,go=false,ans=[false,false];
+var sk='pk_'+window.location.pathname.replace(/[^a-zA-Z0-9]/g,'_');
+var musicOn=true,actx=null;
+
+var modNames = ['模块一：整十数乘两位数','模块二：简单的估算','模块三：不进位两位数乘两位数','模块四：进位乘法与简便笔算','模块五：两步连乘实际问题'];
+var fillModules = {2:true, 3:true};
+	var kpFocus = {1: null, 2: null};
+	function kpClick(pn, val){
+	  if(!go||ans[pn-1])return;
+	  var inputs=document.querySelectorAll('#q'+pn+' .vd-inp');
+	  if(inputs.length===0)return;
+	  var idx=kpFocus[pn];
+	  if(val==='B'){if(idx!==null&&idx>=0&&idx<inputs.length){inputs[idx].value='';if(idx>0)inputs[idx-1].focus();}else{for(var i=inputs.length-1;i>=0;i--){if(inputs[i].value){inputs[i].value='';if(i>0)inputs[i-1].focus();break;}}}}
+	  else if(val==='C'){inputs.forEach(function(inp){inp.value='';inp.classList.remove('correct','wrong');});if(inputs.length>0)inputs[0].focus();}
+	  else{if(idx!==null&&idx>=0&&idx<inputs.length){inputs[idx].value=String(val);if(idx<inputs.length-1)inputs[idx+1].focus();}else{for(var i=0;i<inputs.length;i++){if(!inputs[i].value){inputs[i].value=String(val);if(i<inputs.length-1)inputs[i+1].focus();break;}}}}
+	}
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.1,'sine',0.05);}}
+
+function switchModule(idx){if(go)return;curModule=idx;Q=ALL_Q[idx].slice();document.getElementById('mdBadge').textContent=modNames[idx];var btns=document.querySelectorAll('.mod-btn');btns.forEach(function(b,i){b.classList.toggle('active',i===idx);});document.getElementById('q1').innerHTML='已选：'+modNames[idx].substring(0,15)+'...<br>点击开始对战';document.getElementById('q2').innerHTML='已选：'+modNames[idx].substring(0,15)+'...<br>点击开始对战';document.getElementById('fb1').innerHTML='';document.getElementById('fb2').innerHTML='';}
+
+function startGame(){initAudio();if(Q.length===0){Q=ALL_Q[curModule].slice();}document.getElementById('btnStart').style.display='none';document.getElementById('moduleBar').style.display='none';go=true;sc=[0,0];cr=0;ans=[false,false];document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';document.getElementById('winOverlay').classList.remove('show');Q=sf(Q);nextRound();}
+
+function nextRound(){if(cr>=tr){endGame();return;}ans=[false,false];document.getElementById('rn').textContent=cr+1;var q=Q[cr];var isFill=fillModules[curModule]||false;renderQuestion(1,q,isFill);renderQuestion(2,q,isFill);tm=isFill?20:15;document.getElementById('tm').textContent=tm;clearInterval(ti);ti=setInterval(function(){tm--;document.getElementById('tm').textContent=tm;if(tm<=5)sfxTick();if(tm<=0){clearInterval(ti);timeUp();}},1000);}
+
+function renderQuestion(pn,q,isFill){
+  document.getElementById('fb'+pn).innerHTML='';
+  document.getElementById('st'+pn).textContent='';
+  if(isFill){
+    renderFill(pn,q);
+  }else{
+    renderChoice(pn,q);
+  }
+}
+
+// ====== 逐位填空模式 ======
+function renderFill(pn,q){
+  var f=q.fill;
+  var h="<div style=\"font-size:0.75em;color:#aaa;margin-bottom:4px\">第"+(cr+1)+"题</div>";
+  // Problem card - shows both multipliers prominently
+  if(q.q){
+    var expr=q.q.replace("计算：","").replace("= ？","").trim();
+    h+="<div class=\"prob-card\">"+expr+" = ？</div>";
+  }
+  h+="<div class=\"fill-wrapper\"><div class=\"vf-area\">";
+  h+=f.html;
+  h+="<button class=\"submit-btn\" onclick=\"submitFill("+pn+","+cr+",this)\" id=\"subBtn"+pn+"\">✓ 提交答案</button>";
+  h+="</div><div class=\"kp-area\">";
+  var kb="<div class=\"numpad\">";
+  for(var d=1;d<=9;d++)kb+="<button onclick=\"kpClick("+pn+","+d+")\">"+d+"</button>";
+  kb+="<button class=\"np-clear\" onclick=\"kpClick("+pn+",'C')\">C</button>";
+  kb+="<button onclick=\"kpClick("+pn+",0)\">0</button>";
+  kb+="<button class=\"np-backspace\" onclick=\"kpClick("+pn+",'B')\">⌫</button>";
+  kb+="</div>";
+  h+=kb+"</div></div>";
+  document.getElementById("q"+pn).innerHTML=h;
+  document.getElementById("q"+pn).style.display="";
+  var inputs=document.querySelectorAll("#q"+pn+" .vd-inp");
+  inputs.forEach(function(inp,i){
+    inp.addEventListener("focus",function(){kpFocus[pn]=i;});
+    inp.addEventListener("input",function(e){
+      var v=e.target.value;
+      if(v.length>1)e.target.value=v[v.length-1];
+      if(e.target.value && i<inputs.length-1){inputs[i+1].focus();}
+    });
+    inp.addEventListener("keydown",function(e){
+      if(e.key==="Backspace" && !e.target.value && i>0){inputs[i-1].focus();}
+    });
+  });
+  if(inputs.length>0){inputs[0].focus();kpFocus[pn]=0;}
+}
+function submitFill(pn,round,btn){
+  if(!go||ans[pn-1])return;
+  var q=Q[round];
+  var f=q.fill;
+  var correctAnswers=f.ans;  // [['3','6'], ['1','2','0'], ['1','5','6']] 逐位答案
+  var inputs=document.querySelectorAll('#q'+pn+' .vd-inp');
+  // inputs按行分组：每组以data-row区分
+  var rows={};
+  inputs.forEach(function(inp){
+    var r=parseInt(inp.getAttribute('data-row'));
+    if(!rows[r])rows[r]=[];
+    rows[r].push(inp);
+  });
+  var rowKeys=Object.keys(rows).sort(function(a,b){return a-b;});
+  var allCorrect=true;
+  for(var ri=0;ri<rowKeys.length;ri++){
+    var rowInputs=rows[rowKeys[ri]];
+    var rowAns=correctAnswers[ri];
+    for(var ci=0;ci<rowInputs.length;ci++){
+      var val=rowInputs[ci].value.replace(/\s/g,'');
+      var expected=rowAns[ci];
+      if(val===expected && val!==''){
+        rowInputs[ci].classList.add('correct');
+      }else{
+        rowInputs[ci].classList.add('wrong');
+        allCorrect=false;
+      }
+      rowInputs[ci].disabled=true;
+    }
+  }
+  btn.disabled=true;
+
+  if(allCorrect){
+    ans[pn-1]=true;
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 完全正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    sfxCorrect();
+  }else{
+    ans[pn-1]=true;
+    document.getElementById('fb'+pn).innerHTML='❌ 有误，正确答案已标出';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+  }
+  checkBothDone();
+}
+
+// ====== 选择模式 ======
+function renderChoice(pn,q){
+  var qText=q.q1||q.q;
+  var opts=q.o1||q.o;
+  var ansIdx=q.a1!==undefined?q.a1:q.a;
+  document.getElementById('q'+pn).innerHTML='<div style="font-size:0.85em;color:#ddd;margin-bottom:3px">第'+(cr+1)+'题</div>'+qText+'<div id="optsArea'+pn+'"></div>';
+  document.getElementById('q'+pn).style.display='';
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'];
+  var h='<div class="options-grid">';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answerChoice('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  h+='</div>';
+  document.getElementById('optsArea'+pn).innerHTML=h;
+}
+
+function answerChoice(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#optsArea'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    sfxCorrect();
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+  }
+  checkBothDone();
+}
+
+function checkBothDone(){
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},1500);}
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      ans[p-1]=true;
+      var inps=document.querySelectorAll('#q'+p+' .vd-inp');
+      inps.forEach(function(b){b.disabled=true;});
+      var sbtn=document.getElementById('subBtn'+p);
+      if(sbtn)sbtn.disabled=true;
+      var opts=document.querySelectorAll('#optsArea'+p+' .p-opt');
+      opts.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+    }
+  }
+  cr++;setTimeout(function(){nextRound();},1200);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').innerHTML=modNames[curModule]+'<br>红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').innerHTML=modNames[curModule]+'<br>蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  }else{
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').innerHTML=modNames[curModule]+'<br>双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk)||'0');var mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+function spawnConfetti(){var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];for(var i=0;i<60;i++){var d=document.createElement('div');d.className='confetti';d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';d.style.width=(Math.random()*10+6)+'px';d.style.height=(Math.random()*10+6)+'px';d.style.background=colors[Math.floor(Math.random()*colors.length)];d.style.animationDuration=(Math.random()*2+2)+'s';d.style.animationDelay=Math.random()*1.5+'s';d.style.borderRadius=Math.random()>0.5?'50%':'0';document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}}
+
+function restartGame(){clearInterval(ti);go=false;sc=[0,0];cr=0;ans=[false,false];
+document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+document.getElementById('fb1').innerHTML='';document.getElementById('fb2').innerHTML='';
+document.getElementById('st1').textContent='';document.getElementById('st2').textContent='';
+document.getElementById('rn').textContent='1';document.getElementById('tm').textContent='15';
+document.getElementById('winOverlay').classList.remove('show');
+document.getElementById('btnStart').style.display='inline-block';
+document.getElementById('moduleBar').style.display='flex';
+document.getElementById('q1').innerHTML='已选：'+modNames[curModule].substring(0,15)+'...<br>点击开始对战';
+document.getElementById('q2').innerHTML='已选：'+modNames[curModule].substring(0,15)+'...<br>点击开始对战';
+Q=sf(Q);var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});}
+
+function backToMenu(){restartGame();}
+</script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 50有多大 - 数感培养游戏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .game-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; color: white; margin-bottom: 20px; }
+        .header h1 { font-size: 42px; margin-bottom: 10px; text-shadow: 3px 3px 6px rgba(0,0,0,0.3); }
+        .header p { font-size: 18px; opacity: 0.9; }
+        .level-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .level-btn { padding: 10px 20px; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); }
+        .level-btn:hover, .level-btn.active { background: white; color: #f5576c; transform: translateY(-2px); }
+        .game-area { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .progress-bar { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #f093fb, #f5576c); border-radius: 5px; transition: width 0.3s ease; }
+        .task-header { text-align: center; margin-bottom: 25px; }
+        .task-header h2 { color: #333; font-size: 26px; margin-bottom: 10px; }
+        .task-header .desc { color: #666; font-size: 16px; }
+        .fifty-display { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 20px; padding: 30px; margin: 20px 0; text-align: center; color: white; }
+        .fifty-display .number { font-size: 80px; font-weight: bold; text-shadow: 3px 3px 6px rgba(0,0,0,0.2); }
+        .items-showcase { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 15px; min-height: 200px; }
+        .showcase-item { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 28px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .showcase-item.highlight { background: #fff3cd; border: 2px solid #ffc107; }
+        .groups-display { display: flex; justify-content: center; gap: 30px; margin: 30px 0; flex-wrap: wrap; }
+        .group-box { background: #f8f9fa; border-radius: 15px; padding: 20px; text-align: center; }
+        .group-items { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 200px; }
+        .mini-item { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: white; border-radius: 5px; }
+        .estimate-options { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .estimate-btn { padding: 15px 30px; border: 3px solid #f5576c; border-radius: 10px; background: white; cursor: pointer; font-size: 20px; font-weight: bold; color: #f5576c; transition: all 0.3s; }
+        .estimate-btn:hover { background: #f5576c; color: white; }
+        .estimate-btn.correct { background: #4CAF50; border-color: #4CAF50; color: white; }
+        .estimate-btn.wrong { background: #f44336; border-color: #f44336; color: white; }
+        .life-scene { background: #f8f9fa; border-radius: 15px; padding: 25px; margin: 20px 0; }
+        .scene-items { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; }
+        .scene-item { text-align: center; padding: 15px; background: white; border-radius: 10px; min-width: 120px; }
+        .scene-item .emoji { font-size: 40px; display: block; margin-bottom: 10px; }
+        .scene-item .count { font-size: 24px; font-weight: bold; color: #f5576c; }
+        .slider { width: 80%; max-width: 500px; height: 20px; border-radius: 10px; background: linear-gradient(to right, #f093fb, #f5576c); outline: none; -webkit-appearance: none; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 40px; height: 40px; border-radius: 50%; background: white; border: 4px solid #f5576c; cursor: pointer; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 30px; }
+        .btn { padding: 12px 30px; border: none; border-radius: 25px; cursor: pointer; font-size: 16px; transition: all 0.3s; font-weight: bold; }
+        .btn-primary { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .score-board { position: fixed; top: 20px; right: 20px; background: white; padding: 15px 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100; }
+        .score-board .score { font-size: 24px; font-weight: bold; color: #f5576c; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 40px; border-radius: 20px; text-align: center; max-width: 500px; }
+        .hint-box { background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .progress-indicator { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .progress-dot { width: 15px; height: 15px; border-radius: 50%; background: #e0e0e0; }
+        .progress-dot.active { background: #f5576c; transform: scale(1.2); }
+        .progress-dot.completed { background: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div class="score-board">
+        <div>得分: <span class="score" id="score">0</span></div>
+    </div>
+    <div class="game-container">
+        <div class="header">
+            <h1>🎯 50有多大</h1>
+            <p>苏教版小学一年级下册 - 数感培养</p>
+        </div>
+        <div class="level-selector">
+            <button class="level-btn active" onclick="loadLevel(0)">第1关：认识50</button>
+            <button class="level-btn" onclick="loadLevel(1)">第2关：50个物品</button>
+            <button class="level-btn" onclick="loadLevel(2)">第3关：分组理解</button>
+            <button class="level-btn" onclick="loadLevel(3)">第4关：估算挑战</button>
+            <button class="level-btn" onclick="loadLevel(4)">第5关：生活应用</button>
+            <button class="level-btn" onclick="loadLevel(5)">第6关：互动探索</button>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress" style="width: 0%"></div>
+        </div>
+        <div class="game-area">
+            <div class="task-header">
+                <h2 id="taskTitle">🌟 认识50</h2>
+                <p class="desc" id="taskDesc">让我们一起来看看50有多大</p>
+            </div>
+            <div class="hint-box">
+                <span style="font-size: 24px;">💡</span>
+                <span id="hintText">50 = 5个十 = 10个五 = 25 + 25</span>
+            </div>
+            <div class="progress-indicator" id="progressDots"></div>
+            <div id="gameContent"></div>
+            <div class="controls">
+                <button class="btn btn-secondary" onclick="resetLevel()">🔄 重新开始</button>
+                <button class="btn btn-primary" onclick="nextStep()" id="nextBtn">下一步 ➡️</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div style="font-size: 80px; margin-bottom: 20px;">🎉</div>
+            <h2>太棒了！</h2>
+            <p id="successText">你对50有了更深的认识！</p>
+            <button class="btn btn-primary" onclick="closeModal()">继续</button>
+        </div>
+    </div>
+    <script>
+        let currentLevel = 0, currentStep = 0, score = 0;
+        const levels = [
+            { title: "🌟 认识50", desc: "让我们一起来看看50有多大", hint: "50 = 5个十 = 10个五 = 25 + 25", steps: 3 },
+            { title: "📦 50个物品", desc: "数一数，看看50个物品有多少", hint: "可以十个十个地数：10、20、30、40、50", steps: 4 },
+            { title: "🔢 分组理解", desc: "50可以怎样分组？", hint: "50可以分成不同的组合", steps: 3 },
+            { title: "🎯 估算挑战", desc: "不用数，猜猜有多少个", hint: "先数出一组，再估算总数", steps: 5 },
+            { title: "🏠 生活应用", desc: "生活中哪些地方有50？", hint: "观察身边的事物", steps: 3 },
+            { title: "🎮 互动探索", desc: "拖动滑块，感受不同数量", hint: "比较不同数量的大小", steps: 1 }
+        ];
+        const emojis = ['🍎', '⭐', '🎈', '🌸', '🍀', '🐱', '🚗', '📚'];
+        
+        function loadLevel(levelIndex) {
+            currentLevel = levelIndex;
+            currentStep = 0;
+            const level = levels[levelIndex];
+            document.getElementById('taskTitle').textContent = level.title;
+            document.getElementById('taskDesc').textContent = level.desc;
+            document.getElementById('hintText').textContent = level.hint;
+            document.getElementById('progress').style.width = ((levelIndex + 1) / levels.length) * 100 + '%';
+            document.querySelectorAll('.level-btn').forEach((btn, index) => btn.classList.toggle('active', index === levelIndex));
+            updateProgressDots(level.steps);
+            generateStep();
+        }
+        
+        function updateProgressDots(total) {
+            const container = document.getElementById('progressDots');
+            container.innerHTML = '';
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot' + (i < currentStep ? ' completed' : '') + (i === currentStep ? ' active' : '');
+                container.appendChild(dot);
+            }
+        }
+        
+        function generateStep() {
+            const content = document.getElementById('gameContent');
+            switch(currentLevel) {
+                case 0: generateKnow50(content, currentStep); break;
+                case 1: generateCount50(content, currentStep); break;
+                case 2: generateGroup50(content, currentStep); break;
+                case 3: generateEstimate(content, currentStep); break;
+                case 4: generateLifeScene(content, currentStep); break;
+                case 5: generateInteractive(content); break;
+            }
+            updateProgressDots(levels[currentLevel].steps);
+        }
+        
+        function generateKnow50(container, step) {
+            if (step === 0) {
+                container.innerHTML = `<div class="fifty-display"><div class="number">50</div><div style="font-size: 18px; margin-top: 10px;">五十</div></div><div style="text-align: center; margin-top: 20px; font-size: 18px; color: #666;">50是一个两位数<br>十位是5，表示5个十<br>个位是0，表示0个一</div>`;
+            } else if (step === 1) {
+                container.innerHTML = `<div style="text-align: center; margin-bottom: 20px;"><h3>50在数轴上的位置</h3></div><div style="background: #f8f9fa; padding: 30px; border-radius: 15px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div style="text-align: center;"><div style="font-size: 24px; font-weight: bold;">0</div><div style="font-size: 14px; color: #666;">起点</div></div><div style="text-align: center;"><div style="font-size: 24px; font-weight: bold;">25</div><div style="font-size: 14px; color: #666;">一半</div></div><div style="text-align: center; background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 15px 25px; border-radius: 15px;"><div style="font-size: 36px; font-weight: bold;">50</div><div style="font-size: 14px;">目标</div></div><div style="text-align: center;"><div style="font-size: 24px; font-weight: bold;">100</div><div style="font-size: 14px; color: #666;">终点</div></div></div><div style="margin-top: 20px; text-align: center; color: #666;">50正好在0和100的中间！</div></div>`;
+            } else {
+                container.innerHTML = `<div style="text-align: center; margin-bottom: 20px;"><h3>50的组成</h3></div><div class="groups-display"><div class="group-box"><div style="font-size: 16px; color: #666; margin-bottom: 10px;">5个十</div><div class="group-items">${Array(5).fill(0).map(() => '<div class="mini-item">🔟</div>').join('')}</div><div style="margin-top: 10px; font-weight: bold; color: #f5576c;">= 50</div></div><div class="group-box"><div style="font-size: 16px; color: #666; margin-bottom: 10px;">10个五</div><div class="group-items">${Array(10).fill(0).map(() => '<div class="mini-item">5️⃣</div>').join('')}</div><div style="margin-top: 10px; font-weight: bold; color: #f5576c;">= 50</div></div><div class="group-box"><div style="font-size: 16px; color: #666; margin-bottom: 10px;">25 + 25</div><div style="display: flex; gap: 10px; justify-content: center;"><div style="background: #f093fb; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold;">25</div><div style="font-size: 24px; color: #f5576c;">+</div><div style="background: #f5576c; color: white; padding: 10px 20px; border-radius: 10px; font-weight: bold;">25</div></div><div style="margin-top: 10px; font-weight: bold; color: #f5576c;">= 50</div></div></div>`;
+            }
+        }
+        
+        function generateCount50(container, step) {
+            const emoji = emojis[step % emojis.length];
+            const counts = [10, 20, 30, 50];
+            const count = counts[step];
+            let itemsHtml = '';
+            for (let i = 0; i < count; i++) {
+                itemsHtml += `<div class="showcase-item ${(i + 1) % 10 === 0 ? 'highlight' : ''}">${emoji}</div>`;
+            }
+            container.innerHTML = `<div style="text-align: center; margin-bottom: 15px;"><h3>这里有 ${count} 个${emoji}</h3><p style="color: #666;">黄色标记的是每10个</p></div><div class="items-showcase">${itemsHtml}</div><div style="text-align: center; margin-top: 15px; font-size: 18px; color: #f5576c; font-weight: bold;">${step < 3 ? `还差 ${50 - count} 个就到50了！` : '这就是50个！'}</div>`;
+        }
+        
+        function generateGroup50(container, step) {
+            const groups = [{ num: 10, label: '5组，每组10个' }, { num: 5, label: '10组，每组5个' }, { num: 25, label: '2组，每组25个' }];
+            const group = groups[step];
+            const emoji = '🌟';
+            let groupsHtml = '';
+            const groupCount = 50 / group.num;
+            for (let g = 0; g < groupCount; g++) {
+                let itemsHtml = '';
+                for (let i = 0; i < group.num; i++) itemsHtml += `<div class="mini-item">${emoji}</div>`;
+                groupsHtml += `<div style="background: white; padding: 15px; border-radius: 10px; margin: 10px;"><div style="font-size: 14px; color: #666; margin-bottom: 10px;">第${g + 1}组</div><div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">${itemsHtml}</div><div style="margin-top: 10px; font-weight: bold; color: #f5576c;">${group.num}个</div></div>`;
+            }
+            container.innerHTML = `<div style="text-align: center; margin-bottom: 20px;"><h3>${group.label}</h3><div style="font-size: 24px; color: #f5576c; font-weight: bold; margin-top: 10px;">${groupCount} × ${group.num} = 50</div></div><div style="display: flex; flex-wrap: wrap; justify-content: center;">${groupsHtml}</div>`;
+        }
+        
+        function generateEstimate(container, step) {
+            const targets = [30, 45, 50, 55, 40];
+            const target = targets[step];
+            const emoji = emojis[step % emojis.length];
+            let itemsHtml = '';
+            for (let i = 0; i < target; i++) itemsHtml += `<div class="showcase-item">${emoji}</div>`;
+            const options = [target - 10, target, target + 10, target + 20].sort(() => Math.random() - 0.5);
+            container.innerHTML = `<div style="text-align: center; margin: 30px 0;"><h3>不用数，猜猜有多少个${emoji}？</h3><div class="items-showcase">${itemsHtml}</div><div class="estimate-options">${options.map(opt => `<button class="estimate-btn" onclick="checkEstimate(${opt}, ${target}, this)">${opt}个</button>`).join('')}</div></div>`;
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+        
+        function checkEstimate(guess, actual, btn) {
+            document.querySelectorAll('.estimate-btn').forEach(b => { b.disabled = true; if (parseInt(b.textContent) === actual) b.classList.add('correct'); });
+            if (guess === actual) {
+                btn.classList.add('correct');
+                score += 20;
+                document.getElementById('score').textContent = score;
+                setTimeout(() => { document.getElementById('successModal').classList.add('show'); document.getElementById('successText').textContent = `答对了！确实是${actual}个！`; }, 500);
+            } else {
+                btn.classList.add('wrong');
+                setTimeout(() => alert(`接近了！实际是${actual}个。`), 300);
+            }
+            setTimeout(() => document.getElementById('nextBtn').style.display = 'inline-block', 1000);
+        }
+        
+        function generateLifeScene(container, step) {
+            const scenes = [
+                { title: '一盒铅笔', items: [{ emoji: '✏️', count: 50, desc: '一盒铅笔' }, { emoji: '📒', count: 10, desc: '一本笔记本' }, { emoji: '📏', count: 1, desc: '一把尺子' }] },
+                { title: '一班级同学', items: [{ emoji: '👦', count: 25, desc: '男生' }, { emoji: '👧', count: 25, desc: '女生' }, { emoji: '👨‍🏫', count: 1, desc: '老师' }] },
+                { title: '一袋糖果', items: [{ emoji: '🍬', count: 50, desc: '一袋糖果' }, { emoji: '🍫', count: 20, desc: '巧克力' }, { emoji: '🍭', count: 10, desc: '棒棒糖' }] }
+            ];
+            const scene = scenes[step];
+            container.innerHTML = `<div class="life-scene"><h3 style="text-align: center; color: #333; margin-bottom: 20px;">${scene.title}</h3><div class="scene-items">${scene.items.map(item => `<div class="scene-item"><span style="font-size: 40px; display: block; margin-bottom: 10px;">${item.emoji}</span><div style="font-size: 24px; font-weight: bold; color: #f5576c;">${item.count}</div><div style="font-size: 14px; color: #666; margin-top: 5px;">${item.desc}</div></div>`).join('')}</div></div><div style="text-align: center; margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 10px;"><div style="font-size: 18px; color: #856404;">💡 想一想：你身边还有什么东西大约有50个？</div></div>`;
+        }
+        
+        function generateInteractive(container) {
+            container.innerHTML = `<div style="margin: 30px 0; text-align: center;"><h3>拖动滑块，看看不同数量有多少</h3><div style="margin: 20px 0;"><input type="range" class="slider" id="numberSlider" min="0" max="100" value="50" oninput="updateSlider()"></div><div style="font-size: 48px; font-weight: bold; color: #f5576c; margin: 20px 0;" id="sliderValue">50</div><div id="sliderDesc" style="color: #666; margin-bottom: 10px;">这就是50个！</div><div class="items-showcase" id="sliderItems"></div></div>`;
+            updateSlider();
+        }
+        
+        function updateSlider() {
+            const value = document.getElementById('numberSlider').value;
+            document.getElementById('sliderValue').textContent = value;
+            let desc = '';
+            if (value == 0) desc = '没有物品';
+            else if (value < 25) desc = '比50少很多';
+            else if (value < 50) desc = '比50少一些';
+            else if (value == 50) desc = '这就是50个！';
+            else if (value < 75) desc = '比50多一些';
+            else if (value < 100) desc = '比50多很多';
+            else desc = '100个，是50的两倍！';
+            document.getElementById('sliderDesc').textContent = desc;
+            let itemsHtml = '';
+            const emoji = '🍎';
+            for (let i = 0; i < value; i++) itemsHtml += `<div class="showcase-item">${emoji}</div>`;
+            document.getElementById('sliderItems').innerHTML = itemsHtml;
+        }
+        
+        function nextStep() {
+            currentStep++;
+            if (currentStep >= levels[currentLevel].steps) {
+                if (currentLevel < levels.length - 1) {
+                    if (confirm(`🎉 恭喜完成第${currentLevel + 1}关！\n要进入下一关吗？`)) loadLevel(currentLevel + 1);
+                } else {
+                    alert(`🎊 恭喜你完成所有关卡！\n总分: ${score} 分\n你对50有了很好的认识！`);
+                }
+            } else {
+                generateStep();
+            }
+        }
+        
+        function resetLevel() { loadLevel(currentLevel); }
+        function closeModal() { document.getElementById('successModal').classList.remove('show'); }
+        
+        loadLevel(0);
+    </script>
+</body>
+</html>

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数据的收集与整理 - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主页 ===== */
+.home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.home-title{font-size:1.7em;font-weight:bold;margin-bottom:8px;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.home-subtitle{font-size:1em;color:#aaa;margin-bottom:30px;text-align:center}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+.module-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent;position:relative;overflow:hidden}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.4)}
+.module-card:active{transform:scale(0.96)}
+.module-card .card-icon{font-size:2.8em;margin-bottom:8px;display:block}
+.module-card .card-title{font-size:1.1em;font-weight:bold;margin-bottom:4px}
+.module-card .card-desc{font-size:0.73em;opacity:0.8;line-height:1.5}
+.module-card.full-width{grid-column:1/-1;max-width:280px;justify-self:center;width:100%}
+.card-m1{background:linear-gradient(135deg,rgba(255,152,0,0.25),rgba(255,87,34,0.3));border-color:#FF9800}
+.card-m2{background:linear-gradient(135deg,rgba(33,150,243,0.25),rgba(25,118,210,0.3));border-color:#2196F3}
+.card-m3{background:linear-gradient(135deg,rgba(76,175,80,0.25),rgba(56,142,60,0.3));border-color:#4CAF50}
+.card-m1 .card-icon{color:#FF9800}
+.card-m2 .card-icon{color:#2196F3}
+.card-m3 .card-icon{color:#4CAF50}
+
+/* ===== 游戏页 ===== */
+.game-page{display:none;flex-direction:column;height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 10px;gap:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.btn-back{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.btn-back:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.6)}
+.module-label{font-size:0.95em;font-weight:bold;color:#FFD700;white-space:nowrap}
+.round-info{font-size:0.8em;color:#aaa;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;min-width:55px;text-align:center;white-space:nowrap}
+.timer.urgent{color:#EF4444;animation:timerPulse 0.5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 6px;position:relative;overflow:hidden}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.25));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.25));border-left:3px solid #4ECDC4}
+.player-header{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-shrink:0}
+.left .player-name{color:#FF6B6B;font-weight:bold;font-size:1em}
+.right .player-name{color:#4ECDC4;font-weight:bold;font-size:1em}
+.player-score{font-weight:bold;font-size:1.3em}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.combo-text{font-size:0.7em;color:#FFD700;min-height:16px;flex-shrink:0}
+.question-display{background:rgba(255,255,255,0.12);border-radius:12px;padding:10px 8px;margin:4px 0;width:95%;text-align:center;font-size:0.88em;font-weight:bold;flex-shrink:0;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.5;gap:8px}
+.question-display .q-text{display:block}
+
+/* 统计表样式 */
+.data-table{border-collapse:collapse;margin:0 auto;font-size:0.82em;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden}
+.data-table th,.data-table td{padding:5px 8px;border:1px solid rgba(255,255,255,0.25);text-align:center;white-space:nowrap}
+.data-table th{background:rgba(255,152,0,0.35);color:#FFD700;font-weight:bold}
+.data-table td{background:rgba(255,255,255,0.06)}
+.data-table .highlight{background:rgba(255,215,0,0.2);color:#FFD700}
+
+/* 条形图样式 */
+.bar-chart{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:4px 0;height:110px;width:100%;max-width:300px}
+.bar-item{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;max-width:60px}
+.bar-value{font-size:0.75em;font-weight:bold;color:#FFD700}
+.bar-fill{border-radius:6px 6px 0 0;width:100%;min-width:24px;transition:all 0.3s;position:relative}
+.bar-label{font-size:0.68em;color:#ccc;white-space:nowrap}
+
+/* 正字计数展示 */
+.tally-display{font-size:1em;letter-spacing:2px;line-height:1.6;color:#FFD700;font-family:'KaiTi','STKaiti',serif}
+
+.drop-zone{flex:1;width:100%;position:relative;overflow:hidden;margin-top:4px;border-radius:12px;background:rgba(0,0,0,0.15)}
+.falling-num{position:absolute;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;font-weight:bold;color:#fff;cursor:pointer;z-index:5;transition:transform 0.1s;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.3);pointer-events:auto;-webkit-tap-highlight-color:transparent}
+.falling-num:active{transform:scale(1.3);box-shadow:0 0 20px rgba(255,255,255,0.5)}
+.falling-num.popped{animation:popBurst 0.4s forwards;pointer-events:none}
+.falling-num.wrong-pop{animation:wrongShake 0.4s forwards;pointer-events:none}
+.falling-num.correct-glow{box-shadow:0 0 25px rgba(255,215,0,0.9)!important;animation:correctFlash 0.5s forwards}
+@keyframes popBurst{0%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.7}100%{transform:scale(0);opacity:0}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}100%{transform:scale(0);opacity:0}}
+@keyframes correctFlash{0%{transform:scale(1)}50%{transform:scale(1.25);background:#FFD700!important}100%{transform:scale(1);opacity:0.8}}
+
+.score-pop{position:absolute;font-size:1.4em;font-weight:bold;color:#FFD700;pointer-events:none;z-index:20;animation:floatUp 1s forwards;text-shadow:0 0 10px rgba(255,215,0,0.8)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:36px;margin-bottom:18px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-win{padding:12px 28px;border-radius:22px;border:none;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn-win.again{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.btn-win.home{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.3)}
+.btn-win:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .home-title{font-size:1.3em}
+  .module-grid{gap:10px;padding:0 8px}
+  .module-card{padding:16px 10px}
+  .module-card .card-icon{font-size:2em}
+  .module-card .card-title{font-size:0.9em}
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{flex:1;min-height:0}
+  .drop-zone{min-height:120px}
+  .falling-num{width:52px;height:52px;font-size:1em}
+  .vs-badge{font-size:1.3em}
+  .top-bar{gap:5px;padding:6px}
+  .top-bar .module-label{font-size:0.78em}
+  .timer{font-size:1.1em}
+  .question-display{font-size:0.78em;min-height:40px;padding:8px}
+  .data-table{font-size:0.7em}
+  .data-table th,.data-table td{padding:3px 5px}
+  .bar-chart{height:90px;gap:6px}
+  .bar-item{max-width:44px}
+  .win-title{font-size:1.5em}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 主页 ==================== -->
+<div class="home-page" id="homePage">
+  <div class="home-title">📊 数据的收集与整理 — PK对战</div>
+  <div class="home-subtitle">两人对战 · 抓住正确数字得分 · 每题20秒</div>
+  <div class="module-grid">
+    <div class="module-card card-m1" onclick="startModule(1)">
+      <span class="card-icon">📝</span>
+      <div class="card-title">模块一 · 分类与整理数据</div>
+      <div class="card-desc">用"正"字法记录数据<br>从原始数据中分类计数<br>例：数一数每种水果有几个？</div>
+    </div>
+    <div class="module-card card-m2" onclick="startModule(2)">
+      <span class="card-icon">📋</span>
+      <div class="card-title">模块二 · 认识统计表</div>
+      <div class="card-desc">读懂统计表中的信息<br>比较数据、求和、求差<br>例：哪个班人数最多？</div>
+    </div>
+    <div class="module-card card-m3 full-width" onclick="startModule(3)">
+      <span class="card-icon">📊</span>
+      <div class="card-title">模块三 · 认识条形统计图</div>
+      <div class="card-desc">从条形图中读取数据<br>比较不同类别的数量<br>例：哪种颜色的直条最高？</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 游戏页 ==================== -->
+<div class="game-page" id="gamePage">
+  <div class="top-bar">
+    <button class="btn-back" onclick="goHome()">← 返回主页</button>
+    <span class="module-label" id="moduleLabel">模块一</span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">15</span> 关</span>
+    <span class="timer" id="timerDisplay">⏱ 20s</span>
+  </div>
+  <div class="arena">
+    <div class="player left" id="player1">
+      <div class="player-header">
+        <span class="player-name">🔴 红方</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div class="combo-text" id="combo1"></div>
+      <div class="question-display" id="q1">准备开始...</div>
+      <div class="drop-zone" id="dropZone1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="player2">
+      <div class="player-header">
+        <span class="player-name">🔵 蓝方</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+      <div class="combo-text" id="combo2"></div>
+      <div class="question-display" id="q2">准备开始...</div>
+      <div class="drop-zone" id="dropZone2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 结算弹窗 ==================== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="btn-win again" onclick="restartModule()">🔄 再来一局</button>
+    <button class="btn-win home" onclick="goHome()">🏠 返回主页</button>
+  </div>
+</div>
+
+<script>
+// ==================== 辅助渲染函数 ====================
+
+// 渲染统计表
+function renderTable(title, headers, rows) {
+  var html = '<div style="color:#FFD700;font-size:0.9em;margin-bottom:2px">' + title + '</div>';
+  html += '<table class="data-table"><thead><tr>';
+  for (var i = 0; i < headers.length; i++) {
+    html += '<th>' + headers[i] + '</th>';
+  }
+  html += '</tr></thead><tbody>';
+  for (var r = 0; r < rows.length; r++) {
+    html += '<tr>';
+    for (var c = 0; c < rows[r].length; c++) {
+      html += '<td>' + rows[r][c] + '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+// 渲染条形统计图
+function renderBarChart(title, bars) {
+  // bars: [{label, value, color}]
+  var maxVal = 0;
+  for (var i = 0; i < bars.length; i++) {
+    if (bars[i].value > maxVal) maxVal = bars[i].value;
+  }
+  var html = '<div style="color:#FFD700;font-size:0.85em;margin-bottom:2px">' + title + '</div>';
+  html += '<div class="bar-chart">';
+  for (var i = 0; i < bars.length; i++) {
+    var h = Math.max(12, (bars[i].value / maxVal) * 80);
+    var color = bars[i].color || ['#FF6B6B','#4ECDC4','#FF9800','#9C27B0','#66BB6A','#42A5F5'][i % 6];
+    html += '<div class="bar-item">';
+    html += '<span class="bar-value">' + bars[i].value + '</span>';
+    html += '<div class="bar-fill" style="height:' + h + 'px;background:' + color + '"></div>';
+    html += '<span class="bar-label">' + bars[i].label + '</span>';
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// 渲染正字数据展示
+function renderTally(data) {
+  // data: [{label, count}] or [{label, tally}]
+  var html = '<div class="tally-display">';
+  for (var i = 0; i < data.length; i++) {
+    html += data[i].label + '：' + data[i].tally + '　';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ==================== 题库 ====================
+var QUESTION_BANKS = {
+
+  // 模块1：分类与整理数据 — 正字计数、分类计数、比较
+  1: [
+    {q: renderTally([{label:'张明',tally:'正正正'},{label:'李红',tally:'正正'},{label:'王刚',tally:'正'}]) + '<span class="q-text">二(1)班班长选举，张明得了多少票？（一个"正"=5票）</span>', a:15, _html:true},
+    {q: renderTally([{label:'张明',tally:'正正正'},{label:'李红',tally:'正正'},{label:'王刚',tally:'正'}]) + '<span class="q-text">李红得了多少票？</span>', a:10, _html:true},
+    {q: renderTally([{label:'张明',tally:'正正正'},{label:'李红',tally:'正正'},{label:'王刚',tally:'正'}]) + '<span class="q-text">王刚得了多少票？</span>', a:5, _html:true},
+    {q: renderTally([{label:'张明',tally:'正正正'},{label:'李红',tally:'正正'},{label:'王刚',tally:'正'}]) + '<span class="q-text">张明比李红多几票？</span>', a:5, _html:true},
+    {q: renderTally([{label:'张明',tally:'正正正'},{label:'李红',tally:'正正'},{label:'王刚',tally:'正'}]) + '<span class="q-text">三人一共有多少票？</span>', a:30, _html:true},
+    {q: renderTally([{label:'晴天',tally:'正正丅'},{label:'阴天',tally:'正'},{label:'雨天',tally:'下'}]) + '<span class="q-text">记录了一个月的天气，晴天有多少天？</span>', a:12, _html:true},
+    {q: renderTally([{label:'晴天',tally:'正正丅'},{label:'阴天',tally:'正'},{label:'雨天',tally:'下'}]) + '<span class="q-text">阴天有多少天？</span>', a:5, _html:true},
+    {q: renderTally([{label:'晴天',tally:'正正丅'},{label:'阴天',tally:'正'},{label:'雨天',tally:'下'}]) + '<span class="q-text">雨天比阴天少几天？</span>', a:2, _html:true},
+    {q: renderTally([{label:'晴天',tally:'正正丅'},{label:'阴天',tally:'正'},{label:'雨天',tally:'下'}]) + '<span class="q-text">晴天比雨天多几天？</span>', a:9, _html:true},
+    {q: renderTally([{label:'跑步',tally:'正正一'},{label:'跳绳',tally:'正下'},{label:'篮球',tally:'正'}]) + '<span class="q-text">二(2)班最喜欢的运动统计。喜欢跑步的有几人？</span>', a:11, _html:true},
+    {q: renderTally([{label:'跑步',tally:'正正一'},{label:'跳绳',tally:'正下'},{label:'篮球',tally:'正'}]) + '<span class="q-text">喜欢跳绳的有几人？</span>', a:8, _html:true},
+    {q: renderTally([{label:'跑步',tally:'正正一'},{label:'跳绳',tally:'正下'},{label:'篮球',tally:'正'}]) + '<span class="q-text">喜欢篮球的有几人？</span>', a:5, _html:true},
+    {q: renderTally([{label:'跑步',tally:'正正一'},{label:'跳绳',tally:'正下'},{label:'篮球',tally:'正'}]) + '<span class="q-text">喜欢跑步的比喜欢篮球的多几人？</span>', a:6, _html:true},
+    {q: renderTally([{label:'苹果',tally:'正正'},{label:'香蕉',tally:'正一'},{label:'橘子',tally:'正下'},{label:'梨',tally:'下'}]) + '<span class="q-text">水果喜好调查。喜欢苹果和香蕉的一共有几人？</span>', a:16, _html:true},
+    {q: renderTally([{label:'苹果',tally:'正正'},{label:'香蕉',tally:'正一'},{label:'橘子',tally:'正下'},{label:'梨',tally:'下'}]) + '<span class="q-text">喜欢橘子的比喜欢梨的多几人？</span>', a:5, _html:true}
+  ],
+
+  // 模块2：认识统计表 — 读取统计表、比较、求和、求差
+  2: [
+    {q: renderTable('二年级各班人数统计表',['班级','二(1)','二(2)','二(3)','二(4)'], [['人数','42','38','45','40']]) + '<span class="q-text">二(3)班有多少人？</span>', a:45, _html:true},
+    {q: renderTable('二年级各班人数统计表',['班级','二(1)','二(2)','二(3)','二(4)'], [['人数','42','38','45','40']]) + '<span class="q-text">哪个班人数最多？有多少人？</span>', a:45, _html:true},
+    {q: renderTable('二年级各班人数统计表',['班级','二(1)','二(2)','二(3)','二(4)'], [['人数','42','38','45','40']]) + '<span class="q-text">二(1)班比二(4)班多几人？</span>', a:2, _html:true},
+    {q: renderTable('二年级各班人数统计表',['班级','二(1)','二(2)','二(3)','二(4)'], [['人数','42','38','45','40']]) + '<span class="q-text">四个班一共有多少人？</span>', a:165, _html:true},
+    {q: renderTable('文具店一周销售量',['文具','铅笔','橡皮','尺子','笔记本'], [['数量(个)','25','18','12','30']]) + '<span class="q-text">哪种文具卖得最多？卖了多少个？</span>', a:30, _html:true},
+    {q: renderTable('文具店一周销售量',['文具','铅笔','橡皮','尺子','笔记本'], [['数量(个)','25','18','12','30']]) + '<span class="q-text">铅笔比橡皮多卖出几个？</span>', a:7, _html:true},
+    {q: renderTable('文具店一周销售量',['文具','铅笔','橡皮','尺子','笔记本'], [['数量(个)','25','18','12','30']]) + '<span class="q-text">笔记本和尺子一共卖出多少个？</span>', a:42, _html:true},
+    {q: renderTable('文具店一周销售量',['文具','铅笔','橡皮','尺子','笔记本'], [['数量(个)','25','18','12','30']]) + '<span class="q-text">销售量最少的是哪种？卖了多少个？</span>', a:12, _html:true},
+    {q: renderTable('果园水果产量',['水果','苹果','梨','桃子','橘子'], [['产量(千克)','50','35','28','42']]) + '<span class="q-text">苹果的产量是多少千克？</span>', a:50, _html:true},
+    {q: renderTable('果园水果产量',['水果','苹果','梨','桃子','橘子'], [['产量(千克)','50','35','28','42']]) + '<span class="q-text">苹果比桃子多多少千克？</span>', a:22, _html:true},
+    {q: renderTable('果园水果产量',['水果','苹果','梨','桃子','橘子'], [['产量(千克)','50','35','28','42']]) + '<span class="q-text">四种水果一共多少千克？</span>', a:155, _html:true},
+    {q: renderTable('果园水果产量',['水果','苹果','梨','桃子','橘子'], [['产量(千克)','50','35','28','42']]) + '<span class="q-text">产量最少的水果是多少千克？</span>', a:28, _html:true},
+    {q: renderTable('课外小组人数',['小组','绘画','舞蹈','书法','围棋'], [['男生','8','3','12','15'],['女生','10','18','6','5']]) + '<span class="q-text">书法组一共有多少人？</span>', a:18, _html:true},
+    {q: renderTable('课外小组人数',['小组','绘画','舞蹈','书法','围棋'], [['男生','8','3','12','15'],['女生','10','18','6','5']]) + '<span class="q-text">哪个组人数最多？有多少人？</span>', a:21, _html:true},
+    {q: renderTable('课外小组人数',['小组','绘画','舞蹈','书法','围棋'], [['男生','8','3','12','15'],['女生','10','18','6','5']]) + '<span class="q-text">四个组的男生一共有多少人？</span>', a:38, _html:true}
+  ],
+
+  // 模块3：认识条形统计图 — 从条形图中读取和比较数据
+  3: [
+    {q: renderBarChart('二年级同学最喜欢的动物',[{label:'猫',value:15,color:'#FF6B6B'},{label:'狗',value:20,color:'#4ECDC4'},{label:'兔',value:10,color:'#FF9800'},{label:'鸟',value:8,color:'#9C27B0'}]) + '<span class="q-text">喜欢狗的有多少人？</span>', a:20, _html:true},
+    {q: renderBarChart('二年级同学最喜欢的动物',[{label:'猫',value:15,color:'#FF6B6B'},{label:'狗',value:20,color:'#4ECDC4'},{label:'兔',value:10,color:'#FF9800'},{label:'鸟',value:8,color:'#9C27B0'}]) + '<span class="q-text">喜欢哪种动物的人最多？有多少人？</span>', a:20, _html:true},
+    {q: renderBarChart('二年级同学最喜欢的动物',[{label:'猫',value:15,color:'#FF6B6B'},{label:'狗',value:20,color:'#4ECDC4'},{label:'兔',value:10,color:'#FF9800'},{label:'鸟',value:8,color:'#9C27B0'}]) + '<span class="q-text">喜欢猫的比喜欢兔的多几人？</span>', a:5, _html:true},
+    {q: renderBarChart('二年级同学最喜欢的动物',[{label:'猫',value:15,color:'#FF6B6B'},{label:'狗',value:20,color:'#4ECDC4'},{label:'兔',value:10,color:'#FF9800'},{label:'鸟',value:8,color:'#9C27B0'}]) + '<span class="q-text">喜欢猫和狗的一共有多少人？</span>', a:35, _html:true},
+    {q: renderBarChart('二年级同学最喜欢的动物',[{label:'猫',value:15,color:'#FF6B6B'},{label:'狗',value:20,color:'#4ECDC4'},{label:'兔',value:10,color:'#FF9800'},{label:'鸟',value:8,color:'#9C27B0'}]) + '<span class="q-text">喜欢鸟的有多少人？</span>', a:8, _html:true},
+    {q: renderBarChart('各小组回收废电池数量',[{label:'一组',value:24,color:'#66BB6A'},{label:'二组',value:18,color:'#42A5F5'},{label:'三组',value:30,color:'#EC407A'},{label:'四组',value:22,color:'#FFD54F'}]) + '<span class="q-text">三组回收了多少节电池？</span>', a:30, _html:true},
+    {q: renderBarChart('各小组回收废电池数量',[{label:'一组',value:24,color:'#66BB6A'},{label:'二组',value:18,color:'#42A5F5'},{label:'三组',value:30,color:'#EC407A'},{label:'四组',value:22,color:'#FFD54F'}]) + '<span class="q-text">回收最多的小组比最少的多了几节？</span>', a:12, _html:true},
+    {q: renderBarChart('各小组回收废电池数量',[{label:'一组',value:24,color:'#66BB6A'},{label:'二组',value:18,color:'#42A5F5'},{label:'三组',value:30,color:'#EC407A'},{label:'四组',value:22,color:'#FFD54F'}]) + '<span class="q-text">四个组一共回收了多少节？</span>', a:94, _html:true},
+    {q: renderBarChart('各小组回收废电池数量',[{label:'一组',value:24,color:'#66BB6A'},{label:'二组',value:18,color:'#42A5F5'},{label:'三组',value:30,color:'#EC407A'},{label:'四组',value:22,color:'#FFD54F'}]) + '<span class="q-text">一组比四组多回收几节？</span>', a:2, _html:true},
+    {q: renderBarChart('四种球类的个数',[{label:'足球',value:12,color:'#FF6B6B'},{label:'篮球',value:16,color:'#FF9800'},{label:'排球',value:8,color:'#4ECDC4'},{label:'乒乓球',value:20,color:'#EC407A'}]) + '<span class="q-text">乒乓球有多少个？</span>', a:20, _html:true},
+    {q: renderBarChart('四种球类的个数',[{label:'足球',value:12,color:'#FF6B6B'},{label:'篮球',value:16,color:'#FF9800'},{label:'排球',value:8,color:'#4ECDC4'},{label:'乒乓球',value:20,color:'#EC407A'}]) + '<span class="q-text">篮球比足球多几个？</span>', a:4, _html:true},
+    {q: renderBarChart('四种球类的个数',[{label:'足球',value:12,color:'#FF6B6B'},{label:'篮球',value:16,color:'#FF9800'},{label:'排球',value:8,color:'#4ECDC4'},{label:'乒乓球',value:20,color:'#EC407A'}]) + '<span class="q-text">哪种球最少？有几个？</span>', a:8, _html:true},
+    {q: renderBarChart('四种球类的个数',[{label:'足球',value:12,color:'#FF6B6B'},{label:'篮球',value:16,color:'#FF9800'},{label:'排球',value:8,color:'#4ECDC4'},{label:'乒乓球',value:20,color:'#EC407A'}]) + '<span class="q-text">足球和排球一共有多少个？</span>', a:20, _html:true},
+    {q: renderBarChart('四种球类的个数',[{label:'足球',value:12,color:'#FF6B6B'},{label:'篮球',value:16,color:'#FF9800'},{label:'排球',value:8,color:'#4ECDC4'},{label:'乒乓球',value:20,color:'#EC407A'}]) + '<span class="q-text">四种球一共有多少个？</span>', a:56, _html:true},
+    {q: renderBarChart('四种球类的个数',[{label:'足球',value:12,color:'#FF6B6B'},{label:'篮球',value:16,color:'#FF9800'},{label:'排球',value:8,color:'#4ECDC4'},{label:'乒乓球',value:20,color:'#EC407A'}]) + '<span class="q-text">乒乓球比排球多几个？</span>', a:12, _html:true}
+  ]
+};
+
+var MODULE_NAMES = {
+  1: '模块一 · 分类与整理数据',
+  2: '模块二 · 认识统计表',
+  3: '模块三 · 认识条形统计图'
+};
+
+var DROP_COLORS = [
+  'linear-gradient(135deg,#FF6B6B,#ee5a5a)',
+  'linear-gradient(135deg,#4ECDC4,#44b3ab)',
+  'linear-gradient(135deg,#FF9800,#F57C00)',
+  'linear-gradient(135deg,#9C27B0,#7B1FA2)',
+  'linear-gradient(135deg,#66BB6A,#43A047)',
+  'linear-gradient(135deg,#42A5F5,#1E88E5)',
+  'linear-gradient(135deg,#EC407A,#D81B60)',
+  'linear-gradient(135deg,#FFD54F,#FFB300)'
+];
+
+// ==================== 游戏状态 ====================
+var G = {
+  module: 0,
+  round: 0,
+  totalRounds: 15,
+  scores: [0, 0],
+  combos: [0, 0],
+  timer: 20,
+  timerInterval: null,
+  active: false,
+  roundActive: false,
+  answered: [false, false],
+  questions: [],
+  currentQ: null,
+  falling: [[], []],
+  animFrame: null,
+  spawnTimers: []
+};
+
+// ==================== 工具函数 ====================
+function shuffle(a) {
+  var r = a.slice();
+  for (var i = r.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = r[i]; r[i] = r[j]; r[j] = t;
+  }
+  return r;
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randFloat(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function generateWrongAnswers(correct, count) {
+  var wrongs = [];
+  var offsets = [-15,-12,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10,12,15];
+  offsets = shuffle(offsets);
+  for (var i = 0; i < offsets.length && wrongs.length < count; i++) {
+    var val = correct + offsets[i];
+    if (val >= 0 && val !== correct && wrongs.indexOf(val) === -1) {
+      wrongs.push(val);
+    }
+  }
+  while (wrongs.length < count) {
+    var v = correct + rand(-15, 15);
+    if (v >= 0 && v !== correct && wrongs.indexOf(v) === -1) wrongs.push(v);
+  }
+  return wrongs;
+}
+
+// ==================== 音效 ====================
+var actx = null;
+function initAudio() {
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+}
+function playTone(f, d, ty, vol) {
+  if (!actx) return;
+  try {
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = ty || 'sine';
+    o.frequency.setValueAtTime(f, actx.currentTime);
+    g.gain.setValueAtTime(vol || 0.08, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + d);
+  } catch(e) {}
+}
+function sfxCorrect() {
+  playTone(523, 0.12, 'square', 0.07);
+  setTimeout(function(){playTone(659, 0.12, 'square', 0.07);}, 80);
+  setTimeout(function(){playTone(784, 0.18, 'square', 0.07);}, 160);
+}
+function sfxWrong() { playTone(200, 0.25, 'sawtooth', 0.05); }
+function sfxTick() { playTone(800, 0.04, 'sine', 0.03); }
+function sfxRoundStart() { playTone(600, 0.1, 'sine', 0.05); playTone(900, 0.15, 'sine', 0.05); }
+function sfxWin() {
+  for (var i = 0; i < 5; i++) {
+    setTimeout(function(){ playTone(523 + Math.random() * 500, 0.18, 'square', 0.06); }, i * 130);
+  }
+}
+
+// ==================== 主页 → 游戏导航 ====================
+function startModule(modId) {
+  initAudio();
+  G.module = modId;
+  G.questions = shuffle(QUESTION_BANKS[modId]);
+  G.totalRounds = G.questions.length;
+  G.scores = [0, 0];
+  G.combos = [0, 0];
+  G.round = 0;
+
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('gamePage').style.display = 'flex';
+  document.getElementById('moduleLabel').textContent = MODULE_NAMES[modId];
+  document.getElementById('tr').textContent = G.totalRounds;
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('combo1').textContent = '';
+  document.getElementById('combo2').textContent = '';
+  document.getElementById('winOverlay').classList.remove('show');
+
+  nextRound();
+}
+
+function goHome() {
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  G.active = false;
+  G.roundActive = false;
+  G.spawnTimers.forEach(function(t){ clearTimeout(t); });
+  G.spawnTimers = [];
+  clearAllFalling();
+
+  document.getElementById('gamePage').style.display = 'none';
+  document.getElementById('homePage').style.display = 'flex';
+  document.getElementById('winOverlay').classList.remove('show');
+
+  document.querySelectorAll('.confetti').forEach(function(c){ c.remove(); });
+}
+
+function restartModule() {
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){ c.remove(); });
+  startModule(G.module);
+}
+
+// ==================== 游戏核心 ====================
+function clearAllFalling() {
+  for (var p = 0; p < 2; p++) {
+    var nums = G.falling[p];
+    for (var i = 0; i < nums.length; i++) {
+      if (nums[i].el && nums[i].el.parentNode) nums[i].el.remove();
+    }
+    G.falling[p] = [];
+  }
+}
+
+function buildQuestionHTML() {
+  var q = G.currentQ;
+  if (q._html) {
+    return q.q;
+  } else {
+    return '<span class="q-text">' + q.q + '</span>';
+  }
+}
+
+function nextRound() {
+  if (G.round >= G.totalRounds) { endGame(); return; }
+
+  clearAllFalling();
+  G.answered = [false, false];
+  G.roundActive = true;
+  G.timer = 20;
+
+  G.currentQ = G.questions[G.round];
+  document.getElementById('rn').textContent = G.round + 1;
+
+  var qHTML = buildQuestionHTML();
+  document.getElementById('q1').innerHTML = qHTML;
+  document.getElementById('q2').innerHTML = qHTML;
+
+  var td = document.getElementById('timerDisplay');
+  td.textContent = '⏱ 20s';
+  td.classList.remove('urgent');
+
+  clearInterval(G.timerInterval);
+  G.timerInterval = setInterval(function() {
+    G.timer--;
+    var tEl = document.getElementById('timerDisplay');
+    tEl.textContent = '⏱ ' + G.timer + 's';
+    if (G.timer <= 5 && G.timer > 0) {
+      tEl.classList.add('urgent');
+      sfxTick();
+    }
+    if (G.timer <= 0) {
+      clearInterval(G.timerInterval);
+      tEl.classList.remove('urgent');
+      timeUp();
+    }
+  }, 1000);
+
+  spawnRoundNumbers();
+
+  cancelAnimationFrame(G.animFrame);
+  G.animFrame = requestAnimationFrame(gameLoop);
+
+  sfxRoundStart();
+}
+
+function spawnRoundNumbers() {
+  var correct = G.currentQ.a;
+  var wrongs = generateWrongAnswers(correct, 4);
+  var allVals = wrongs.concat([correct]);
+  allVals = shuffle(allVals);
+
+  G.spawnTimers.forEach(function(t){ clearTimeout(t); });
+  G.spawnTimers = [];
+
+  var lanes = [8, 26, 44, 62, 80];
+
+  for (var p = 0; p < 2; p++) {
+    (function(playerIdx) {
+      var pvals = shuffle(allVals.slice());
+      var pLanes = shuffle(lanes.slice());
+      for (var i = 0; i < pvals.length; i++) {
+        (function(val, idx, laneX) {
+          var delay = idx * 1900 + Math.random() * 300;
+          var t = setTimeout(function() {
+            if (!G.roundActive) return;
+            spawnNumber(playerIdx, val, val === correct, laneX);
+          }, delay);
+          G.spawnTimers.push(t);
+        })(pvals[i], i, pLanes[i]);
+      }
+    })(p);
+  }
+}
+
+function spawnNumber(playerIdx, value, isCorrect, laneX) {
+  var dz = document.getElementById('dropZone' + (playerIdx + 1));
+  if (!dz) return;
+
+  var el = document.createElement('div');
+  el.className = 'falling-num';
+  el.textContent = value;
+  el.style.background = DROP_COLORS[Math.floor(Math.random() * DROP_COLORS.length)];
+
+  el.style.left = laneX + '%';
+  el.style.top = '2px';
+
+  var handled = false;
+  function onTap(e) {
+    if (handled) return;
+    handled = true;
+    e.stopPropagation();
+    e.preventDefault();
+    handleAnswer(playerIdx, value, isCorrect, el);
+  }
+  el.addEventListener('touchstart', onTap, {passive: false});
+  el.addEventListener('mousedown', onTap);
+
+  dz.appendChild(el);
+
+  var numObj = {
+    el: el,
+    value: value,
+    isCorrect: isCorrect,
+    y: 2,
+    speed: randFloat(0.2, 0.45),
+    baseX: laneX,
+    wobblePhase: Math.random() * Math.PI * 2,
+    color: el.style.background
+  };
+
+  G.falling[playerIdx].push(numObj);
+}
+
+function handleAnswer(playerIdx, value, isCorrect, el) {
+  if (!G.roundActive) return;
+  if (G.answered[playerIdx]) return;
+  if (el.classList.contains('wrong-pop') || el.classList.contains('correct-glow')) return;
+
+  if (isCorrect) {
+    G.answered[playerIdx] = true;
+    G.roundActive = false;
+    clearInterval(G.timerInterval);
+
+    G.scores[playerIdx] += 10;
+    G.combos[playerIdx]++;
+    document.getElementById('s' + (playerIdx + 1)).textContent = G.scores[playerIdx];
+
+    var comboEl = document.getElementById('combo' + (playerIdx + 1));
+    if (G.combos[playerIdx] >= 3) {
+      comboEl.textContent = '🔥 ' + G.combos[playerIdx] + '连击！';
+    } else if (G.combos[playerIdx] >= 1) {
+      comboEl.textContent = '✅ 连续答对';
+    }
+
+    var otherIdx = playerIdx === 0 ? 1 : 0;
+    G.combos[otherIdx] = 0;
+    document.getElementById('combo' + (otherIdx + 1)).textContent = '';
+
+    el.classList.add('correct-glow');
+    sfxCorrect();
+
+    showScorePop(playerIdx, '+10');
+
+    G.answered[otherIdx] = true;
+
+    freezeAllNumbers();
+
+    document.getElementById('q' + (otherIdx + 1)).innerHTML = buildQuestionHTML() + ' <span style="color:#FFD700">答案：' + G.currentQ.a + '</span>';
+
+    setTimeout(function() {
+      G.round++;
+      nextRound();
+    }, 1200);
+
+  } else {
+    el.classList.add('wrong-pop');
+    sfxWrong();
+    removeFallingNum(playerIdx, el);
+    setTimeout(function() {
+      if (el.parentNode) el.remove();
+    }, 400);
+  }
+}
+
+function showScorePop(playerIdx, text) {
+  var dz = document.getElementById('dropZone' + (playerIdx + 1));
+  var pop = document.createElement('div');
+  pop.className = 'score-pop';
+  pop.textContent = text;
+  pop.style.left = '50%';
+  pop.style.top = '40%';
+  pop.style.transform = 'translateX(-50%)';
+  dz.appendChild(pop);
+  setTimeout(function(){ pop.remove(); }, 1000);
+}
+
+function freezeAllNumbers() {
+  for (var p = 0; p < 2; p++) {
+    var nums = G.falling[p];
+    for (var i = 0; i < nums.length; i++) {
+      nums[i].el.style.pointerEvents = 'none';
+      nums[i].el.style.opacity = '0.5';
+    }
+  }
+}
+
+function removeFallingNum(playerIdx, el) {
+  var nums = G.falling[playerIdx];
+  for (var i = nums.length - 1; i >= 0; i--) {
+    if (nums[i].el === el) {
+      nums.splice(i, 1);
+      break;
+    }
+  }
+}
+
+function timeUp() {
+  if (!G.roundActive) return;
+  G.roundActive = false;
+  G.answered = [true, true];
+  G.combos = [0, 0];
+  document.getElementById('combo1').textContent = '';
+  document.getElementById('combo2').textContent = '';
+
+  var ansHTML = buildQuestionHTML() + ' <span style="color:#FFD700">答案：' + G.currentQ.a + '</span>';
+  document.getElementById('q1').innerHTML = ansHTML;
+  document.getElementById('q2').innerHTML = ansHTML;
+
+  freezeAllNumbers();
+
+  setTimeout(function() {
+    G.round++;
+    nextRound();
+  }, 1500);
+}
+
+// ==================== 动画循环 ====================
+function gameLoop() {
+  if (!G.roundActive && G.falling[0].length === 0 && G.falling[1].length === 0) {
+    return;
+  }
+
+  var now = Date.now();
+
+  for (var p = 0; p < 2; p++) {
+    var dz = document.getElementById('dropZone' + (p + 1));
+    if (!dz) continue;
+    var maxY = dz.clientHeight + 10;
+    var nums = G.falling[p];
+
+    for (var i = nums.length - 1; i >= 0; i--) {
+      var n = nums[i];
+      n.y += n.speed;
+      n.el.style.top = n.y + 'px';
+
+      var wobble = Math.sin(now / 400 + n.wobblePhase) * 0.6;
+      n.el.style.left = (n.baseX + wobble) + '%';
+
+      if (n.y > maxY) {
+        n.el.remove();
+        nums.splice(i, 1);
+      }
+    }
+  }
+
+  G.animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ==================== 游戏结束 ====================
+function endGame() {
+  G.active = false;
+  G.roundActive = false;
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  clearAllFalling();
+
+  var ov = document.getElementById('winOverlay');
+  ov.classList.add('show');
+
+  document.getElementById('ws1').textContent = G.scores[0];
+  document.getElementById('ws2').textContent = G.scores[1];
+
+  var wt = document.getElementById('winTitle');
+  var ws = document.getElementById('winSub');
+
+  if (G.scores[0] > G.scores[1]) {
+    wt.innerHTML = '🔴 红方获胜！';
+    wt.style.color = '#FF6B6B';
+    ws.textContent = '红方 ' + G.scores[0] + ' : ' + G.scores[1] + ' 蓝方';
+  } else if (G.scores[1] > G.scores[0]) {
+    wt.innerHTML = '🔵 蓝方获胜！';
+    wt.style.color = '#4ECDC4';
+    ws.textContent = '蓝方 ' + G.scores[1] + ' : ' + G.scores[0] + ' 红方';
+  } else {
+    wt.innerHTML = '🤝 平局！';
+    wt.style.color = '#FFD700';
+    ws.textContent = '双方都是 ' + G.scores[0] + ' 分';
+  }
+
+  sfxWin();
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  var colors = ['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for (var i = 0; i < 60; i++) {
+    var d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random() * 100 + '%';
+    d.style.top = -(Math.random() * 50 + 10) + 'px';
+    d.style.width = (Math.random() * 10 + 6) + 'px';
+    d.style.height = (Math.random() * 10 + 6) + 'px';
+    d.style.background = colors[Math.floor(Math.random() * colors.length)];
+    d.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    d.style.animationDelay = Math.random() * 1.5 + 's';
+    d.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.remove(); }, 4000);
+  }
+}
+
+// ==================== 初始化 ====================
+document.getElementById('homePage').style.display = 'flex';
+document.getElementById('gamePage').style.display = 'none';
+</script>
+</body>
+</html>

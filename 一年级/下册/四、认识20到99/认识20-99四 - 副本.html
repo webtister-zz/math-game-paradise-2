@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 数字探险家 - 认识20-99</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .game-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .level-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .level-btn:hover, .level-btn.active {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+        
+        .game-area {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        
+        .task-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .task-header h2 {
+            color: #333;
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+        .task-header .desc {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* 数字卡片样式 */
+        .number-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .number-card {
+            width: 120px;
+            height: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s;
+        }
+        .number-card:hover {
+            transform: translateY(-5px) rotate(3deg);
+        }
+        .number-card .digit {
+            font-size: 60px;
+            font-weight: bold;
+        }
+        .number-card .place {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        /* 计数器样式 */
+        .counter-area {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .counter-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .counter-label {
+            font-size: 18px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .counter-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .counter-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .counter-btn:hover {
+            transform: scale(1.1);
+        }
+        .counter-value {
+            width: 80px;
+            height: 60px;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        /* 选项按钮 */
+        .options-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .option-btn {
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            background: white;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.3s;
+        }
+        .option-btn:hover {
+            border-color: #667eea;
+            background: #f5f7fa;
+            transform: translateY(-3px);
+        }
+        .option-btn.correct {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        .option-btn.wrong {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+        
+        /* 数字分解 */
+        .decompose-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .decompose-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .decompose-input {
+            width: 80px;
+            height: 60px;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        .decompose-input:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+        .decompose-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .operator {
+            font-size: 36px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        /* 数数区域 */
+        .counting-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        .count-item {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* 比较大小 */
+        .compare-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .compare-number {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+        }
+        .compare-btn {
+            padding: 15px 30px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-size: 30px;
+            transition: all 0.3s;
+        }
+        .compare-btn:hover, .compare-btn.selected {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        /* 分数板 */
+        .score-board {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        .score-board .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .score-board .stars {
+            font-size: 20px;
+            margin-top: 5px;
+        }
+        
+        /* 成功弹窗 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            animation: popIn 0.5s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-content .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .modal-content h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .modal-content p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        /* 提示框 */
+        .hint-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hint-box .icon {
+            font-size: 24px;
+        }
+        .hint-box .text {
+            color: #856404;
+            font-size: 14px;
+        }
+        
+        /* 序列练习 */
+        .sequence-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .sequence-item {
+            width: 70px;
+            height: 70px;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            background: white;
+        }
+        .sequence-item.missing {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .sequence-item input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 28px; }
+            .number-card { width: 90px; height: 120px; }
+            .number-card .digit { font-size: 40px; }
+            .compare-number { width: 80px; height: 80px; font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="score-board">
+        <div>得分: <span class="score" id="score">0</span></div>
+        <div class="stars" id="stars">⭐⭐⭐</div>
+    </div>
+
+    <div class="game-container">
+        <div class="header">
+            <h1>🔢 数字探险家</h1>
+            <p>苏教版小学一年级下册 - 认识20-99</p>
+        </div>
+        
+        <div class="level-selector">
+            <button class="level-btn active" onclick="loadLevel(0)">第1关：认识数位</button>
+            <button class="level-btn" onclick="loadLevel(1)">第2关：数的组成</button>
+            <button class="level-btn" onclick="loadLevel(2)">第3关：数数练习</button>
+            <button class="level-btn" onclick="loadLevel(3)">第4关：比较大小</button>
+            <button class="level-btn" onclick="loadLevel(4)">第5关：数字序列</button>
+            <button class="level-btn" onclick="loadLevel(5)">第6关：综合挑战</button>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress" style="width: 0%"></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="task-header">
+                <h2 id="taskTitle">🎯 认识数位</h2>
+                <p class="desc" id="taskDesc">看看这个数字是由几个十和几个一组成的</p>
+            </div>
+            
+            <div class="hint-box" id="hintBox">
+                <span class="icon">💡</span>
+                <span class="text" id="hintText">十位上的数字表示几个十，个位上的数字表示几个一</span>
+            </div>
+            
+            <div id="gameContent"></div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary" onclick="resetLevel()">🔄 重新开始</button>
+                <button class="btn btn-primary" onclick="checkAnswer()" id="checkBtn">✅ 检查答案</button>
+                <button class="btn btn-primary" onclick="nextQuestion()" id="nextBtn" style="display: none;">下一题 ➡️</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="emoji">🎉</div>
+            <h2>太棒了！</h2>
+            <p id="successText">回答正确！</p>
+            <button class="btn btn-primary" onclick="closeModal()">继续</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 0;
+        let currentQuestion = 0;
+        let score = 0;
+        let correctCount = 0;
+        let currentAnswer = null;
+        let selectedCompare = null;
+        
+        const levels = [
+            { title: "🎯 认识数位", desc: "看看这个数字是由几个十和几个一组成的", hint: "十位上的数字表示几个十，个位上的数字表示几个一", type: "placeValue", questions: 5 },
+            { title: "🔢 数的组成", desc: "用计数器表示下面的数字", hint: "十位拨几个珠子，个位拨几个珠子", type: "composition", questions: 5 },
+            { title: "📊 数数练习", desc: "数一数有多少个物品", hint: "可以十个十个地数，再数剩下的", type: "counting", questions: 5 },
+            { title: "⚖️ 比较大小", desc: "比较两个数字的大小", hint: "先比十位，十位相同再比个位", type: "compare", questions: 5 },
+            { title: "📈 数字序列", desc: "找出缺失的数字", hint: "观察数字的规律，按顺序填数", type: "sequence", questions: 5 },
+            { title: "🌟 综合挑战", desc: "综合运用所学知识", hint: "仔细读题，运用数位知识解答", type: "mixed", questions: 5 }
+        ];
+        
+        function randomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        function loadLevel(levelIndex) {
+            currentLevel = levelIndex;
+            currentQuestion = 0;
+            correctCount = 0;
+            
+            const level = levels[levelIndex];
+            document.getElementById('taskTitle').textContent = level.title;
+            document.getElementById('taskDesc').textContent = level.desc;
+            document.getElementById('hintText').textContent = level.hint;
+            
+            const progress = ((levelIndex + 1) / levels.length) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            
+            document.querySelectorAll('.level-btn').forEach((btn, index) => {
+                btn.classList.toggle('active', index === levelIndex);
+            });
+            
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            generateQuestion();
+        }
+        
+        function generateQuestion() {
+            const level = levels[currentLevel];
+            const content = document.getElementById('gameContent');
+            content.innerHTML = '';
+            selectedCompare = null;
+            
+            switch(level.type) {
+                case 'placeValue':
+                    generatePlaceValue(content);
+                    break;
+                case 'composition':
+                    generateComposition(content);
+                    break;
+                case 'counting':
+                    generateCounting(content);
+                    break;
+                case 'compare':
+                    generateCompare(content);
+                    break;
+                case 'sequence':
+                    generateSequence(content);
+                    break;
+                case 'mixed':
+                    const types = ['placeValue', 'counting', 'compare'];
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    if (type === 'placeValue') generatePlaceValue(content);
+                    else if (type === 'counting') generateCounting(content);
+                    else generateCompare(content);
+                    break;
+            }
+        }
+        
+        function generatePlaceValue(container) {
+            const num = randomNumber(20, 99);
+            const tens = Math.floor(num / 10);
+            const ones = num % 10;
+            currentAnswer = { tens, ones };
+            
+            container.innerHTML = `
+                <div class="number-display">
+                    <div class="number-card">
+                        <div class="digit">${num}</div>
+                        <div class="place">这个数字</div>
+                    </div>
+                </div>
+                <div class="decompose-area">
+                    <div class="decompose-box">
+                        <input type="number" class="decompose-input" id="tensInput" min="0" max="9">
+                        <div class="decompose-label">几个十</div>
+                    </div>
+                    <div class="operator">+</div>
+                    <div class="decompose-box">
+                        <input type="number" class="decompose-input" id="onesInput" min="0" max="9">
+                        <div class="decompose-label">几个一</div>
+                    </div>
+                    <div class="operator">=</div>
+                    <div class="decompose-box">
+                        <div class="decompose-input" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center;">${num}</div>
+                        <div class="decompose-label">这个数</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateComposition(container) {
+            const num = randomNumber(20, 99);
+            const tens = Math.floor(num / 10);
+            const ones = num % 10;
+            currentAnswer = { tens, ones };
+            
+            container.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 48px; font-weight: bold; color: #667eea;">${num}</div>
+                    <div style="color: #666; margin-top: 10px;">用计数器表示这个数字</div>
+                </div>
+                <div class="counter-area">
+                    <div class="counter-group">
+                        <div class="counter-label">十位</div>
+                        <div class="counter-box">
+                            <button class="counter-btn" onclick="adjustCounter('tens', -1)">-</button>
+                            <div class="counter-value" id="tensCounter">0</div>
+                            <button class="counter-btn" onclick="adjustCounter('tens', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="counter-group">
+                        <div class="counter-label">个位</div>
+                        <div class="counter-box">
+                            <button class="counter-btn" onclick="adjustCounter('ones', -1)">-</button>
+                            <div class="counter-value" id="onesCounter">0</div>
+                            <button class="counter-btn" onclick="adjustCounter('ones', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function adjustCounter(place, delta) {
+            const counter = document.getElementById(place + 'Counter');
+            let value = parseInt(counter.textContent) + delta;
+            if (value < 0) value = 0;
+            if (value > 9) value = 9;
+            counter.textContent = value;
+        }
+        
+        function generateCounting(container) {
+            const count = randomNumber(20, 50);
+            currentAnswer = count;
+            
+            let itemsHtml = '';
+            const emojis = ['🍎', '⭐', '🎈', '🌸', '🍀'];
+            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            for (let i = 0; i < count; i++) {
+                itemsHtml += `<div class="count-item">${emoji}</div>`;
+            }
+            
+            container.innerHTML = `
+                <div class="counting-area">${itemsHtml}</div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <div style="font-size: 18px; color: #666; margin-bottom: 10px;">一共有多少个？</div>
+                    <input type="number" class="decompose-input" id="countInput" style="width: 120px;" min="1" max="99" placeholder="输入数字">
+                </div>
+            `;
+        }
+        
+        function generateCompare(container) {
+            let num1, num2;
+            do {
+                num1 = randomNumber(20, 99);
+                num2 = randomNumber(20, 99);
+            } while (num1 === num2);
+            
+            currentAnswer = num1 > num2 ? 'greater' : 'less';
+            
+            container.innerHTML = `
+                <div class="compare-area">
+                    <div class="compare-number">${num1}</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="compare-btn" onclick="selectCompare('greater', this)">&gt;</button>
+                        <button class="compare-btn" onclick="selectCompare('less', this)">&lt;</button>
+                    </div>
+                    <div class="compare-number">${num2}</div>
+                </div>
+            `;
+        }
+        
+        function selectCompare(choice, btn) {
+            selectedCompare = choice;
+            document.querySelectorAll('.compare-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+        
+        function generateSequence(container) {
+            const start = randomNumber(20, 70);
+            const step = Math.random() > 0.5 ? 1 : 2;
+            const missingIndex = randomNumber(1, 4);
+            currentAnswer = start + missingIndex * step;
+            
+            let sequenceHtml = '';
+            for (let i = 0; i < 5; i++) {
+                if (i === missingIndex) {
+                    sequenceHtml += `<div class="sequence-item missing"><input type="number" id="sequenceInput" min="1" max="99"></div>`;
+                } else {
+                    sequenceHtml += `<div class="sequence-item">${start + i * step}</div>`;
+                }
+            }
+            
+            container.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 18px; color: #666;">按规律填数</div>
+                </div>
+                <div class="sequence-area">${sequenceHtml}</div>
+            `;
+        }
+        
+        function checkAnswer() {
+            const level = levels[currentLevel];
+            let isCorrect = false;
+            
+            switch(level.type) {
+                case 'placeValue':
+                    const tens = parseInt(document.getElementById('tensInput')?.value || 0);
+                    const ones = parseInt(document.getElementById('onesInput')?.value || 0);
+                    isCorrect = tens === currentAnswer.tens && ones === currentAnswer.ones;
+                    break;
+                    
+                case 'composition':
+                    const tensCount = parseInt(document.getElementById('tensCounter')?.textContent || 0);
+                    const onesCount = parseInt(document.getElementById('onesCounter')?.textContent || 0);
+                    isCorrect = tensCount === currentAnswer.tens && onesCount === currentAnswer.ones;
+                    break;
+                    
+                case 'counting':
+                    const count = parseInt(document.getElementById('countInput')?.value || 0);
+                    isCorrect = count === currentAnswer;
+                    break;
+                    
+                case 'compare':
+                    isCorrect = selectedCompare === currentAnswer;
+                    break;
+                    
+                case 'sequence':
+                    const seq = parseInt(document.getElementById('sequenceInput')?.value || 0);
+                    isCorrect = seq === currentAnswer;
+                    break;
+                    
+                case 'mixed':
+                    if (document.getElementById('tensInput')) {
+                        const mtens = parseInt(document.getElementById('tensInput')?.value || 0);
+                        const mones = parseInt(document.getElementById('onesInput')?.value || 0);
+                        isCorrect = mtens === currentAnswer.tens && mones === currentAnswer.ones;
+                    } else if (document.getElementById('countInput')) {
+                        const mcount = parseInt(document.getElementById('countInput')?.value || 0);
+                        isCorrect = mcount === currentAnswer;
+                    } else {
+                        isCorrect = selectedCompare === currentAnswer;
+                    }
+                    break;
+            }
+            
+            if (isCorrect) {
+                correctCount++;
+                score += 20;
+                document.getElementById('score').textContent = score;
+                
+                const modal = document.getElementById('successModal');
+                document.getElementById('successText').textContent = `回答正确！获得 20 分！(${currentQuestion + 1}/${level.questions})`;
+                modal.classList.add('show');
+                
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            } else {
+                alert('再想想哦！可以参考上方的提示 💡');
+            }
+        }
+        
+        function nextQuestion() {
+            currentQuestion++;
+            const level = levels[currentLevel];
+            
+            if (currentQuestion >= level.questions) {
+                const stars = correctCount >= 4 ? 3 : (correctCount >= 2 ? 2 : 1);
+                document.getElementById('stars').textContent = '⭐'.repeat(stars);
+                
+                if (currentLevel < levels.length - 1) {
+                    if (confirm(`🎉 恭喜完成第${currentLevel + 1}关！\n答对 ${correctCount}/${level.questions} 题\n获得 ${stars} 颗星\n\n要进入下一关吗？`)) {
+                        loadLevel(currentLevel + 1);
+                    }
+                } else {
+                    alert(`🎊 恭喜你完成所有关卡！\n总分: ${score} 分\n你是真正的数字探险家！`);
+                }
+            } else {
+                document.getElementById('checkBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'none';
+                generateQuestion();
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('successModal').classList.remove('show');
+        }
+        
+        function resetLevel() {
+            loadLevel(currentLevel);
+        }
+        
+        loadLevel(0);
+    </script>
+</body>
+</html>

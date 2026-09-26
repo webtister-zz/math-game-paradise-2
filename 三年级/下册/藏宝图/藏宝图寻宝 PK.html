@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>藏宝图寻宝 PK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px 8px;gap:10px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.module-tabs{display:flex;gap:4px;padding:4px 8px;background:rgba(0,0,0,0.3);justify-content:center;flex-wrap:wrap}
+.mtab{padding:7px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.78em;cursor:pointer;transition:all 0.2s;font-family:inherit;white-space:nowrap}
+.mtab:hover{border-color:rgba(255,255,255,0.5);color:#fff}
+.mtab.active{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333;border-color:#FFD700;font-weight:bold}
+
+/* 藏宝图容器 */
+.map-section{display:flex;justify-content:center;align-items:center;padding:8px;gap:12px;flex-wrap:wrap}
+.map-wrapper{position:relative;background:linear-gradient(135deg,#f5e6c8,#e8d5a3,#d4c08c);border:4px solid #8B6914;border-radius:8px;padding:6px;box-shadow:0 0 20px rgba(139,105,20,0.4),inset 0 0 30px rgba(0,0,0,0.1)}
+.map-wrapper::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 Q35 15 30 25 Q25 15 30 5' fill='rgba(139,105,20,0.06)'/%3E%3C/svg%3E");pointer-events:none;border-radius:4px}
+.map-title{text-align:center;font-size:0.85em;font-weight:bold;color:#5D3A1A;margin-bottom:4px;letter-spacing:2px}
+.map-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(6,1fr);gap:2px;position:relative;z-index:1}
+.map-cell{width:50px;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.6em;cursor:default;transition:all 0.2s;position:relative;border:1px solid rgba(139,105,20,0.3)}
+.map-cell.grass{background:rgba(144,238,144,0.45)}
+.map-cell.forest{background:rgba(34,139,34,0.35)}
+.map-cell.mountain{background:rgba(139,137,137,0.55)}
+.map-cell.river{background:rgba(100,149,237,0.55)}
+.map-cell.bridge{background:rgba(160,82,45,0.5)}
+.map-cell.camp{background:rgba(255,215,0,0.3)}
+.map-cell.castle{background:rgba(255,182,193,0.4)}
+.map-cell.treasure{border:3px solid #3060FF!important;box-shadow:0 0 14px rgba(30,96,255,0.7);outline:2px solid #3060FF;outline-offset:-1px;animation:destGlow 2s infinite}
+@keyframes destGlow{0%,100%{box-shadow:0 0 10px rgba(30,96,255,0.5)}50%{box-shadow:0 0 22px rgba(30,96,255,0.9)}}
+@keyframes treasureGlow{0%,100%{box-shadow:0 0 8px rgba(255,215,0,0.5)}50%{box-shadow:0 0 18px rgba(255,215,0,0.9)}}
+.map-cell.start{border:3px solid #FF2020!important;box-shadow:0 0 10px rgba(255,0,0,0.6);outline:2px solid #FF2020;outline-offset:-1px}
+
+/* 指南针 */
+.compass{position:absolute;bottom:-36px;right:-8px;width:55px;height:55px;z-index:2}
+.compass-inner{width:100%;height:100%;border-radius:50%;background:rgba(255,255,255,0.9);border:2px solid #8B6914;position:relative;display:flex;align-items:center;justify-content:center}
+.compass-n{position:absolute;top:2px;color:#c00;font-weight:bold;font-size:0.7em}
+.compass-s{position:absolute;bottom:2px;color:#333;font-weight:bold;font-size:0.7em}
+.compass-w{position:absolute;left:2px;color:#333;font-weight:bold;font-size:0.7em}
+.compass-e{position:absolute;right:2px;color:#333;font-weight:bold;font-size:0.7em}
+.compass-arrow{width:2px;height:22px;background:#c00;position:absolute;top:4px}
+.compass-arrow::after{content:'';position:absolute;top:-6px;left:-4px;border:5px solid transparent;border-bottom:8px solid #c00}
+
+/* 图例 */
+.legend{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:4px 8px;font-size:0.65em;color:#ccc}
+.legend span{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:8px}
+
+/* PK 区域 */
+.arena{display:flex;flex:1}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 6px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:0.95em;font-weight:bold;margin-bottom:2px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.6em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.7em;color:#FFD700;min-height:16px}
+
+/* 模块一：方向问题 */
+.q-box{background:rgba(255,255,255,0.1);border-radius:12px;padding:8px;margin:4px 0;width:100%;text-align:center;min-height:45px;display:flex;align-items:center;justify-content:center;font-size:0.88em;line-height:1.3;flex-direction:column}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;margin:4px 0}
+.p-opt{padding:8px 4px;border-radius:10px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.78em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.2;min-height:36px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.03)}
+.p-opt:active{transform:scale(0.95)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.feedback{font-size:0.75em;font-weight:bold;min-height:18px;text-align:center;margin:2px 0}
+
+/* 模块二：路线点击 */
+.route-task{background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:6px 10px;margin:4px 0;font-size:0.82em;color:#FFD700;text-align:center;width:100%}
+.route-map-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(6,1fr);gap:2px;margin:6px 0}
+.route-cell{width:38px;height:38px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1.2em;cursor:pointer;transition:all 0.15s;border:1.5px solid rgba(255,255,255,0.25);position:relative;background:rgba(255,255,255,0.08)}
+.route-cell:hover{border-color:#FFD700;transform:scale(1.08);z-index:2}
+.route-cell.grass{background:rgba(144,238,144,0.3)}
+.route-cell.forest{background:rgba(34,139,34,0.25)}
+.route-cell.mountain{background:rgba(139,137,137,0.45);cursor:not-allowed}
+.route-cell.river{background:rgba(100,149,237,0.4);cursor:not-allowed}
+.route-cell.bridge{background:rgba(160,82,45,0.4)}
+.route-cell.camp{background:rgba(255,215,0,0.2)}
+.route-cell.castle{background:rgba(255,182,193,0.3)}
+.route-cell.treasure{background:rgba(255,215,0,0.45);animation:treasureGlow 2s infinite}
+.route-cell.start{border:3px solid #FF2020!important;box-shadow:0 0 10px rgba(255,0,0,0.6);outline:2px solid #FF2020;outline-offset:-1px}
+.route-cell.dest{border:3px solid #3060FF!important;box-shadow:0 0 10px rgba(30,96,255,0.6);outline:2px solid #3060FF;outline-offset:-1px}
+.route-cell.path1{background:rgba(255,107,107,0.7)!important;border-color:#FF6B6B!important;box-shadow:0 0 8px rgba(255,107,107,0.5)}
+.route-cell.path2{background:rgba(78,205,196,0.7)!important;border-color:#4ECDC4!important;box-shadow:0 0 8px rgba(78,205,196,0.5)}
+.route-cell .step-num{position:absolute;top:1px;left:2px;font-size:0.5em;font-weight:bold;color:#fff}
+.route-cell.blocked{opacity:0.4;cursor:not-allowed}
+.route-info{font-size:0.7em;color:#ccc;text-align:center;margin:2px 0}
+.route-btns{display:flex;gap:8px;margin:4px 0}
+.route-btn{padding:6px 14px;border-radius:12px;border:none;font-size:0.72em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.route-btn.undo{background:rgba(255,255,255,0.15);color:#fff}
+.route-btn.submit{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.route-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.6em;font-weight:bold;z-index:10;text-shadow:0 0 20px rgba(255,215,0,0.7);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.08)}}
+
+.timer{font-size:1.3em;font-weight:bold;color:#FFD700;min-width:50px;text-align:center}
+.round-info{font-size:0.75em;color:#aaa}
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:8px 16px;border-radius:18px;border:none;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:35px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:650px){
+  .map-cell{width:38px;height:38px;font-size:1.2em}
+  .route-cell{width:30px;height:30px;font-size:1em}
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:4px}
+  .vs-badge{font-size:1.2em}
+  .compass{width:40px;height:40px;bottom:-28px;right:-5px}
+  .compass-arrow{height:16px;top:3px}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <h1>🗺️ 藏宝图寻宝 PK</h1>
+  <span class="round-info">第 <span id="rn">1</span>/10 轮</span>
+  <span class="timer">⏱ <span id="tm">20</span>s</span>
+</div>
+
+<div class="module-tabs">
+  <button class="mtab active" onclick="switchModule(1)">🧭 模块一：说一说方向</button>
+  <button class="mtab" onclick="switchModule(2)">👆 模块二：点击设计路线</button>
+</div>
+
+<!-- 共享藏宝图 -->
+<div class="map-section" id="sharedMap">
+  <div class="map-wrapper">
+    <div class="map-title">🏴‍☠️ 寻 宝 地 图 🏴‍☠️</div>
+    <div class="map-grid" id="mainMapGrid"></div>
+    <div class="compass">
+      <div class="compass-inner">
+        <span class="compass-n">北</span><span class="compass-s">南</span>
+        <span class="compass-w">西</span><span class="compass-e">东</span>
+        <div class="compass-arrow"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="legend">
+  <span>🏁起点</span><span>💎宝藏</span><span>🏰城堡</span><span>⛰️山(不可通过)</span><span>🌲树林</span><span>🌊河流(需过桥)</span><span>🌉桥</span><span>⛺营地</span><span>🟢草地</span>
+</div>
+
+<!-- PK 对战区 -->
+<div class="arena" id="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div id="p1Content"></div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div id="p2Content"></div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1" style="color:#FF6B6B">0</div></div>
+    <div class="win-player"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2" style="color:#4ECDC4">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.1em;padding:12px 30px">🔄 再来一局</button>
+</div>
+
+<script>
+// ============ 藏宝图数据 ============
+// 6×6 固定地图, r=行(0=北→5=南), c=列(0=西→5=东)
+var MAPDATA = [
+  ['mountain','forest',  'castle',  'forest',  'mountain','forest'  ], // r0 北
+  ['forest',  'river',   'bridge',  'river',   'forest',  'castle'  ], // r1
+  ['grass',   'grass',   'grass',   'camp',    'grass',   'river'   ], // r2
+  ['river',   'bridge',  'grass',   'grass',   'grass',   'forest'  ], // r3
+  ['mountain','grass',   'camp',    'mountain','forest',   'grass'   ], // r4
+  ['forest',  'mountain','start',   'forest',  'river',   'forest'  ]  // r5 南
+];
+// 宝藏位置
+var TREASURE_R=0, TREASURE_C=2;
+// 起点位置
+var START_R=5, START_C=2;
+
+var CELL_ICON={
+  grass:'🟢', forest:'🌲', mountain:'⛰️', river:'🌊', bridge:'🌉',
+  camp:'⛺', castle:'🏰', start:'🏁', treasure:'💎'
+};
+var CELL_LABEL={
+  grass:'草地', forest:'树林', mountain:'山', river:'河流', bridge:'桥',
+  camp:'营地', castle:'城堡', start:'起点', treasure:'宝藏'
+};
+// 不可通行
+var BLOCKED={mountain:true, river:true};
+
+// 方向计算
+function getDir(r1,c1,r2,c2){
+  var dr=r2-r1, dc=c2-c1;
+  var ns='', ew='';
+  if(dr<0)ns='北'; else if(dr>0)ns='南';
+  if(dc<0)ew='西'; else if(dc>0)ew='东';
+  if(ns&&ew)return ns+ew;
+  if(ns)return '正'+ns;
+  if(ew)return '正'+ew;
+  return '相同位置';
+}
+
+// ============ 渲染共享地图 ============
+// fromR/fromC=红色出发地, toR/toC=蓝色目标地 (不传=默认🏁💎, 传-1=不显示)
+function renderMainMap(fromR, fromC, toR, toC){
+  var hasHL=fromR!==undefined;
+  var h='';
+  for(var r=0;r<6;r++){
+    for(var c=0;c<6;c++){
+      var type=MAPDATA[r][c];
+      var icon=CELL_ICON[type];
+      var cls='map-cell '+type;
+      if(!hasHL){
+        // 默认模式：固定🏁起点 💎宝藏
+        if(r===START_R&&c===START_C){icon='🏁';cls+=' start';}
+        if(r===TREASURE_R&&c===TREASURE_C){icon='💎';cls+=' treasure';}
+      } else {
+        // 高亮模式：🔴出发地 🔵目标地
+        if(r===fromR&&c===fromC){icon='🔴';cls+=' start';}
+        else if(r===toR&&c===toC){icon='🔵';cls+=' treasure';}
+        // 非高亮的默认位置保留原图标
+        else if(r===START_R&&c===START_C){icon='🏁';cls+=' start';}
+        else if(r===TREASURE_R&&c===TREASURE_C){icon='💎';cls+=' treasure';}
+      }
+      h+='<div class="'+cls+'">'+icon+'</div>';
+    }
+  }
+  document.getElementById('mainMapGrid').innerHTML=h;
+}
+
+// ============ 模块一：方向问题 ============
+// fr/fc=出发地点(红色), tr/tc=目标地点(蓝色)
+var M1=[
+  {q:"宝藏在起点的什么方向？", o:["正北","东北","西北","正西"], a:0, fr:5,fc:2, tr:0,tc:2},
+  {q:"城堡(🏰,r1c5)在起点(🏁,r5c2)的什么方向？", o:["东北","西北","西南","东南"], a:0, fr:5,fc:2, tr:1,tc:5},
+  {q:"桥(🌉,r1c2)在起点的什么方向？", o:["正东","正南","正北","正西"], a:2, fr:5,fc:2, tr:1,tc:2},
+  {q:"从起点出发，营地(⛺,r4c2)在你的什么方向？", o:["正南","正北","正东","正西"], a:1, fr:5,fc:2, tr:4,tc:2},
+  {q:"起点在宝藏的什么方向？", o:["正北","正南","东北","西南"], a:1, fr:0,fc:2, tr:5,tc:2},
+  {q:"山的西边是什么？（看r0c0的山）", o:["树林","地图外面","河流","城堡"], a:1, fr:0,fc:0, tr:-1,tc:-1},
+  {q:"桥(🌉,r3c1)在起点(🏁)的什么方向？", o:["东北","西南","东南","西北"], a:3, fr:5,fc:2, tr:3,tc:1},
+  {q:"城堡(🏰)在宝藏(💎)的什么方向？", o:["东北","西北","东南","西南"], a:2, fr:0,fc:2, tr:1,tc:5},
+  {q:"从起点出发，向南走会遇到什么？", o:["地图外面","河流","树林","山"], a:0, fr:5,fc:2, tr:-1,tc:-1},
+  {q:"树林(🌲,r0c3)在宝藏(💎)的什么方向？", o:["正东","正西","正南","正北"], a:0, fr:0,fc:2, tr:0,tc:3},
+  {q:"草地(🟢,r2c0)在桥(🌉,r3c1)的什么方向？", o:["东北","东南","西北","西南"], a:2, fr:3,fc:1, tr:2,tc:0},
+  {q:"从桥(🌉,r1c2)出发，宝藏在什么方向？", o:["正东","正北","正南","正西"], a:1, fr:1,fc:2, tr:0,tc:2},
+  {q:"营地(⛺,r2c3)在河流(🌊,r2c5)的什么方向？", o:["正东","正西","正南","东北"], a:1, fr:2,fc:5, tr:2,tc:3},
+  {q:"从r0c1树林出发，城堡(r1c5)在什么方向？", o:["西北","东北","西南","东南"], a:3, fr:0,fc:1, tr:1,tc:5},
+  {q:"桥(🌉,r1c2)在桥(🌉,r3c1)的什么方向？", o:["东北","西北","西南","东南"], a:0, fr:3,fc:1, tr:1,tc:2}
+];
+
+// ============ 模块二：路线设计 ============
+// 路线任务：从A到B，在地图上点击格子
+var M2=[
+  {task:"从起点🏁到宝藏💎，设计一条最短路线（必须经过桥🌉）", fromR:5,fromC:2, toR:0,toC:2, require:['bridge']},
+  {task:"从起点🏁到城堡🏰(r1c5)，设计一条路线（不能走山⛰️）", fromR:5,fromC:2, toR:1,toC:5, avoid:['mountain']},
+  {task:"从起点🏁到营地⛺(r2c3)，设计一条路线", fromR:5,fromC:2, toR:2,toC:3},
+  {task:"从起点🏁到另一个营地⛺(r4c2)，设计一条路线", fromR:5,fromC:2, toR:4,toC:2},
+  {task:"从城堡🏰(r1c5)到宝藏💎，设计一条最短路线", fromR:1,fromC:5, toR:0,toC:2, require:['bridge']},
+  {task:"从起点🏁到桥🌉(r3c1)，设计一条路线（经过营地⛺）", fromR:5,fromC:2, toR:3,toC:1, require:['camp']},
+  {task:"从桥🌉(r3c1)出发，经过营地⛺后到达宝藏💎，设计路线", fromR:3,fromC:1, toR:0,toC:2, require:['camp']},
+  {task:"从桥🌉(r1c2)经过营地⛺(r2c3)最后到城堡🏰(r1c5)，设计路线", fromR:1,fromC:2, toR:1,toC:5, waypoints:[{r:2,c:3}]},
+  {task:"从起点🏁到宝藏💎，绕开山⛰️和河流🌊（走桥过河）", fromR:5,fromC:2, toR:0,toC:2, avoid:['mountain','river']},
+  {task:"从营地⛺(r4c2)出发，到宝藏💎，设计最短路线", fromR:4,fromC:2, toR:0,toC:2, require:['bridge']}
+];
+
+// 生成路线图html
+function routeMapHtml(pn, task, pathCells){
+  var h='<div class="route-map-grid" id="rm'+pn+'">';
+  for(var r=0;r<6;r++){
+    for(var c=0;c<6;c++){
+      var type=MAPDATA[r][c];
+      var icon=CELL_ICON[type];
+      if(r===task.fromR&&c===task.fromC)icon='🏁';
+      if(r===task.toR&&c===task.toC&&!(r===task.fromR&&c===task.fromC))icon='💎';
+      // waypoints
+      if(task.waypoints){
+        for(var w=0;w<task.waypoints.length;w++){
+          if(r===task.waypoints[w].r&&c===task.waypoints[w].c)icon='⭐';
+        }
+      }
+      var cls='route-cell '+type;
+      if(r===task.fromR&&c===task.fromC)cls+=' start';
+      if(r===task.toR&&c===task.toC)cls+=' dest';
+      // 检查是否在路径中
+      var stepIdx=-1;
+      for(var i=0;i<pathCells.length;i++){
+        if(pathCells[i].r===r&&pathCells[i].c===c){stepIdx=i;break;}
+      }
+      if(stepIdx>=0)cls+=' path'+pn;
+      var stepLabel=stepIdx>=0?'<span class="step-num">'+(stepIdx+1)+'</span>':'';
+      // 不可通行标记
+      if(BLOCKED[type]&&!(r===task.fromR&&c===task.fromC)&&!(r===task.toR&&c===task.toC)){
+        // 桥例外
+        if(type!=='bridge')cls+=' blocked';
+      }
+      h+='<div class="'+cls+'" data-r="'+r+'" data-c="'+c+'" '+(stepIdx<0?'onclick="clickCell('+pn+','+r+','+c+')"':'')+'>'+icon+stepLabel+'</div>';
+    }
+  }
+  h+='</div>';
+  return h;
+}
+
+// ============ 游戏状态 ============
+var curModule=1, Q=[], sc=[0,0], cr=0, tr=10, tm=20, ti=null, go=false, ans=[false,false];
+var sk='pk_treasure';
+var musicOn=true, actx=null;
+// 模块二路由状态
+var routePaths=[[],[]]; // 每个玩家的路径
+var routeSubmitted=[false,false];
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+// ============ 模块切换 ============
+function switchModule(m){
+  if(go){restartGame();}
+  curModule=m;
+  var tabs=document.querySelectorAll('.mtab');
+  tabs.forEach(function(t,i){t.classList.toggle('active',i===m-1);});
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('sharedMap').style.display='block';
+  document.getElementById('p1Content').innerHTML='<div class="q-box">准备开始...</div>';
+  document.getElementById('p2Content').innerHTML='<div class="q-box">准备开始...</div>';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  renderMainMap(); // 重置地图
+  if(m===1){
+    document.getElementById('arena').style.flexDirection='';
+  }
+}
+
+// ============ 音频 ============
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.1,'sine',0.05);}}
+
+// ============ 开始游戏 ============
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display='none';
+  sc=[0,0];cr=0;ans=[false,false];routePaths=[[],[]];routeSubmitted=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  if(curModule===1){
+    Q=sf(M1).slice(0,10);
+  } else {
+    Q=sf(M2).slice(0,10);
+  }
+  go=true;
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];routePaths=[[],[]];routeSubmitted=[false,false];
+  document.getElementById('rn').textContent=cr+1;
+  if(curModule===1)renderModule1();
+  else renderModule2();
+  tm=20;document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;document.getElementById('tm').textContent=tm;
+    if(tm<=5)sfxTick();
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+// ============ 模块一：方向问答 ============
+function renderModule1(){
+  var q=Q[cr];
+  // 更新共享地图：红色=出发地，蓝色=目标地
+  renderMainMap(q.fr, q.fc, q.tr, q.tc);
+  for(var p=1;p<=2;p++){
+    var pn=p;
+    var ix=[0,1,2,3];
+    for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+    var lb=['A','B','C','D'];
+    var h='<div class="q-box">第'+(cr+1)+'题：'+q.q+'</div><div class="options-grid">';
+    for(var i=0;i<4;i++){
+      var oi=ix[i];
+      h+='<button class="p-opt" onclick="answerM1('+pn+','+oi+','+q.a+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+q.o[oi]+'</button>';
+    }
+    h+='</div>';
+    document.getElementById('p'+pn+'Content').innerHTML=h;
+    document.getElementById('fb'+pn).textContent='';
+    document.getElementById('st'+pn).textContent='';
+  }
+}
+
+function answerM1(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#p'+pn+'Content .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    sfxCorrect();
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+  }
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},1200);}
+}
+
+// ============ 模块二：路线点击 ============
+function renderModule2(){
+  var task=Q[cr];
+  // 更新共享地图：红色=出发地，蓝色=目标地
+  renderMainMap(task.fromR, task.fromC, task.toR, task.toC);
+  for(var p=1;p<=2;p++){
+    var h='<div class="route-task">🗺️ '+task.task+'</div>';
+    h+=routeMapHtml(p, task, []);
+    h+='<div class="route-info" id="ri'+p+'">点击地图格子来设计路线（从🏁出发，只能点相邻格子）</div>';
+    h+='<div class="route-btns">';
+    h+='<button class="route-btn undo" onclick="undoStep('+p+')">↩ 撤销</button>';
+    h+='<button class="route-btn submit" id="btnSub'+p+'" onclick="submitRoute('+p+')">✅ 提交路线</button>';
+    h+='</div>';
+    document.getElementById('p'+p+'Content').innerHTML=h;
+    document.getElementById('fb'+p).textContent='';
+    document.getElementById('st'+p).textContent='';
+  }
+}
+
+function clickCell(pn, r, c){
+  if(!go||ans[pn-1]||routeSubmitted[pn-1])return;
+  var task=Q[cr];
+  var path=routePaths[pn-1];
+
+  // 第一步：必须从起点开始
+  if(path.length===0){
+    if(r===task.fromR&&c===task.fromC){
+      path.push({r:r,c:c});
+      refreshRouteMap(pn);
+      document.getElementById('ri'+pn).textContent='已选起点，继续点击相邻格子设计路线...';
+      sfxTick();
+    } else {
+      document.getElementById('ri'+pn).textContent='⚠️ 请先点击起点(🏁)开始路线！';
+    }
+    return;
+  }
+
+  // 后续步骤：必须是相邻格子
+  var last=path[path.length-1];
+  var dr=Math.abs(r-last.r), dc=Math.abs(c-last.c);
+  if(!(dr+dc===1)){
+    document.getElementById('ri'+pn).textContent='⚠️ 只能点击相邻（上下左右）的格子！';
+    return;
+  }
+
+  // 检查是否已访问
+  for(var i=0;i<path.length;i++){
+    if(path[i].r===r&&path[i].c===c){
+      document.getElementById('ri'+pn).textContent='⚠️ 不能重复走已经过的格子！';
+      return;
+    }
+  }
+
+  // 检查是否可通行
+  var type=MAPDATA[r][c];
+  if(BLOCKED[type]&&type!=='bridge'){
+    document.getElementById('ri'+pn).textContent='⚠️ '+CELL_LABEL[type]+'不可通过！';
+    return;
+  }
+
+  // 检查是否避开
+  if(task.avoid){
+    for(var a=0;a<task.avoid.length;a++){
+      if(type===task.avoid[a]&&type!=='bridge'){
+        document.getElementById('ri'+pn).textContent='⚠️ 需要避开'+CELL_LABEL[type]+'！';
+        return;
+      }
+    }
+  }
+
+  path.push({r:r,c:c});
+  refreshRouteMap(pn);
+
+  // 检查是否到达目标
+  if(r===task.toR&&c===task.toC){
+    // 检查必经点
+    var reqMet=true;
+    if(task.require){
+      for(var ri=0;ri<task.require.length;ri++){
+        var found=false;
+        for(var pi=0;pi<path.length;pi++){
+          if(MAPDATA[path[pi].r][path[pi].c]===task.require[ri]){found=true;break;}
+        }
+        if(!found){reqMet=false;break;}
+      }
+    }
+    if(task.waypoints){
+      for(var wi=0;wi<task.waypoints.length;wi++){
+        var found=false;
+        for(var pi=0;pi<path.length;pi++){
+          if(path[pi].r===task.waypoints[wi].r&&path[pi].c===task.waypoints[wi].c){found=true;break;}
+        }
+        if(!found){reqMet=false;break;}
+      }
+    }
+    if(reqMet){
+      document.getElementById('ri'+pn).textContent='✅ 已到达目标！共'+path.length+'步。请点击"提交路线"确认';
+    } else {
+      document.getElementById('ri'+pn).textContent='⚠️ 已到目标但缺少必经点！请继续设计或撤销重来';
+    }
+  } else {
+    document.getElementById('ri'+pn).textContent='已选'+path.length+'步，当前在'+CELL_LABEL[type]+'。继续点击或提交';
+  }
+}
+
+function undoStep(pn){
+  if(!go||ans[pn-1]||routeSubmitted[pn-1])return;
+  routePaths[pn-1].pop();
+  refreshRouteMap(pn);
+  document.getElementById('ri'+pn).textContent='撤销一步，当前路径长'+routePaths[pn-1].length+'步。继续点击格子设计路线';
+}
+
+function refreshRouteMap(pn){
+  var task=Q[cr];
+  var container=document.getElementById('p'+pn+'Content');
+  var h='<div class="route-task">🗺️ '+task.task+'</div>';
+  h+=routeMapHtml(pn, task, routePaths[pn-1]);
+  var ri=document.getElementById('ri'+pn);
+  var riText=ri?ri.textContent:'点击地图格子来设计路线';
+  h+='<div class="route-info" id="ri'+pn+'">'+riText+'</div>';
+  h+='<div class="route-btns">';
+  h+='<button class="route-btn undo" onclick="undoStep('+pn+')">↩ 撤销</button>';
+  h+='<button class="route-btn submit" id="btnSub'+pn+'" onclick="submitRoute('+pn+')">✅ 提交路线</button>';
+  h+='</div>';
+  container.innerHTML=h;
+}
+
+function submitRoute(pn){
+  if(!go||ans[pn-1]||routeSubmitted[pn-1])return;
+  var task=Q[cr];
+  var path=routePaths[pn-1];
+  if(path.length===0){document.getElementById('ri'+pn).textContent='⚠️ 请先设计路线！';return;}
+  if(path[0].r!==task.fromR||path[0].c!==task.fromC){document.getElementById('ri'+pn).textContent='⚠️ 路线必须从起点开始！';return;}
+  if(path[path.length-1].r!==task.toR||path[path.length-1].c!==task.toC){document.getElementById('ri'+pn).textContent='⚠️ 路线必须到达目标！';return;}
+
+  // 验证必经点
+  if(task.require){
+    for(var ri=0;ri<task.require.length;ri++){
+      var found=false;
+      for(var pi=0;pi<path.length;pi++){
+        if(MAPDATA[path[pi].r][path[pi].c]===task.require[ri]){found=true;break;}
+      }
+      if(!found){document.getElementById('ri'+pn).textContent='⚠️ 必须经过'+CELL_LABEL[task.require[ri]]+'！';return;}
+    }
+  }
+  if(task.waypoints){
+    for(var wi=0;wi<task.waypoints.length;wi++){
+      var found=false;
+      for(var pi=0;pi<path.length;pi++){
+        if(path[pi].r===task.waypoints[wi].r&&path[pi].c===task.waypoints[wi].c){found=true;break;}
+      }
+      if(!found){document.getElementById('ri'+pn).textContent='⚠️ 必须经过所有途经点(⭐)！';return;}
+    }
+  }
+
+  routeSubmitted[pn-1]=true;
+  ans[pn-1]=true;
+  sc[pn-1]+=10;
+  document.getElementById('s'+pn).textContent=sc[pn-1];
+  document.getElementById('fb'+pn).innerHTML='✅ 路线正确！+10';
+  document.getElementById('st'+pn).textContent='🔥 宝藏发现！';
+  document.getElementById('ri'+pn).textContent='✅ 路线提交成功！共'+path.length+'步';
+  sfxCorrect();
+
+  // 禁用按钮
+  var btns=document.querySelectorAll('#p'+pn+'Content .route-btn');
+  btns.forEach(function(b){b.disabled=true;});
+
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},1500);}
+}
+
+// ============ 超时 ============
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      if(curModule===2){
+        // 模块二超时，禁用点击
+        var btns=document.querySelectorAll('#p'+p+'Content .route-btn');
+        btns.forEach(function(b){b.disabled=true;});
+      }
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+    }
+  }
+  cr++;setTimeout(function(){nextRound();},1200);
+}
+
+// ============ 结束 ============
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方找到了宝藏！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  } else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方找到了宝藏！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  } else {
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk+'_'+curModule)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk+'_'+curModule,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<50;i++){
+    var d=document.createElement('div');
+    d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*8+5)+'px';
+    d.style.height=(Math.random()*8+5)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;
+  sc=[0,0];cr=0;ans=[false,false];routePaths=[[],[]];routeSubmitted=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('rn').textContent='1';
+  document.getElementById('tm').textContent='20';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('p1Content').innerHTML='<div class="q-box">准备开始...</div>';
+  document.getElementById('p2Content').innerHTML='<div class="q-box">准备开始...</div>';
+  renderMainMap(); // 重置地图
+  var cf=document.querySelectorAll('.confetti');
+  cf.forEach(function(c){c.remove();});
+}
+
+// ============ 初始化 ============
+renderMainMap();
+</script>
+</body>
+</html>

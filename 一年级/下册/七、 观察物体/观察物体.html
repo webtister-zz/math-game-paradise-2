@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>观察物体 - 立体图形认知游戏</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  height: 100vh; width: 100vw; overflow: hidden;
+  display: flex; flex-direction: column;
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 加载遮罩 */
+.loading-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15,12,41,0.95); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 300; color: #fff;
+}
+.loading-overlay.hidden { display: none; }
+.loading-spinner {
+  width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #667eea; border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin-bottom: 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 1.1em; color: rgba(255,255,255,0.7); }
+.loading-error { color: #EF4444; font-size: 0.9em; margin-top: 8px; display: none; }
+.loading-retry {
+  margin-top: 16px; padding: 10px 28px; border-radius: 20px; border: none;
+  background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;
+  font-size: 0.95em; cursor: pointer; font-family: inherit; display: none;
+}
+/* 顶部信息栏 */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; gap: 10px; flex-shrink: 0;
+  background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10;
+  flex-wrap: wrap;
+}
+.mode-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.mode-tab {
+  padding: 7px 14px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+  font-size: 0.85em; font-weight: bold; cursor: pointer;
+  transition: all 0.3s; white-space: nowrap; font-family: inherit;
+}
+.mode-tab:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+.mode-tab.active { background: linear-gradient(135deg, #667eea, #764ba2); border-color: transparent; color: #fff; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+.info-pills { display: flex; gap: 10px; align-items: center; }
+.info-pill {
+  background: rgba(255,255,255,0.12); color: #fff; padding: 6px 14px;
+  border-radius: 18px; font-size: 0.9em; font-weight: bold;
+  border: 1px solid rgba(255,255,255,0.15); white-space: nowrap;
+}
+.info-pill .val { color: #FFD700; font-size: 1.1em; margin: 0 2px; }
+/* 3D画布区 */
+.canvas-wrap {
+  flex: 1; position: relative; min-height: 0; overflow: hidden;
+  background: radial-gradient(ellipse at center, #1a1a3e 0%, #0a0a1a 100%);
+}
+.canvas-wrap canvas { display: block; }
+.hint-tag {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.4); font-size: 0.75em;
+  pointer-events: none; transition: opacity 0.3s;
+}
+.motion-indicator {
+  position: absolute; top: 12px; right: 16px;
+  background: rgba(0,0,0,0.5); color: #FFD700; padding: 5px 12px;
+  border-radius: 14px; font-size: 0.8em; font-weight: bold;
+  pointer-events: none; display: none; align-items: center; gap: 6px;
+  border: 1px solid rgba(255,215,0,0.3);
+}
+.motion-indicator.show { display: flex; }
+.motion-dot { width: 8px; height: 8px; border-radius: 50%; background: #FFD700; animation: motionPulse 1s ease-in-out infinite; }
+@keyframes motionPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+/* 问题与答案区 */
+.qa-area {
+  flex-shrink: 0; padding: 10px 16px 14px;
+  background: rgba(255,255,255,0.06); backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255,255,255,0.1); z-index: 10;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.question-text {
+  color: #fff; font-size: 1.25em; font-weight: bold; text-align: center;
+  min-height: 32px; line-height: 1.5;
+}
+.question-text .hl { color: #FFD700; font-size: 1.1em; }
+.answers-row {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  max-width: 620px;
+}
+.ans-btn {
+  padding: 10px 18px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08); color: #fff; font-size: 0.95em;
+  font-weight: bold; cursor: pointer; transition: all 0.2s;
+  font-family: inherit; min-width: 56px; text-align: center;
+  display: flex; align-items: center; gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.ans-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.5); transform: translateY(-2px); }
+.ans-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.25); }
+.ans-btn.correct-flash { background: #10B981 !important; border-color: #10B981 !important; animation: popFlash 0.6s ease; pointer-events: none; }
+.ans-btn.wrong-flash { background: #EF4444 !important; border-color: #EF4444 !important; animation: shake 0.5s ease; pointer-events: none; }
+.ans-btn:disabled { pointer-events: none; opacity: 0.5; }
+.ans-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.6); }
+@keyframes popFlash { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+/* 反馈浮层 */
+.feedback-toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+  font-size: 3em; font-weight: bold; color: #FFD700;
+  pointer-events: none; z-index: 100; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  text-shadow: 0 0 30px rgba(255,215,0,0.6);
+}
+.feedback-toast.show { transform: translate(-50%,-50%) scale(1); }
+.feedback-toast.wrong { color: #EF4444; text-shadow: 0 0 30px rgba(239,68,68,0.6); }
+/* 粒子容器 */
+.particles-layer {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 99;
+}
+.star-particle {
+  position: absolute; font-size: 24px;
+  animation: starUp 1.2s ease-out forwards;
+}
+@keyframes starUp {
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  50% { transform: translateY(-80px) scale(1.3); opacity: 0.8; }
+  100% { transform: translateY(-160px) scale(0.5); opacity: 0; }
+}
+/* 模态框 */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-overlay.hidden { display: none; }
+.modal-box {
+  background: linear-gradient(145deg, #1e1e3f, #2a2a5a);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 28px;
+  padding: 36px 28px; text-align: center; max-width: 440px; width: 90%;
+  box-shadow: 0 25px 70px rgba(0,0,0,0.5); color: #fff;
+  animation: modalIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.modal-box h2 { font-size: 2em; margin-bottom: 12px; }
+.modal-box p { color: rgba(255,255,255,0.7); line-height: 1.7; margin-bottom: 18px; font-size: 1em; }
+.modal-box .big-emoji { font-size: 4em; display: block; margin-bottom: 10px; }
+.modal-btn {
+  padding: 14px 40px; border-radius: 30px; border: none;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff; font-size: 1.15em; font-weight: bold; cursor: pointer;
+  font-family: inherit; box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+  transition: all 0.25s; margin: 6px;
+  touch-action: manipulation;
+}
+.modal-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.55); }
+.modal-btn:active { transform: scale(0.95); }
+.modal-btn.secondary {
+  background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid rgba(255,255,255,0.2);
+}
+.stars-display { font-size: 2.5em; margin: 12px 0; letter-spacing: 4px; }
+/* 图例提示 */
+.legend-row {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  margin-top: 2px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 4px; font-size: 0.75em;
+  color: rgba(255,255,255,0.6);
+}
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+/* 响应式 */
+@media (max-width: 600px) {
+  .mode-tab { padding: 5px 10px; font-size: 0.72em; }
+  .info-pill { font-size: 0.75em; padding: 4px 10px; }
+  .question-text { font-size: 1.05em; }
+  .ans-btn { padding: 8px 14px; font-size: 0.82em; }
+  .modal-box { padding: 24px 16px; }
+  .modal-box h2 { font-size: 1.5em; }
+}
+</style>
+</head>
+<body>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">正在加载 3D 引擎...</div>
+  <div class="loading-error" id="loadingError">加载失败，请检查网络连接后刷新页面</div>
+  <button class="loading-retry" id="loadingRetry" onclick="location.reload()">重新加载 🔄</button>
+</div>
+
+<!-- 顶部导航 -->
+<div class="top-bar">
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-tab active" data-mode="0">🎯 认识面</button>
+    <button class="mode-tab" data-mode="1">🔄 运动观察</button>
+    <button class="mode-tab" data-mode="2">🧩 图形拼组</button>
+    <button class="mode-tab" data-mode="3">🏠 生活物体</button>
+  </div>
+  <div class="info-pills">
+    <div class="info-pill">⭐ <span class="val" id="scoreEl">0</span></div>
+    <div class="info-pill">📊 <span class="val" id="levelEl">1</span>/<span id="totalEl">8</span></div>
+  </div>
+</div>
+
+<!-- 3D画布 -->
+<div class="canvas-wrap" id="canvasWrap">
+  <div class="hint-tag" id="hintTag">🖱 拖拽旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; 双击重置</div>
+  <div class="motion-indicator" id="motionIndicator"><span class="motion-dot"></span>旋转中</div>
+</div>
+
+<!-- 问答区 -->
+<div class="qa-area" id="qaArea">
+  <div class="question-text" id="questionText">准备开始观察物体吧！</div>
+  <div class="answers-row" id="answersRow"></div>
+  <div class="legend-row" id="legendRow"></div>
+</div>
+
+<!-- 反馈浮层 -->
+<div class="feedback-toast" id="feedbackToast"></div>
+<div class="particles-layer" id="particlesLayer"></div>
+
+<!-- 开始弹窗 -->
+<div class="modal-overlay" id="startModal">
+  <div class="modal-box">
+    <span class="big-emoji">🔍</span>
+    <h2>观察物体</h2>
+    <p>学习从不同角度观察立体图形！<br>
+    <strong>四种玩法：</strong><br>
+    🎯 认识每个面 &nbsp; 🔄 运动中观察<br>
+    🧩 图形拼组 &nbsp; 🏠 生活物体</p>
+    <p style="font-size:0.85em;color:rgba(255,255,255,0.5);">每种颜色代表不同的面<br>拖拽图形旋转观察</p>
+    <button class="modal-btn" id="startBtn">开始游戏 🚀</button>
+  </div>
+</div>
+
+<!-- 完成弹窗 -->
+<div class="modal-overlay hidden" id="completeModal">
+  <div class="modal-box">
+    <span class="big-emoji">🏆</span>
+    <h2 id="completeTitle">太棒了！</h2>
+    <div class="stars-display" id="starsDisplay">⭐⭐⭐</div>
+    <p id="completeMsg">你完成了所有关卡！</p>
+    <p>总分：<strong style="color:#FFD700;font-size:1.3em;" id="finalScoreEl">0</strong></p>
+    <button class="modal-btn" id="restartBtn">再玩一次 🔄</button>
+    <button class="modal-btn secondary" id="switchModeBtn">换一种玩法</button>
+  </div>
+</div>
+
+<!-- Three.js CDN 加载 -->
+<script>
+// 记录加载状态
+window.__THREE_LOADED = false;
+
+function onThreeLoaded() {
+  window.__THREE_LOADED = true;
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  // 初始化游戏（在 module 脚本中）
+  if (window.__initGame) window.__initGame();
+}
+
+function onThreeError() {
+  // 尝试备用 CDN
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/three@0.157.0/build/three.min.js';
+  s.onload = onThreeLoaded;
+  s.onerror = function() {
+    // 第二个备用
+    var s2 = document.createElement('script');
+    s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    s2.onload = function() { onThreeLoaded(); };
+    s2.onerror = function() {
+      document.getElementById('loadingError').style.display = 'block';
+      document.getElementById('loadingRetry').style.display = 'inline-block';
+      document.querySelector('.loading-spinner').style.display = 'none';
+      document.querySelector('.loading-text').textContent = '3D 引擎加载失败';
+    };
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js" onload="onThreeLoaded()" onerror="onThreeError()"></script>
+
+<script>
+(function() {
+// 等待 Three.js 加载完成后初始化
+function initWhenReady() {
+  if (window.__THREE_LOADED || typeof THREE !== 'undefined') {
+    if (typeof THREE !== 'undefined') {
+      window.__THREE_LOADED = true;
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+    initGame();
+  } else {
+    // 轮询等待
+    var checkCount = 0;
+    var checkInterval = setInterval(function() {
+      checkCount++;
+      if (window.__THREE_LOADED || typeof THREE !== 'undefined') {
+        clearInterval(checkInterval);
+        if (typeof THREE !== 'undefined') {
+          window.__THREE_LOADED = true;
+          document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+        initGame();
+      } else if (checkCount > 100) {
+        clearInterval(checkInterval);
+      }
+    }, 100);
+  }
+}
+
+window.__initGame = initGame;
+
+// 如果脚本在 Three.js 之后加载，直接初始化
+if (typeof THREE !== 'undefined') {
+  window.__THREE_LOADED = true;
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+function initGame() {
+  var THREE_ = window.THREE;
+
+  // ==================== DOM 引用 ====================
+  var canvasWrap = document.getElementById('canvasWrap');
+  var questionText = document.getElementById('questionText');
+  var answersRow = document.getElementById('answersRow');
+  var legendRow = document.getElementById('legendRow');
+  var feedbackToast = document.getElementById('feedbackToast');
+  var particlesLayer = document.getElementById('particlesLayer');
+  var scoreEl = document.getElementById('scoreEl');
+  var levelEl = document.getElementById('levelEl');
+  var totalEl = document.getElementById('totalEl');
+  var hintTag = document.getElementById('hintTag');
+  var motionIndicator = document.getElementById('motionIndicator');
+  var startModal = document.getElementById('startModal');
+  var completeModal = document.getElementById('completeModal');
+  var completeTitle = document.getElementById('completeTitle');
+  var completeMsg = document.getElementById('completeMsg');
+  var starsDisplay = document.getElementById('starsDisplay');
+  var finalScoreEl = document.getElementById('finalScoreEl');
+  var modeTabs = document.querySelectorAll('.mode-tab');
+
+  // ==================== 面颜色定义 ====================
+  var FACE_COLORS = {
+    front:  { color: '#FF4444', hex: 0xff4444, name: '前面', emoji: '🔴', axis: 'z', sign: 1  },
+    back:   { color: '#4488FF', hex: 0x4488ff, name: '后面', emoji: '🔵', axis: 'z', sign: -1 },
+    top:    { color: '#44CC44', hex: 0x44cc44, name: '上面', emoji: '🟢', axis: 'y', sign: 1  },
+    bottom: { color: '#FFD700', hex: 0xffd700, name: '下面', emoji: '🟡', axis: 'y', sign: -1 },
+    right:  { color: '#FF8844', hex: 0xff8844, name: '右面', emoji: '🟠', axis: 'x', sign: 1  },
+    left:   { color: '#CC44FF', hex: 0xcc44ff, name: '左面', emoji: '🟣', axis: 'x', sign: -1 },
+  };
+  var FACE_NAMES = ['前面','后面','上面','下面','右面','左面'];
+  var FACE_KEYS = ['front','back','top','bottom','right','left'];
+
+  // ==================== Three.js 场景 ====================
+  var scene = new THREE_.Scene();
+  scene.background = new THREE_.Color(0x1a1a3e);
+  scene.fog = new THREE_.Fog(0x1a1a3e, 8, 30);
+
+  var camera = new THREE_.PerspectiveCamera(45, 2, 0.5, 50);
+  camera.position.set(3.5, 2.8, 5.5);
+  camera.lookAt(0, 0.3, 0);
+
+  var renderer = new THREE_.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE_.PCFSoftShadowMap;
+  renderer.toneMapping = THREE_.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+  canvasWrap.appendChild(renderer.domElement);
+
+  // ==================== 光照 ====================
+  scene.add(new THREE_.AmbientLight(0x8899cc, 1.8));
+  scene.add(new THREE_.HemisphereLight(0xffffff, 0x444466, 1.0));
+  var sunLight = new THREE_.DirectionalLight(0xffffff, 3.5);
+  sunLight.position.set(8, 12, 5);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width = 1024;
+  sunLight.shadow.mapSize.height = 1024;
+  sunLight.shadow.camera.near = 0.5;
+  sunLight.shadow.camera.far = 50;
+  sunLight.shadow.camera.left = -10; sunLight.shadow.camera.right = 10;
+  sunLight.shadow.camera.top = 10; sunLight.shadow.camera.bottom = -10;
+  sunLight.shadow.bias = -0.0001;
+  scene.add(sunLight);
+  var fillLight = new THREE_.DirectionalLight(0x8899ff, 0.8);
+  fillLight.position.set(-3, 2, -3);
+  scene.add(fillLight);
+
+  // ==================== 地面与展示台 ====================
+  var groundGeo = new THREE_.PlaneGeometry(20, 20);
+  var groundMat = new THREE_.MeshStandardMaterial({ color: 0x2a2a4a, roughness: 0.85, metalness: 0.1 });
+  var ground = new THREE_.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -3.5; ground.receiveShadow = true;
+  scene.add(ground);
+
+  var gridHelper = new THREE_.PolarGridHelper(8, 32, 20, 64, 0x444466, 0x333355);
+  gridHelper.position.y = -3.48;
+  scene.add(gridHelper);
+
+  var platformGeo = new THREE_.CylinderGeometry(1.2, 1.3, 0.15, 48);
+  var platformMat = new THREE_.MeshStandardMaterial({ color: 0x3a3a5a, roughness: 0.3, metalness: 0.6 });
+  var platform = new THREE_.Mesh(platformGeo, platformMat);
+  platform.position.y = -3.35; platform.receiveShadow = true; platform.castShadow = true;
+  scene.add(platform);
+
+  // 粒子装饰
+  var particlesGeo = new THREE_.BufferGeometry();
+  var posArray = new Float32Array(360);
+  for (var pi = 0; pi < 360; pi++) {
+    posArray[pi] = (Math.random() - 0.5) * 14;
+    if (pi % 3 === 1) posArray[pi] = Math.random() * 8 + 0.5;
+  }
+  particlesGeo.setAttribute('position', new THREE_.BufferAttribute(posArray, 3));
+  var particlesMat = new THREE_.PointsMaterial({ size: 0.03, color: 0x8899cc, transparent: true, opacity: 0.5, blending: THREE_.AdditiveBlending });
+  var particles = new THREE_.Points(particlesGeo, particlesMat);
+  scene.add(particles);
+
+  // ==================== 旋转轴指示器 ====================
+  var axisGroup = new THREE_.Group();
+  axisGroup.visible = false;
+  scene.add(axisGroup);
+
+  function createAxisRing(color, rotation) {
+    var ringGeo = new THREE_.TorusGeometry(1.0, 0.03, 16, 64);
+    var ringMat = new THREE_.MeshStandardMaterial({ color: color, roughness: 0.3, emissive: color, emissiveIntensity: 0.6 });
+    var ring = new THREE_.Mesh(ringGeo, ringMat);
+    ring.rotation.set(rotation.x, rotation.y, rotation.z);
+    return ring;
+  }
+
+  var ringY = createAxisRing(0xFFD700, { x: Math.PI/2, y: 0, z: 0 });
+  var ringX = createAxisRing(0xFF4444, { x: 0, y: 0, z: Math.PI/2 });
+  var ringZ = createAxisRing(0x4488FF, { x: 0, y: Math.PI/2, z: 0 });
+  axisGroup.add(ringY); axisGroup.add(ringX); axisGroup.add(ringZ);
+
+  function showAxisRing(axis) {
+    axisGroup.visible = true;
+    ringY.visible = (axis === 'y' || axis === 'all');
+    ringX.visible = (axis === 'x' || axis === 'all');
+    ringZ.visible = (axis === 'z' || axis === 'all');
+  }
+
+  function hideAxisRing() { axisGroup.visible = false; }
+
+  // ==================== 可操作对象组 ====================
+  var mainGroup = new THREE_.Group();
+  scene.add(mainGroup);
+  var currentMeshGroup = null;
+
+  // ==================== 形状工厂函数 ====================
+  function createFaceColoredBox(w, h, d) {
+    var geo = new THREE_.BoxGeometry(w, h, d);
+    var mats = [
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.right.hex, roughness: 0.35, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.left.hex, roughness: 0.35, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.top.hex, roughness: 0.35, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.bottom.hex, roughness: 0.35, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.front.hex, roughness: 0.35, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.back.hex, roughness: 0.35, metalness: 0.05 }),
+    ];
+    var mesh = new THREE_.Mesh(geo, mats);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  function createFaceColoredCylinder(rTop, rBot, h, segs) {
+    var geo = new THREE_.CylinderGeometry(rTop, rBot, h, segs || 48);
+    var mats = [
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.right.hex, roughness: 0.4, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.top.hex, roughness: 0.35, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.bottom.hex, roughness: 0.35, metalness: 0.05 }),
+    ];
+    var mesh = new THREE_.Mesh(geo, mats);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  function createFaceColoredCone(r, h, segs) {
+    var geo = new THREE_.ConeGeometry(r, h, segs || 48);
+    var mats = [
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.right.hex, roughness: 0.4, metalness: 0.05 }),
+      new THREE_.MeshStandardMaterial({ color: FACE_COLORS.bottom.hex, roughness: 0.35, metalness: 0.05 }),
+    ];
+    var mesh = new THREE_.Mesh(geo, mats);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  function addEdges(mesh) {
+    var edgeGeo = new THREE_.EdgesGeometry(mesh.geometry, 20);
+    var edgeMat = new THREE_.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 });
+    var lines = new THREE_.LineSegments(edgeGeo, edgeMat);
+    mesh.add(lines);
+    return lines;
+  }
+
+  function clearMainGroup() {
+    while (mainGroup.children.length > 0) {
+      var child = mainGroup.children[0];
+      disposeObject(child);
+      mainGroup.remove(child);
+    }
+    currentMeshGroup = null;
+  }
+
+  function disposeObject(obj) {
+    obj.traverse(function(child) {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(function(m) { m.dispose(); });
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+  }
+
+  // ==================== 创建复合形状 ====================
+  function createComposite1() {
+    var g = new THREE_.Group();
+    var b1 = createFaceColoredBox(1.2, 0.6, 1.2); b1.position.y = 0.3;
+    var b2 = createFaceColoredBox(0.9, 0.6, 0.9); b2.position.y = 0.9;
+    [b1,b2].forEach(function(b){ b.castShadow=true;b.receiveShadow=true;addEdges(b);g.add(b); });
+    return g;
+  }
+  function createComposite2() {
+    var g = new THREE_.Group();
+    var box = createFaceColoredBox(1.2, 0.5, 1.2); box.position.y = -0.25;
+    var cyl = createFaceColoredCylinder(0.4, 0.4, 0.9, 48); cyl.position.y = 0.45;
+    [box,cyl].forEach(function(b){ b.castShadow=true;b.receiveShadow=true;addEdges(b);g.add(b); });
+    return g;
+  }
+  function createComposite3() {
+    var g = new THREE_.Group();
+    var cyl = createFaceColoredCylinder(0.4, 0.4, 1.0, 48); cyl.position.y = -0.2;
+    var cone = createFaceColoredCone(0.4, 0.8, 48); cone.position.y = 0.7;
+    [cyl,cone].forEach(function(b){ b.castShadow=true;b.receiveShadow=true;addEdges(b);g.add(b); });
+    return g;
+  }
+  function createComposite4() {
+    var g = new THREE_.Group();
+    var box = createFaceColoredBox(1.5, 0.6, 1.0); box.position.y = -0.1;
+    addEdges(box); box.castShadow=true; box.receiveShadow=true;
+    var roofGeo = new THREE_.ConeGeometry(0.9, 0.7, 4);
+    var roof = new THREE_.Mesh(roofGeo, [
+      new THREE_.MeshStandardMaterial({ color: 0xee6644, roughness: 0.35 }),
+      new THREE_.MeshStandardMaterial({ color: 0xee6644, roughness: 0.35 }),
+    ]);
+    roof.position.y = 0.45; roof.rotation.y = Math.PI/4;
+    roof.castShadow=true; roof.receiveShadow=true; addEdges(roof);
+    g.add(box); g.add(roof);
+    return g;
+  }
+  function createComposite5() {
+    var g = new THREE_.Group();
+    for (var i = 0; i < 3; i++) {
+      var b = createFaceColoredBox(0.65, 0.65, 0.65);
+      b.position.set((i-1)*0.75, 0, 0);
+      b.castShadow=true; b.receiveShadow=true; addEdges(b); g.add(b);
+    }
+    return g;
+  }
+  function createComposite6() {
+    var g = new THREE_.Group();
+    var box = createFaceColoredBox(1.0, 0.5, 1.0); box.position.y = -0.3;
+    var sphereGeo = new THREE_.SphereGeometry(0.45, 40, 30);
+    var sphere = new THREE_.Mesh(sphereGeo, new THREE_.MeshStandardMaterial({ color: 0xff8844, roughness: 0.3, metalness: 0.1 }));
+    sphere.position.y = 0.45;
+    [box,sphere].forEach(function(b){ b.castShadow=true;b.receiveShadow=true;g.add(b); });
+    addEdges(box); addEdges(sphere);
+    return g;
+  }
+
+  // ==================== 生活物体模型 ====================
+  function createTable() {
+    var g = new THREE_.Group();
+    var topGeo = new THREE_.BoxGeometry(1.8, 0.12, 1.2);
+    var top = new THREE_.Mesh(topGeo, new THREE_.MeshStandardMaterial({ color: 0xDEB887, roughness: 0.4 }));
+    top.position.y = 0.55; top.castShadow=true; top.receiveShadow=true; addEdges(top);
+    for (var ix = -0.7; ix <= 0.7; ix += 1.4) {
+      for (var iz = -0.45; iz <= 0.45; iz += 0.9) {
+        var legGeo = new THREE_.CylinderGeometry(0.08, 0.1, 0.6, 16);
+        var leg = new THREE_.Mesh(legGeo, new THREE_.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.5 }));
+        leg.position.set(ix, 0.25, iz); leg.castShadow=true; leg.receiveShadow=true; addEdges(leg);
+        g.add(leg);
+      }
+    }
+    g.add(top); return g;
+  }
+  function createHouse() {
+    var g = new THREE_.Group();
+    var body = createFaceColoredBox(1.4, 0.9, 1.0); body.position.y = 0.05;
+    addEdges(body); body.castShadow=true; body.receiveShadow=true;
+    var roofGeo = new THREE_.ConeGeometry(1.0, 0.7, 4);
+    var roof = new THREE_.Mesh(roofGeo, [
+      new THREE_.MeshStandardMaterial({ color: 0xCC4444, roughness: 0.4 }),
+      new THREE_.MeshStandardMaterial({ color: 0xCC4444, roughness: 0.4 }),
+    ]);
+    roof.position.y = 0.7; roof.rotation.y = Math.PI/4;
+    roof.castShadow=true; roof.receiveShadow=true; addEdges(roof);
+    var chimneyGeo = new THREE_.BoxGeometry(0.2, 0.4, 0.2);
+    var chimney = new THREE_.Mesh(chimneyGeo, new THREE_.MeshStandardMaterial({ color: 0x886644, roughness: 0.5 }));
+    chimney.position.set(0.35, 1.0, 0.2); chimney.castShadow=true;
+    g.add(body); g.add(roof); g.add(chimney);
+    return g;
+  }
+  function createPencil() {
+    var g = new THREE_.Group();
+    var bodyGeo = new THREE_.CylinderGeometry(0.15, 0.15, 1.6, 6);
+    var bodyMat = new THREE_.MeshStandardMaterial({ color: 0xFFDD44, roughness: 0.35 });
+    var body = new THREE_.Mesh(bodyGeo, [bodyMat, bodyMat, bodyMat]);
+    body.position.y = 0; body.castShadow=true;
+    var tipGeo = new THREE_.ConeGeometry(0.15, 0.4, 6);
+    var tip = new THREE_.Mesh(tipGeo, [
+      new THREE_.MeshStandardMaterial({ color: 0xF5DEB3, roughness: 0.4 }),
+      new THREE_.MeshStandardMaterial({ color: 0x333333, roughness: 0.3 }),
+    ]);
+    tip.position.y = 1.0; tip.castShadow=true;
+    var eraserGeo = new THREE_.CylinderGeometry(0.16, 0.16, 0.2, 16);
+    var eraser = new THREE_.Mesh(eraserGeo, new THREE_.MeshStandardMaterial({ color: 0xFF8888, roughness: 0.5 }));
+    eraser.position.y = -0.9; eraser.castShadow=true;
+    g.add(body); g.add(tip); g.add(eraser);
+    return g;
+  }
+  function createIceCream() {
+    var g = new THREE_.Group();
+    var coneGeo = new THREE_.ConeGeometry(0.35, 0.9, 24);
+    var coneMat = new THREE_.MeshStandardMaterial({ color: 0xDEB887, roughness: 0.5 });
+    var cone = new THREE_.Mesh(coneGeo, [coneMat, coneMat]);
+    cone.position.y = -0.3; cone.castShadow=true;
+    var scoopGeo = new THREE_.SphereGeometry(0.4, 32, 24);
+    var scoop = new THREE_.Mesh(scoopGeo, new THREE_.MeshStandardMaterial({ color: 0xFF88AA, roughness: 0.3, metalness: 0.05 }));
+    scoop.position.y = 0.3; scoop.castShadow=true;
+    var scoop2Geo = new THREE_.SphereGeometry(0.3, 32, 24);
+    var scoop2 = new THREE_.Mesh(scoop2Geo, new THREE_.MeshStandardMaterial({ color: 0xAAFF88, roughness: 0.3, metalness: 0.05 }));
+    scoop2.position.set(0.25, 0.5, 0.1); scoop2.castShadow=true;
+    g.add(cone); g.add(scoop); g.add(scoop2);
+    return g;
+  }
+  function createDumbbell() {
+    var g = new THREE_.Group();
+    var barGeo = new THREE_.CylinderGeometry(0.1, 0.1, 1.5, 16);
+    var bar = new THREE_.Mesh(barGeo, new THREE_.MeshStandardMaterial({ color: 0x888888, roughness: 0.2, metalness: 0.7 }));
+    bar.castShadow=true;
+    [-0.8, 0.8].forEach(function(x) {
+      var wGeo = new THREE_.CylinderGeometry(0.3, 0.3, 0.35, 24);
+      var w = new THREE_.Mesh(wGeo, new THREE_.MeshStandardMaterial({ color: 0x333333, roughness: 0.4, metalness: 0.5 }));
+      w.position.x = x; w.rotation.z = Math.PI/2; w.castShadow=true; g.add(w);
+    });
+    g.add(bar); return g;
+  }
+
+  // ==================== 游戏状态 ====================
+  var state = {
+    currentMode: 0, score: 0, level: 0, totalLevels: 8,
+    targetAnswer: null, isAnswering: false,
+    autoRotate: false, rotateAxis: 'y', rotateSpeed: 0.5,
+    cameraGoal: new THREE_.Vector3(3.5, 2.8, 5.5),
+    camLookGoal: new THREE_.Vector3(0, 0.3, 0),
+    gameStarted: false
+  };
+
+  // ==================== 关卡配置 ====================
+  function FACE_Q(q) { return {
+    shape: 'cube', question: q, answers: FACE_NAMES, correct: null,
+    setup: function(s) { setupFaceRecognition(s, 'cube'); }
+  };}
+  function CUBOID_Q(q) { return {
+    shape: 'cuboid', question: q, answers: FACE_NAMES, correct: null,
+    setup: function(s) { setupFaceRecognition(s, 'cuboid'); }
+  };}
+
+  var modeData = {
+    0: { name: '认识面', levels: [
+      FACE_Q('你现在看到<span class="hl">哪个面</span>颜色最明显？'),
+      FACE_Q('这个<span class="hl">彩色面</span>叫什么名字？'),
+      CUBOID_Q('面对你的是<span class="hl">什么面</span>？'),
+      CUBOID_Q('从<span class="hl">这个角度</span>看，最上面是什么颜色？'),
+      { shape:'cylinder',question:'从<span class="hl">上面</span>看圆柱体是什么形状？',answers:['圆形','长方形','三角形','正方形'],correct:'圆形',setup:function(s){setupTopView(s,'cylinder');}},
+      { shape:'cylinder',question:'从<span class="hl">侧面</span>看圆柱体是什么形状？',answers:['圆形','长方形','三角形','正方形'],correct:'长方形',setup:function(s){setupSideView(s,'cylinder');}},
+      { shape:'cone',question:'从<span class="hl">上面</span>看圆锥是什么形状？',answers:['圆形','长方形','三角形','正方形'],correct:'圆形',setup:function(s){setupTopView(s,'cone');}},
+      { shape:'cone',question:'从<span class="hl">侧面</span>看圆锥是什么形状？',answers:['圆形','长方形','三角形','正方形'],correct:'三角形',setup:function(s){setupSideView(s,'cone');}},
+    ]},
+    1: { name: '运动观察', levels: [
+      { shape:'cube',question:'正方体<span class="hl">绕竖轴旋转</span>时，你能同时看到几个面？',answers:['1个','2个','3个','4个'],correct:'3个',setup:function(s){setupMotion(s,'cube','y','绕Y轴旋转');}},
+      { shape:'cuboid',question:'长方体旋转中，<span class="hl">相对的两个面</span>颜色一样吗？',answers:['一样','不一样','有时一样','看角度'],correct:'不一样',setup:function(s){setupMotion(s,'cuboid','y','绕Y轴旋转 — 观察相对面');}},
+      { shape:'cylinder',question:'圆柱体<span class="hl">绕竖轴旋转</span>时，从侧面看形状会变化吗？',answers:['会变化','不变','有时变','变很大'],correct:'不变',setup:function(s){setupMotion(s,'cylinder','y','绕竖轴旋转 — 注意对称性');}},
+      { shape:'cone',question:'圆锥<span class="hl">绕竖轴旋转</span>时，从侧面看形状会变化吗？',answers:['会变化','不变','有时变','看情况'],correct:'不变',setup:function(s){setupMotion(s,'cone','y','绕竖轴旋转 — 注意对称性');}},
+      { shape:'cube',question:'物体<span class="hl">绕横轴向前翻滚</span>时，哪个面依次出现？',answers:['上→前→下→后','左→前→右→后','上→左→下→右','前→上→后→下'],correct:'前→上→后→下',setup:function(s){setupMotion(s,'cube','x','绕X轴向前翻滚');}},
+      { shape:'cuboid',question:'长方体<span class="hl">绕X轴翻滚</span>一周，每个面会出现几次？',answers:['1次','2次','3次','4次'],correct:'1次',setup:function(s){setupMotion(s,'cuboid','x','绕X轴翻滚');}},
+      { shape:'sphere',question:'球体<span class="hl">怎么转</span>看起来都一样吗？',answers:['都一样','不一样','有时一样','看颜色'],correct:'都一样',setup:function(s){setupMotion(s,'sphere','y','球体旋转 — 从各方向看');}},
+      { shape:'cube',question:'正方体旋转时<span class="hl">哪些面</span>在当前视图中是可见的？',answers:['1个面','2个面','3个面','全部6个面'],correct:'3个面',setup:function(s){setupMotion(s,'cube','y','观察可见面数量');}},
+    ]},
+    2: { name: '图形拼组', levels: [
+      { shape:'composite1',question:'这个图形由<span class="hl">几个正方体</span>拼成？',answers:['1个','2个','3个','4个'],correct:'2个',setup:function(s){setupComposite(s,'composite1');}},
+      { shape:'composite2',question:'这个图形由<span class="hl">哪两种</span>立体图形组成？',answers:['正方体和圆柱','长方体和球','圆柱和圆锥','正方体和圆锥'],correct:'正方体和圆柱',setup:function(s){setupComposite(s,'composite2');}},
+      { shape:'composite3',question:'这个图形由<span class="hl">哪两种</span>立体图形组成？',answers:['圆柱和球','圆柱和圆锥','正方体和圆锥','长方体和球'],correct:'圆柱和圆锥',setup:function(s){setupComposite(s,'composite3');}},
+      { shape:'composite4',question:'这个图形像什么？由<span class="hl">哪两种</span>图形组成？',answers:['长方体和棱锥','正方体和圆柱','圆柱和球','长方体和球'],correct:'长方体和棱锥',setup:function(s){setupComposite(s,'composite4');}},
+      { shape:'composite5',question:'这个图形由<span class="hl">几个正方体</span>拼成？',answers:['1个','2个','3个','5个'],correct:'3个',setup:function(s){setupComposite(s,'composite5');}},
+      { shape:'composite6',question:'这个图形由<span class="hl">哪两种</span>立体图形组成？',answers:['正方体和球','长方体和圆柱','圆柱和圆锥','正方体和圆柱'],correct:'正方体和球',setup:function(s){setupComposite(s,'composite6');}},
+      { shape:'house',question:'这个小房子用了<span class="hl">哪些</span>立体图形？',answers:['长方体和棱锥','正方体和球','圆柱和圆锥','都是正方体'],correct:'长方体和棱锥',setup:function(s){setupComposite(s,'house');}},
+      { shape:'composite3',question:'把圆锥放在圆柱上，从<span class="hl">正上方</span>看是什么？',answers:['同心圆','三角形','长方形','正方形'],correct:'同心圆',setup:function(s){setupTopView(s,'composite3');}},
+    ]},
+    3: { name: '生活物体', levels: [
+      { shape:'table',question:'从<span class="hl">上面</span>看桌子，桌面是什么形状？',answers:['长方形','圆形','三角形','正方形'],correct:'长方形',setup:function(s){setupTopView(s,'table');}},
+      { shape:'table',question:'从<span class="hl">侧面</span>看桌子，能看到什么形状？',answers:['长方形','只有腿','圆形','三角形'],correct:'长方形',setup:function(s){setupSideView(s,'table');}},
+      { shape:'house',question:'从<span class="hl">正面</span>看房子，屋顶是什么形状？',answers:['三角形','长方形','圆形','梯形'],correct:'三角形',setup:function(s){setupFrontView(s,'house');}},
+      { shape:'pencil',question:'从<span class="hl">侧面</span>看铅笔，笔身是什么形状？',answers:['长方形','三角形','圆形','六边形'],correct:'长方形',setup:function(s){setupSideView(s,'pencil');}},
+      { shape:'pencil',question:'从<span class="hl">上面</span>看铅笔尖，是什么形状？',answers:['圆形','三角形','正方形','六边形'],correct:'圆形',setup:function(s){setupTopView(s,'pencil');}},
+      { shape:'icecream',question:'冰淇淋由<span class="hl">哪些</span>立体图形组成？',answers:['圆锥和球','圆柱和球','正方体和球','圆锥和圆柱'],correct:'圆锥和球',setup:function(s){setupComposite(s,'icecream');}},
+      { shape:'dumbbell',question:'杠铃可以看成<span class="hl">哪些</span>立体图形的组合？',answers:['圆柱和圆柱','球和圆柱','正方体和圆柱','球和正方体'],correct:'圆柱和圆柱',setup:function(s){setupComposite(s,'dumbbell');}},
+      { shape:'house',question:'生活中<span class="hl">哪些物体</span>可以看成长方体和棱锥的组合？',answers:['帐篷/房子','铅笔','水杯','书本'],correct:'帐篷/房子',setup:function(s){setupComposite(s,'house');}},
+    ]}
+  };
+
+  // ==================== 形状构建 ====================
+  function buildShape(shapeKey) {
+    clearMainGroup(); hideAxisRing();
+    var obj;
+    switch (shapeKey) {
+      case 'cube': obj = createFaceColoredBox(1.3, 1.3, 1.3); break;
+      case 'cuboid': obj = createFaceColoredBox(1.0, 0.7, 1.5); break;
+      case 'cylinder': obj = createFaceColoredCylinder(0.55, 0.55, 1.3, 48); break;
+      case 'cone': obj = createFaceColoredCone(0.55, 1.3, 48); break;
+      case 'sphere':
+        var sGeo = new THREE_.SphereGeometry(0.7, 48, 36);
+        obj = new THREE_.Mesh(sGeo, new THREE_.MeshStandardMaterial({ color: 0xff8844, roughness: 0.3, metalness: 0.1 }));
+        obj.castShadow=true; obj.receiveShadow=true;
+        break;
+      case 'composite1': obj = createComposite1(); break;
+      case 'composite2': obj = createComposite2(); break;
+      case 'composite3': obj = createComposite3(); break;
+      case 'composite4': obj = createComposite4(); break;
+      case 'composite5': obj = createComposite5(); break;
+      case 'composite6': obj = createComposite6(); break;
+      case 'table': obj = createTable(); break;
+      case 'house': obj = createHouse(); break;
+      case 'pencil': obj = createPencil(); break;
+      case 'icecream': obj = createIceCream(); break;
+      case 'dumbbell': obj = createDumbbell(); break;
+      default: obj = createFaceColoredBox(1.3, 1.3, 1.3);
+    }
+    if (!(obj instanceof THREE_.Group)) {
+      var wrapper = new THREE_.Group(); wrapper.add(obj);
+      if (['cube','cuboid','cylinder','cone'].indexOf(shapeKey) >= 0) addEdges(obj);
+      mainGroup.add(wrapper);
+      currentMeshGroup = obj;
+      return wrapper;
+    } else {
+      mainGroup.add(obj); currentMeshGroup = obj; return obj;
+    }
+  }
+
+  // ==================== 相机定位 ====================
+  function setCameraToFace(faceKey, distance) {
+    distance = distance || 4.5;
+    var fc = FACE_COLORS[faceKey];
+    var pos = { x: 0, y: 0.3, z: 0 };
+    if (fc.axis === 'x') pos.x = fc.sign * distance;
+    if (fc.axis === 'y') { pos.y = fc.sign * distance; pos.z = 0.15; }
+    if (fc.axis === 'z') pos.z = fc.sign * distance;
+    if (fc.axis === 'y') pos.y += 0.3;
+    state.cameraGoal.set(pos.x, pos.y, pos.z);
+    state.camLookGoal.set(0, fc.axis === 'y' ? 0 : 0.3, 0);
+  }
+  function setCameraTop(d) { d = d || 5; state.cameraGoal.set(0, d, 0.05); state.camLookGoal.set(0, 0, 0); }
+  function setCameraSide(d) { d = d || 5; state.cameraGoal.set(0, 0.3, d); state.camLookGoal.set(0, 0.3, 0); }
+  function setCameraFront(d) { d = d || 5; state.cameraGoal.set(0, 0.3, d); state.camLookGoal.set(0, 0.3, 0); }
+  function setCameraPerspective(d) { d = d || 4.5; state.cameraGoal.set(3, 2.5, 4.5); state.camLookGoal.set(0, 0.3, 0); }
+
+  // ==================== 关卡设置函数 ====================
+  function setupFaceRecognition(s, shapeKey) {
+    buildShape(shapeKey);
+    var faces = ['front','back','top','bottom','right','left'];
+    var targetFace = faces[Math.floor(Math.random() * faces.length)];
+    setCameraToFace(targetFace);
+    s.targetAnswer = FACE_COLORS[targetFace].name;
+    s.autoRotate = false;
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+  }
+
+  function setupTopView(s, shapeKey) {
+    buildShape(shapeKey); setCameraTop();
+    s.targetAnswer = modeData[s.currentMode].levels[s.level].correct;
+    s.autoRotate = false;
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+  }
+
+  function setupSideView(s, shapeKey) {
+    buildShape(shapeKey); setCameraSide();
+    s.targetAnswer = modeData[s.currentMode].levels[s.level].correct;
+    s.autoRotate = false;
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+  }
+
+  function setupFrontView(s, shapeKey) {
+    buildShape(shapeKey); setCameraFront();
+    s.targetAnswer = modeData[s.currentMode].levels[s.level].correct;
+    s.autoRotate = false;
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+  }
+
+  function setupMotion(s, shapeKey, axis, label) {
+    buildShape(shapeKey);
+    setCameraPerspective();
+    s.autoRotate = true;
+    s.rotateAxis = axis;
+    s.rotateSpeed = (axis === 'x') ? 0.7 : 0.55;
+    s.targetAnswer = modeData[s.currentMode].levels[s.level].correct;
+    showAxisRing(axis);
+    motionIndicator.querySelector('span:last-child').textContent = label || '旋转中';
+    motionIndicator.classList.add('show');
+  }
+
+  function setupComposite(s, shapeKey) {
+    buildShape(shapeKey);
+    setCameraPerspective();
+    s.autoRotate = false;
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+    s.targetAnswer = modeData[s.currentMode].levels[s.level].correct;
+  }
+
+  // ==================== UI 更新 ====================
+  function updateUI() {
+    scoreEl.textContent = state.score;
+    levelEl.textContent = state.level + 1;
+    totalEl.textContent = state.totalLevels;
+  }
+
+  function showQuestion() {
+    var md = modeData[state.currentMode];
+    var lv = md.levels[state.level];
+    questionText.innerHTML = lv.question;
+    answersRow.innerHTML = '';
+    var faceKeys = ['front','back','top','bottom','right','left'];
+    lv.answers.forEach(function(ans, i) {
+      var btn = document.createElement('button');
+      btn.className = 'ans-btn';
+      var isFaceMode = (state.currentMode === 0 && lv.answers.length === 6);
+      if (isFaceMode) {
+        var fk = faceKeys[i];
+        var fc = FACE_COLORS[fk];
+        btn.innerHTML = '<span class="ans-dot" style="background:' + fc.color + '"></span>' + ans;
+      } else {
+        btn.textContent = ans;
+      }
+      btn.addEventListener('click', function() { handleAnswer(ans, btn); });
+      btn.addEventListener('touchend', function(e) { e.preventDefault(); handleAnswer(ans, btn); });
+      answersRow.appendChild(btn);
+    });
+    if (state.currentMode === 0 && lv.answers.length === 6) {
+      legendRow.innerHTML = FACE_KEYS.map(function(k) {
+        var fc = FACE_COLORS[k];
+        return '<span class="legend-item"><span class="legend-dot" style="background:' + fc.color + '"></span>' + fc.name + '</span>';
+      }).join('');
+      legendRow.style.display = 'flex';
+    } else {
+      legendRow.style.display = 'none';
+    }
+    state.isAnswering = true;
+  }
+
+  function handleAnswer(ans, btnEl) {
+    if (!state.isAnswering) return;
+    state.isAnswering = false;
+    var md = modeData[state.currentMode];
+    var lv = md.levels[state.level];
+    var correct = lv.correct || state.targetAnswer;
+    var isCorrect = (ans === correct);
+
+    var allBtns = answersRow.querySelectorAll('.ans-btn');
+    allBtns.forEach(function(b) { b.disabled = true; });
+
+    if (isCorrect) {
+      btnEl.classList.add('correct-flash');
+      state.score += 10;
+      showFeedback(true);
+      spawnParticles();
+      setTimeout(function() { advanceLevel(); }, 1500);
+    } else {
+      btnEl.classList.add('wrong-flash');
+      allBtns.forEach(function(b) {
+        var t = b.textContent || b.innerText || '';
+        if (t.indexOf(correct) === 0 || t === correct) b.classList.add('correct-flash');
+      });
+      showFeedback(false);
+      setTimeout(function() {
+        allBtns.forEach(function(b) { b.disabled = false; b.className = 'ans-btn'; });
+        state.isAnswering = true;
+      }, 1500);
+    }
+    updateUI();
+  }
+
+  function showFeedback(correct) {
+    var toast = feedbackToast;
+    if (correct) {
+      toast.textContent = ['太棒了！🌟','真厉害！👏','答对了！✨','真聪明！🎉'][Math.floor(Math.random()*4)];
+      toast.className = 'feedback-toast show';
+    } else {
+      toast.textContent = ['再想想～💪','差一点！🤔','再试一次！🔍'][Math.floor(Math.random()*3)];
+      toast.className = 'feedback-toast show wrong';
+    }
+    setTimeout(function() { toast.className = 'feedback-toast'; }, 1000);
+  }
+
+  function spawnParticles() {
+    var emojis = ['⭐','🌟','✨','💫','🎉','👏','🔥','💎'];
+    for (var i = 0; i < 20; i++) {
+      var p = document.createElement('span');
+      p.className = 'star-particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.style.left = (30 + Math.random() * 40) + '%';
+      p.style.top = (40 + Math.random() * 20) + '%';
+      p.style.animationDelay = Math.random() * 0.3 + 's';
+      p.style.animationDuration = (0.8 + Math.random() * 0.8) + 's';
+      particlesLayer.appendChild(p);
+      setTimeout(function() { p.remove(); }, 1500);
+    }
+  }
+
+  function advanceLevel() {
+    state.level++;
+    if (state.level >= state.totalLevels) {
+      completeMode();
+    } else {
+      loadLevel();
+    }
+  }
+
+  function completeMode() {
+    state.isAnswering = false;
+    state.autoRotate = false;
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+    var starCount = state.score >= 70 ? 3 : state.score >= 40 ? 2 : 1;
+    completeTitle.textContent = '太棒了！🏆';
+    completeMsg.textContent = '你完成了「' + modeData[state.currentMode].name + '」所有关卡！';
+    starsDisplay.textContent = '⭐'.repeat(starCount) + '☆'.repeat(3 - starCount);
+    finalScoreEl.textContent = state.score;
+    completeModal.classList.remove('hidden');
+    answersRow.innerHTML = '';
+    questionText.innerHTML = '选择一个模式继续学习吧！';
+    legendRow.style.display = 'none';
+  }
+
+  function loadLevel() {
+    var md = modeData[state.currentMode];
+    var lv = md.levels[state.level];
+    state.autoRotate = false;
+    state.rotateSpeed = 0.3;
+    mainGroup.rotation.set(0, 0, 0);
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+    lv.setup(state, lv.shape || 'cube');
+    updateUI();
+    showQuestion();
+  }
+
+  // ==================== 模式切换 ====================
+  function switchMode(modeIdx) {
+    state.currentMode = modeIdx;
+    state.level = 0;
+    state.score = 0;
+    state.totalLevels = modeData[modeIdx].levels.length;
+    state.autoRotate = false;
+    mainGroup.rotation.set(0, 0, 0);
+    setCameraPerspective();
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+    modeTabs.forEach(function(t) { t.classList.remove('active'); });
+    modeTabs[modeIdx].classList.add('active');
+    updateUI();
+    loadLevel();
+    completeModal.classList.add('hidden');
+  }
+
+  modeTabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var idx = parseInt(tab.dataset.mode);
+      if (idx !== state.currentMode) switchMode(idx);
+    });
+  });
+
+  // ==================== 鼠标/触摸交互 ====================
+  var isDragging = false;
+  var prevMouse = { x: 0, y: 0 };
+  var dragRotateSpeed = 0.008;
+
+  function getEventPos(e) {
+    if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  canvasWrap.addEventListener('pointerdown', function(e) {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+    isDragging = true;
+    var pos = getEventPos(e);
+    prevMouse.x = pos.x; prevMouse.y = pos.y;
+    hintTag.style.opacity = '0';
+  });
+
+  window.addEventListener('pointermove', function(e) {
+    if (!isDragging) return;
+    var pos = getEventPos(e);
+    var dx = pos.x - prevMouse.x;
+    var dy = pos.y - prevMouse.y;
+    mainGroup.rotation.y += dx * dragRotateSpeed;
+    mainGroup.rotation.x += dy * dragRotateSpeed;
+    mainGroup.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, mainGroup.rotation.x));
+    prevMouse.x = pos.x; prevMouse.y = pos.y;
+  });
+
+  window.addEventListener('pointerup', function() {
+    isDragging = false;
+    setTimeout(function() { hintTag.style.opacity = '1'; }, 2000);
+  });
+
+  canvasWrap.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var currentDist = camera.position.length();
+    var newDist = Math.max(2.5, Math.min(10, currentDist + e.deltaY * 0.01));
+    var dir = camera.position.clone().normalize();
+    state.cameraGoal.copy(dir.multiplyScalar(newDist));
+  }, { passive: false });
+
+  canvasWrap.addEventListener('dblclick', function() {
+    setCameraPerspective();
+    mainGroup.rotation.set(0, 0, 0);
+  });
+
+  // ==================== 按钮事件绑定 ====================
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', restartGame);
+  document.getElementById('switchModeBtn').addEventListener('click', function() {
+    switchMode(0); restartGame();
+  });
+
+  // ==================== 动画循环 ====================
+  var clock = new THREE_.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var dt = Math.min(clock.getDelta(), 0.1);
+
+    if (state.autoRotate && !isDragging) {
+      var spd = state.rotateSpeed * dt;
+      if (state.rotateAxis === 'y') mainGroup.rotation.y += spd;
+      else if (state.rotateAxis === 'x') mainGroup.rotation.x += spd;
+      else if (state.rotateAxis === 'z') mainGroup.rotation.z += spd;
+      else if (state.rotateAxis === 'all') {
+        mainGroup.rotation.y += spd * 0.7;
+        mainGroup.rotation.x += spd * 0.3;
+      }
+    }
+
+    axisGroup.rotation.copy(mainGroup.rotation);
+    particles.rotation.y += 0.05 * dt;
+    camera.position.lerp(state.cameraGoal, 3 * dt);
+    camera.lookAt(state.camLookGoal);
+    renderer.render(scene, camera);
+  }
+
+  // ==================== 响应式 ====================
+  function resize() {
+    var w = canvasWrap.clientWidth;
+    var h = canvasWrap.clientHeight;
+    if (w === 0 || h === 0) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+
+  // ==================== 游戏启动 ====================
+  function startGame() {
+    startModal.classList.add('hidden');
+    state.currentMode = 0;
+    state.level = 0;
+    state.score = 0;
+    state.totalLevels = modeData[0].levels.length;
+    state.autoRotate = false;
+    state.gameStarted = true;
+    mainGroup.rotation.set(0, 0, 0);
+    setCameraPerspective();
+    hideAxisRing();
+    motionIndicator.classList.remove('show');
+    modeTabs.forEach(function(t, i) { t.classList.toggle('active', i === 0); });
+    updateUI();
+    loadLevel();
+    resize();
+  }
+
+  function restartGame() {
+    completeModal.classList.add('hidden');
+    startGame();
+  }
+
+  // 暴露到全局
+  window.startGame = startGame;
+  window.restartGame = restartGame;
+  window.switchMode = switchMode;
+
+  // ==================== 初始化 ====================
+  resize();
+  animate();
+  console.log('🔍 观察物体 - 立体图形认知游戏已就绪 (v2)');
+  console.log('  🎯 认识面 | 🔄 运动观察 | 🧩 图形拼组 | 🏠 生活物体');
+}
+
+// 启动
+if (typeof THREE !== 'undefined') {
+  window.__THREE_LOADED = true;
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  initGame();
+} else {
+  initWhenReady();
+}
+
+})();
+</script>
+</body>
+</html>

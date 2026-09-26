@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数学游戏乐园2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#0f0c29,#302b63,#24243e);background-attachment:fixed;min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.bf{position:absolute;font-size:2.5em;opacity:0.08;animation:fa 20s infinite ease-in-out}
+@keyframes fa{0%,100%{transform:translateY(0)rotate(0)}25%{transform:translateY(-30px)rotate(5deg)}50%{transform:translateY(-10px)rotate(-3deg)}75%{transform:translateY(-40px)rotate(2deg)}}
+.bf:nth-child(1){top:5%;left:5%}.bf:nth-child(2){top:15%;right:8%;animation-delay:-4s}.bf:nth-child(3){top:50%;left:3%;animation-delay:-8s}.bf:nth-child(4){top:60%;right:5%;animation-delay:-12s}.bf:nth-child(5){top:80%;left:10%;animation-delay:-16s}.bf:nth-child(6){top:35%;left:85%;animation-delay:-6s}.bf:nth-child(7){top:85%;right:15%;animation-delay:-10s}.bf:nth-child(8){top:25%;left:45%;animation-delay:-14s}
+.main{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:16px}
+.hero{text-align:center;padding:26px 16px 20px;margin-bottom:8px;background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03));border-radius:28px;box-shadow:0 8px 32px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);position:relative;overflow:hidden}
+.hero .icon{font-size:3.5em;display:block;margin-bottom:6px;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.hero h1{font-size:2.1em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero p{color:rgba(255,255,255,0.6);font-size:0.95em;margin-top:6px}
+.tabs{display:flex;justify-content:center;gap:12px;margin:16px 0 10px}
+.tab{padding:13px 30px;border-radius:30px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:1.1em;font-weight:bold;cursor:pointer;transition:all 0.3s;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.tab:hover{transform:translateY(-3px);border-color:rgba(255,255,255,0.4);color:#fff}
+.tab.active{color:#fff;border-color:transparent}
+.tab.g0.active{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);box-shadow:0 8px 28px rgba(255,107,107,0.3)}
+.tab.g1.active{background:linear-gradient(135deg,#4ECDC4,#44b8b0);box-shadow:0 8px 28px rgba(78,205,196,0.3)}
+.tab.g2.active{background:linear-gradient(135deg,#6C5CE7,#5a4bd1);box-shadow:0 8px 28px rgba(108,92,231,0.35)}
+.semtabs{display:flex;justify-content:center;gap:12px;margin:8px 0 14px}
+.semtab{padding:9px 26px;border-radius:22px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.65);font-size:0.95em;font-weight:bold;cursor:pointer;transition:all 0.3s;font-family:inherit}
+.semtab:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.4);color:#fff}
+.semtab.active{color:#fff;border-color:transparent}
+.semtab.up.active{background:linear-gradient(135deg,#FFD93D,#f0c800);color:#333;box-shadow:0 6px 20px rgba(255,217,61,0.3)}
+.semtab.dn.active{background:linear-gradient(135deg,#66BB6A,#43A047);box-shadow:0 6px 20px rgba(102,187,106,0.3)}
+.sb{display:flex;justify-content:center;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.sp{background:rgba(255,255,255,0.08);padding:8px 18px;border-radius:20px;font-size:0.85em;font-weight:bold;border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.85)}
+.sp .v{color:#FFD700;font-size:1.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.card{background:rgba(255,255,255,0.06);border-radius:18px;padding:18px 16px;box-shadow:0 6px 20px rgba(0,0,0,0.2);transition:all 0.3s;border:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden;backdrop-filter:blur(4px)}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.4);border-color:rgba(255,215,0,0.3)}
+.card:nth-child(8n+1){border-left:4px solid #FF6B6B}
+.card:nth-child(8n+2){border-left:4px solid #4ECDC4}
+.card:nth-child(8n+3){border-left:4px solid #FFD93D}
+.card:nth-child(8n+4){border-left:4px solid #6C5CE7}
+.card:nth-child(8n+5){border-left:4px solid #FF9800}
+.card:nth-child(8n+6){border-left:4px solid #66BB6A}
+.card:nth-child(8n+7){border-left:4px solid #42A5F5}
+.card:nth-child(8n+8){border-left:4px solid #EC407A}
+.card .ch{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.card .cn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2em;font-weight:bold;color:#fff;flex-shrink:0}
+.card:nth-child(8n+1) .cn{background:linear-gradient(135deg,#FF6B6B,#ee5a5a)}
+.card:nth-child(8n+2) .cn{background:linear-gradient(135deg,#4ECDC4,#44b8b0)}
+.card:nth-child(8n+3) .cn{background:linear-gradient(135deg,#FFD93D,#f0c800);color:#333}
+.card:nth-child(8n+4) .cn{background:linear-gradient(135deg,#6C5CE7,#5a4bd1)}
+.card:nth-child(8n+5) .cn{background:linear-gradient(135deg,#FF9800,#F57C00)}
+.card:nth-child(8n+6) .cn{background:linear-gradient(135deg,#66BB6A,#43A047)}
+.card:nth-child(8n+7) .cn{background:linear-gradient(135deg,#42A5F5,#1E88E5)}
+.card:nth-child(8n+8) .cn{background:linear-gradient(135deg,#EC407A,#D81B60)}
+.card .un{font-size:1.05em;font-weight:bold;color:rgba(255,255,255,0.9);line-height:1.3}
+.card .ud{font-size:0.78em;color:rgba(255,255,255,0.5);margin-bottom:10px;line-height:1.4}
+.card .ui{font-size:1.5em;position:absolute;top:14px;right:14px;opacity:0.3}
+.card .gl{display:flex;flex-wrap:wrap;gap:5px}
+.gl-btn{padding:7px 13px;border-radius:14px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);font-size:0.8em;font-weight:bold;cursor:pointer;transition:all 0.25s;font-family:inherit}
+.gl-btn:nth-child(8n+1):hover{background:rgba(255,107,107,0.3);border-color:#FF6B6B}
+.gl-btn:nth-child(8n+2):hover{background:rgba(78,205,196,0.3);border-color:#4ECDC4}
+.gl-btn:nth-child(8n+3):hover{background:rgba(255,217,61,0.3);border-color:#FFD93D}
+.gl-btn:nth-child(8n+4):hover{background:rgba(108,92,231,0.3);border-color:#6C5CE7}
+.gl-btn:nth-child(8n+5):hover{background:rgba(255,152,0,0.3);border-color:#FF9800}
+.gl-btn:nth-child(8n+6):hover{background:rgba(102,187,106,0.3);border-color:#66BB6A}
+.gl-btn:nth-child(8n+7):hover{background:rgba(66,165,245,0.3);border-color:#42A5F5}
+.gl-btn:nth-child(8n+8):hover{background:rgba(236,64,122,0.3);border-color:#EC407A}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;background:rgba(0,0,0,0);transition:0.35s;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden}
+.modal.open{background:rgba(0,0,0,0.75);pointer-events:auto;opacity:1;visibility:visible}
+.modal .mw{width:97%;height:95%;max-width:1200px;background:#1a1a2e;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);transform:scale(0.85);transition:0.35s;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.1)}
+.modal.open .mw{transform:scale(1)}
+.modal .mh{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,0.5);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.1)}
+.modal .mh .mt{font-weight:bold;color:rgba(255,255,255,0.85);font-size:0.95em}
+.modal .cb{width:36px;height:36px;border-radius:50%;border:none;background:#ff5252;color:#fff;font-size:1.3em;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal .cb:hover{background:#d32f2f}
+.modal iframe{flex:1;border:none;width:100%;background:#0f0c29}
+.star-badge{display:inline-flex;align-items:center;gap:2px;font-size:0.85em}
+.star-badge .e{color:#FFD700}
+.star-badge .em{color:rgba(255,255,255,0.3)}
+.footer{text-align:center;padding:20px;color:rgba(255,255,255,0.35);font-size:0.8em}
+.rs{padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.5);font-size:0.75em;cursor:pointer;font-family:inherit}
+.rs:hover{border-color:#ff5252;color:#ff5252}
+@media(max-width:600px){.hero h1{font-size:1.5em}.tab{padding:10px 18px;font-size:0.95em}.semtab{padding:8px 18px;font-size:0.88em}.grid{grid-template-columns:1fr}.card{padding:12px}}
+</style>
+</head>
+<body>
+<div class="bg">
+<span class="bf">⚔️</span><span class="bf">🎮</span><span class="bf">🏆</span><span class="bf">⚡</span><span class="bf">🔥</span><span class="bf">💪</span><span class="bf">🎯</span><span class="bf">🌟</span>
+</div>
+<div class="main">
+<div class="hero">
+<span class="icon">⚔️</span>
+<h1>数学游戏乐园2</h1>
+<p>苏教版 · 一二三年级 · 双人对战 · 谁是数学王者？</p>
+</div>
+<div class="tabs" id="gtabs"></div>
+<div class="semtabs" id="stabs"></div>
+<div class="sb">
+<div class="sp">🏆 总星数：<span class="v" id="ts">0</span></div>
+<div class="sp">🎮 已完成：<span class="v" id="cc">0</span> 局</div>
+<button class="rs" onclick="rsa()">重置记录</button>
+</div>
+<div id="ca"></div>
+<div class="footer">⚡ 叫上小伙伴，一起来对战吧！⚡</div>
+</div>
+<div class="modal" id="gm">
+<div class="mw">
+<div class="mh"><span class="mt" id="mt">加载中...</span><button class="cb" onclick="cg()">✕</button></div>
+<iframe id="gf" src="" allow="accelerometer;autoplay;clipboard-write;gyroscope"></iframe>
+</div>
+</div>
+<script>
+var DATA=[
+{name:"一年级",icon:"🎈",sem:[
+ {name:"上册",units:[
+  {i:"🔢",nn:"数学准备课",d:"数一数 比一比 认识数字1~5",g:[["数字PK战","一年级/上册/一 、二、 四 、五单元/数字PK战.html"]]},
+  {i:"➕",nn:"1~5的加减法",d:"加减法预习练习",g:[["加减PK","一年级/上册/一、 二 、四、单元 加一下预习/加减PK.html"]]},
+  {i:"🧭",nn:"生活中的位置",d:"认识上下前后左右",g:[["位置PK","一年级/上册/一后、生活中的位置/位置PK.html"],["认识位置","一年级/上册/一后、生活中的位置/认识位置.html"]]},
+  {i:"📦",nn:"图形的初步认识",d:"认识立体图形",g:[["图形PK","一年级/上册/三、图形的初步认识 立体图形的初步认识/图形PK.html"],["立体图形","一年级/上册/三、图形的初步认识 立体图形的初步认识/立体图形.html"]]},
+  {i:"🕐",nn:"认识钟表",d:"认识整时和半时",g:[["钟表PK","一年级/上册/钟表PK.html"]]}
+ ]},
+ {name:"下册",units:[
+  {i:"➖",nn:"20以内退位减法",d:"十几减几",g:[["退位减法PK","一年级/下册/一 、五、计算/退位减法PK.html"]]},
+  {i:"🔍",nn:"观察物体",d:"从不同角度观察物体",g:[["观察物体","一年级/下册/七、 观察物体/观察物体.html"],["观察物体PK","一年级/下册/七、 观察物体/观察物体PK.html"]]},
+  {i:"📊",nn:"数据分类",d:"按标准分类整理数据",g:[["数据分类PK","一年级/下册/三、数据分类/数据分类PK.html"]]},
+  {i:"🔷",nn:"认识平面图形",d:"认识平面图形",g:[["平面图形PK","一年级/下册/二、图形的初步认识/平面图形PK.html"]]},
+  {i:"🧩",nn:"图形的拼组",d:"拼图大作战",g:[["像素三角形拼图","一年级/下册/二后、图形的拼组/像素三角形拼图2.html"],["像素正方形拼图","一年级/下册/二后、图形的拼组/像素正方形拼图1 .html"],["生活拼图大作战","一年级/下册/二后、图形的拼组/生活拼图大作战3.html"]]},
+  {i:"🔗",nn:"简单的数量关系",d:"比多少 差倍问题",g:[["数量关系PK","一年级/下册/六、简单的数量关系/数量关系PK.html"]]},
+  {i:"🔢",nn:"认识20~99",d:"两位数的组成与数位",g:[["数字王国PK","一年级/下册/四、认识20到99/数字王国PK.html"],["认识20~99","一年级/下册/四、认识20到99/认识20-99四 - 副本.html"]]},
+  {i:"🎈",nn:"50有多大",d:"数的拓展",g:[["50有多大","一年级/下册/四后、50有多大/50有多大四拓展 - 副本.html"]]}
+ ]}
+]},
+{name:"二年级",icon:"🎪",sem:[
+ {name:"上册",units:[
+  {i:"✖️",nn:"1~6的乘法口诀",d:"乘法口诀速记",g:[["1~6乘法口诀PK","二年级/上册/一、1到6的乘法口诀/1~6乘法口诀PK.html"]]},
+  {i:"➗",nn:"7~9的乘除法",d:"乘法口诀求商",g:[["7~9乘法口诀求商PK","二年级/上册/三、7到9的乘除法/7~9乘法口诀求商PK.html"]]},
+  {i:"🧭",nn:"认识方向",d:"认识东南西北",g:[["认识东南西北PK","二年级/上册/三后 认识方向/认识东南西北PK.html"]]},
+  {i:"➗",nn:"1~6的表内除法",d:"除法入门练习",g:[["除法对战PK","二年级/上册/二、1到6的表内除法/除法对战PK.html"]]},
+  {i:"🧮",nn:"两位数加减两位数",d:"两位数加减两位数",g:[["两位数加减PK","二年级/上册/五、两位数加减两位数/两位数加减PK.html"]]},
+  {i:"🔢",nn:"有余数的除法",d:"带余数除法",g:[["带余数除法PK","二年级/上册/六、有余数的除法/带余数除法PK.html"]]},
+  {i:"🔢",nn:"认识三位数",d:"三位数的认识",g:[["三位数PK","二年级/上册/四、认识三位数/三位数PK.html"],["认识三位数PK","二年级/上册/四、认识三位数/认识三位数PK.html"]]},
+  {i:"🛒",nn:"欢乐购物街",d:"认识人民币 购物",g:[["人民币PK","二年级/上册/欢乐购物街/人民币PK.html"],["认识人民币","二年级/上册/欢乐购物街/认识人民币.html"],["认识人民币PK","二年级/上册/欢乐购物街/认识人民币PK.html"]]}
+ ]},
+ {name:"下册",units:[
+  {i:"📏",nn:"厘米与米",d:"认识厘米和米",g:[["认识厘米和米PK","二年级/下册/一、厘米与米/认识厘米和米PK.html"]]},
+  {i:"🧮",nn:"两位数乘除一位数",d:"两位数乘除一位数",g:[["两位数乘除一位数PK","二年级/下册/三、两位数乘除一位数PK/两位数乘除一位数PK.html"]]},
+  {i:"🔗",nn:"简单的数量关系",d:"倍的认识",g:[["倍的认识PK","二年级/下册/二、简单的数量关系/倍的认识PK.html"]]},
+  {i:"⏰",nn:"时间有多长",d:"时分秒 认识时间",g:[["时分秒PK","二年级/下册/二后 时间有多长/时分秒PK.html"],["认识时间PK","二年级/下册/二后 时间有多长/认识时间PK.html"]]},
+  {i:"🔢",nn:"认识四位数",d:"万以内数的认识",g:[["万以内数认识PK","二年级/下册/五、认识四位数/万以内数认识PK.html"]]},
+  {i:"🧮",nn:"两三位数加减",d:"两三位数的加减法",g:[["两三位数加减法PK","二年级/下册/六、两三位数加减/两三位数加减法PK.html"],["两三位数计算PK","二年级/下册/六、两三位数加减/两三位数计算PK.html"]]},
+  {i:"📊",nn:"数据的分类与整理",d:"数据分类整理",g:[["数据分类整理PK","二年级/下册/四、数据的分类与整理/数据分类整理PK.html"],["数据整理PK","二年级/下册/四、数据的分类与整理/数据整理PK.html"]]}
+ ]}
+]},
+{name:"三年级",icon:"🚀",sem:[
+ {name:"上册",units:[
+  {i:"🧮",nn:"混合运算与数量关系",d:"乘加乘减混合运算",g:[["混合运算PK","三年级/上册/一、混合运算与数量关系/混合运算PK.html"],["混合运算与数量关系","三年级/上册/一、混合运算与数量关系/混合运算与数量关系1.html"]]},
+  {i:"🕐",nn:"一天的时间",d:"认识一天的时间",g:[["一天的时间","三年级/上册/一天的时间/一天的时间.html"]]},
+  {i:"🔗",nn:"数量关系的分析",d:"分析数量关系",g:[["数量关系分析PK","三年级/上册/七、数量关系的分析/数量关系分析PK.html"]]},
+  {i:"📊",nn:"数据的收集与整理",d:"收集整理数据",g:[["数据的收集与整理","三年级/上册/三、数据的收集与整理/数据的收集与整理.html"]]},
+  {i:"✖️",nn:"两三位数乘一位数",d:"笔算乘法",g:[["两三位数乘一位数","三年级/上册/二、两三位数乘一位数/二、两三位数乘一位数.html"]]},
+  {i:"🔄",nn:"平移旋转轴对称",d:"图形的变换",g:[["图形变换PK","三年级/上册/五、平移旋转轴对称/图形变换PK.html"],["平移旋转轴对称PK","三年级/上册/五、平移旋转轴对称/平移旋转轴对称PK.html"]]},
+  {i:"🔍",nn:"观察物体（二）",d:"三视图初步",g:[["观察物体PK","三年级/上册/八、观察物体（二）/观察物体PK.html"],["观察物体二PK","三年级/上册/八、观察物体（二）/观察物体二PK.html"]]},
+  {i:"➗",nn:"两三位数除以一位数",d:"笔算除法",g:[["两三位数除以一位数PK","三年级/上册/六、两三位数除以一位数/两三位数除以一位数PK.html"]]},
+  {i:"📏",nn:"毫米、分米和千米",d:"长度单位换算",g:[["毫米分米千米PK","三年级/上册/四、毫米、分米和千米/毫米分米千米PK.html"],["长度单位PK","三年级/上册/四、毫米、分米和千米/长度单位PK.html"]]},
+  {i:"🔁",nn:"间隔排列",d:"间隔排列",g:[["间隔排列PK","三年级/上册/间隔排列/间隔排列PK.html"]]}
+ ]},
+ {name:"下册",units:[
+  {i:"📐",nn:"认识角",d:"认识角",g:[["认识角PK","三年级/下册/一、认识角/认识角PK.html"]]},
+  {i:"✖️",nn:"两位数乘两位数",d:"两位数乘两位数",g:[["两位数乘两位数PK","三年级/下册/三、两位数乘两位数/两位数乘两位数-五合一PK.html"]]},
+  {i:"➕",nn:"加法数量关系",d:"加法数量关系",g:[["加法数量关系PK","三年级/下册/二、第二单元加法数量关系/第二单元加法数量关系 PK.html"]]},
+  {i:"📏",nn:"长方形和正方形",d:"长方形 正方形",g:[["长方形和正方形·绘图PK","三年级/下册/五、长方形和正方形/长方形和正方形-交互绘图PK.html"],["长方形和正方形·六合一PK","三年级/下册/五、长方形和正方形/长方形和正方形-六合一PK.html"]]},
+  {i:"🍕",nn:"分数的初步认识",d:"认识分数",g:[["分数初步认识PK","三年级/下册/六、分数的初步认识/分数初步认识PK.html"]]},
+  {i:"📊",nn:"统计表和条形统计图",d:"统计图表",g:[["统计图表PK","三年级/下册/四、统计表和条形统计图/统计图表PK.html"]]},
+  {i:"📅",nn:"年月日",d:"年月日 季度 农历",g:[["年月日季度农历PK","三年级/下册/年月日/年月日季度农历PK.html"]]},
+  {i:"🔁",nn:"简单的周期",d:"简单的周期",g:[["简单周期PK","三年级/下册/简单的周期/简单周期PK.html"]]},
+  {i:"🗺️",nn:"藏宝图",d:"藏宝图寻宝",g:[["藏宝图寻宝PK","三年级/下册/藏宝图/藏宝图寻宝 PK.html"]]}
+ ]}
+]}
+];
+var cg_=0, cs_=0, ts=0, cc=0;
+function gk(f){return 'pk_'+f.replace(/[\/\.\s]/g,'_').replace(/^_+|_+$/g,'');}
+function init(){buildTabs();ls();ru();}
+function buildTabs(){
+  var h='';DATA.forEach(function(g,i){h+='<button class="tab g'+i+(i===0?' active':'')+'" onclick="swg('+i+')">'+g.icon+' '+g.name+'</button>';});
+  document.getElementById('gtabs').innerHTML=h;
+  buildSemTabs();
+}
+function buildSemTabs(){
+  var h='';DATA[cg_].sem.forEach(function(s,j){h+='<button class="semtab '+(j===0?'up':'dn')+(j===cs_?' active':'')+'" onclick="sws('+j+')">📘 '+s.name+'</button>';});
+  document.getElementById('stabs').innerHTML=h;
+}
+function swg(i){cg_=i;cs_=0;buildSemTabs();document.querySelectorAll('.tab').forEach(function(t,j){t.classList.toggle('active',j===i);});ru();}
+function sws(i){cs_=i;document.querySelectorAll('.semtab').forEach(function(t,j){t.classList.toggle('active',j===i);});ru();}
+function ls(){ts=0;cc=0;DATA.forEach(function(g){g.sem.forEach(function(s){s.units.forEach(function(u){u.g.forEach(function(x){var k=gk(x[1]);var v=parseInt(localStorage.getItem(k)||'0');x[2]=v;if(v>0){ts+=v;cc++;}});});});});us();}
+function rc(){ls();}
+function us(){document.getElementById('ts').textContent=ts;document.getElementById('cc').textContent=cc;}
+function ru(){
+  var units=DATA[cg_].sem[cs_].units;var h='';var n=0;
+  units.forEach(function(u){n++;
+    h+='<div class="card">';
+    h+='<span class="ui">'+u.i+'</span>';
+    h+='<div class="ch"><div class="cn">'+n+'</div><div class="un">'+u.nn+'</div></div>';
+    h+='<div class="ud">'+u.d+'</div>';
+    h+='<div class="gl">';
+    u.g.forEach(function(x){var sh='',st=x[2]||0;for(var i=0;i<3;i++)sh+='<span class="'+(i<st?'e':'em')+'">'+(i<st?'⭐':'☆')+'</span>';h+='<button class="gl-btn" onclick="og(\''+eh(x[1])+'\',\''+eh(x[0])+'\')">⚔ '+x[0]+' <span class="star-badge">'+sh+'</span></button>';});
+    h+='</div></div>';
+  });
+  document.getElementById('ca').innerHTML=h;
+}
+function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function og(f,t){
+  var m=document.getElementById('gm');document.getElementById('mt').textContent=t;
+  document.getElementById('gf').src=f;m.classList.add('open');document.body.style.overflow='hidden';
+  var k=gk(f);clearTimeout(document.getElementById('gf')._st);
+  document.getElementById('gf')._st=setTimeout(function(){var c=parseInt(localStorage.getItem(k)||'0');if(c<3){localStorage.setItem(k,c+1);rc();ru();}},45000);
+}
+function cg(){var m=document.getElementById('gm');m.classList.remove('open');document.body.style.overflow='';setTimeout(function(){document.getElementById('gf').src='';},350);}
+function rsa(){if(confirm('确定要重置所有PK记录吗？')){var ks=[];for(var k in localStorage)if(k.indexOf('pk_')===0)ks.push(k);ks.forEach(function(k){localStorage.removeItem(k);});rc();ru();}}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cg();});
+document.getElementById('gm').addEventListener('click',function(e){if(e.target===this)cg();});
+init();
+</script>
+</body>
+</html>

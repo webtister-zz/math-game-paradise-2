@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>认识位置 - 一年级数学游戏</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+  background:linear-gradient(180deg, #e8f5e9 0%, #fff9c4 40%, #e3f2fd 100%);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent; overflow-y:auto;
+}
+
+/* === 顶部 === */
+.top-bar {
+  width:100%; max-width:700px; display:flex; align-items:center;
+  justify-content:space-between; padding:10px 14px; gap:6px; flex-shrink:0; flex-wrap:wrap;
+}
+.stage-tabs { display:flex; gap:4px; flex-wrap:wrap; }
+.stage-tab {
+  padding:7px 12px; border-radius:20px; border:2.5px solid rgba(0,0,0,0.1);
+  background:#fff; color:#555; font-size:0.82em; font-weight:bold;
+  cursor:pointer; transition:all 0.25s; font-family:inherit;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+}
+.stage-tab:hover { transform:translateY(-1px); }
+.stage-tab.active { color:#fff; border-color:transparent; }
+.stage-tab.s0.active { background:linear-gradient(135deg,#FF6B6B,#ee5a5a); }
+.stage-tab.s1.active { background:linear-gradient(135deg,#4ECDC4,#44b8b0); }
+.stage-tab.s2.active { background:linear-gradient(135deg,#FF9800,#F57C00); }
+.stage-tab.s3.active { background:linear-gradient(135deg,#7C4DFF,#651FFF); }
+.info-pills { display:flex; gap:8px; }
+.info-pill {
+  background:#fff; padding:5px 12px; border-radius:16px;
+  font-size:0.85em; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  display:flex; align-items:center; gap:3px;
+}
+.info-pill .val { color:#FF6B6B; font-size:1.1em; }
+
+/* === 进度 === */
+.progress-wrap { width:100%; max-width:700px; padding:0 14px 4px; }
+.progress-bar { height:8px; background:rgba(0,0,0,0.06); border-radius:10px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:10px; transition:width 0.4s; }
+
+/* === 游戏区 === */
+.game-area {
+  width:100%; max-width:700px; flex:1; display:flex;
+  flex-direction:column; align-items:center; padding:8px 14px 14px; gap:10px;
+}
+.scene-card {
+  width:100%; background:#fff; border-radius:22px; padding:18px 14px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.06); text-align:center;
+}
+
+/* === 场景标签 === */
+.scene-badge {
+  display:inline-block; padding:5px 14px; border-radius:12px;
+  font-size:0.82em; font-weight:bold; margin-bottom:6px;
+}
+.scene-badge.classroom { background:#FFEBEE; color:#C62828; border:1.5px solid #FFCDD2; }
+.scene-badge.stairs { background:#E0F7FA; color:#00695C; border:1.5px solid #B2DFDB; }
+.scene-badge.queue { background:#FFF3E0; color:#E65100; border:1.5px solid #FFE0B2; }
+.scene-badge.mixed { background:#EDE7F6; color:#4527A0; border:1.5px solid #D1C4E9; }
+
+/* === 问题 === */
+.prompt-text {
+  font-size:1.15em; font-weight:bold; color:#333; margin:8px 0 14px; line-height:1.7;
+}
+.prompt-text .hl { color:#FF6B6B; font-size:1.15em; }
+.prompt-text .hl2 { color:#4ECDC4; font-size:1.1em; }
+.prompt-text .hl3 { color:#FF9800; font-size:1.1em; }
+
+/* ========================================
+   场景1: 教室 (Classroom)
+   ======================================== */
+.classroom-scene {
+  position:relative; width:100%; max-width:420px; height:280px; margin:0 auto 10px;
+  background:linear-gradient(180deg, #fffef5 0%, #f5f0e0 100%);
+  border:3px solid #e0d5c0; border-radius:16px; overflow:hidden;
+}
+/* 黑板 */
+.classroom-scene .blackboard {
+  position:absolute; top:16px; left:50%; transform:translateX(-50%);
+  width:55%; height:44px; background:#2d5a27; border-radius:6px;
+  border:4px solid #8D6E63; box-shadow:0 2px 8px rgba(0,0,0,0.2);
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(255,255,255,0.7); font-size:0.7em; letter-spacing:2px;
+}
+/* 讲台 */
+.classroom-scene .podium {
+  position:absolute; top:74px; left:50%; transform:translateX(-50%);
+  width:40%; height:18px; background:#A1887F; border-radius:4px 4px 0 0;
+}
+/* 窗户 */
+.classroom-scene .window {
+  position:absolute; top:20px; width:36px; height:50px;
+  background:#bbdefb; border:3px solid #90A4AE; border-radius:3px;
+  box-shadow:inset 0 0 8px rgba(255,255,255,0.5);
+}
+.classroom-scene .window::after {
+  content:''; position:absolute; top:50%; left:0; width:100%; height:3px;
+  background:#90A4AE;
+}
+.classroom-scene .window.left { left:14px; }
+.classroom-scene .window.right { right:14px; }
+/* 门 */
+.classroom-scene .door {
+  position:absolute; bottom:0; right:16px; width:32px; height:54px;
+  background:#8D6E63; border-radius:3px 3px 0 0; border:3px solid #6D4C41;
+}
+.classroom-scene .door::after {
+  content:''; position:absolute; right:4px; top:50%; width:6px; height:6px;
+  background:#FFD700; border-radius:50%;
+}
+/* 书柜 */
+.classroom-scene .bookshelf {
+  position:absolute; bottom:20px; left:18px; width:40px; height:46px;
+  background:#A1887F; border-radius:3px; border:3px solid #8D6E63;
+}
+/* 课桌 */
+.classroom-scene .desk {
+  position:absolute; width:56px; height:36px;
+  background:#FFCC80; border-radius:3px; border:2px solid #FFB74D;
+  display:flex; align-items:flex-start; justify-content:center; padding-top:2px;
+  font-size:0.6em; color:#999;
+}
+.classroom-scene .chair {
+  position:absolute; width:22px; height:18px;
+  background:#BCAAA4; border-radius:2px 2px 4px 4px;
+}
+/* 学生头像 */
+.classroom-scene .student {
+  position:absolute; font-size:1.4em; transition:all 0.3s; cursor:default;
+  z-index:2; text-align:center;
+}
+.classroom-scene .student .name-tag {
+  display:block; font-size:0.45em; color:#555; font-weight:bold;
+  background:rgba(255,255,255,0.85); padding:1px 5px; border-radius:6px;
+  white-space:nowrap; margin-top:-2px;
+}
+
+/* ========================================
+   场景2: 楼梯 (Stairs)
+   ======================================== */
+.stairs-scene {
+  position:relative; width:100%; max-width:400px; height:260px; margin:0 auto 10px;
+  background:linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 40%, #a5d6a7 100%);
+  border:3px solid #a5d6a7; border-radius:16px; overflow:hidden;
+}
+.stairs-scene .stair-step {
+  position:absolute; background:#BDBDBD; border:1px solid #9E9E9E;
+  border-radius:2px; box-shadow:0 1px 2px rgba(0,0,0,0.1);
+}
+.stairs-scene .stair-label {
+  position:absolute; font-size:0.6em; color:#fff; font-weight:bold; right:4px; bottom:2px;
+}
+.stairs-scene .person {
+  position:absolute; font-size:1.3em; transition:all 0.3s; cursor:default; text-align:center;
+  z-index:2;
+}
+.stairs-scene .person .pname {
+  display:block; font-size:0.45em; font-weight:bold; color:#333;
+  background:rgba(255,255,255,0.8); padding:1px 4px; border-radius:4px;
+  white-space:nowrap;
+}
+.stairs-scene .arrow-up {
+  position:absolute; font-size:1.8em; color:#4CAF50; font-weight:bold;
+}
+.stairs-scene .arrow-down {
+  position:absolute; font-size:1.8em; color:#FF9800; font-weight:bold;
+}
+
+/* ========================================
+   场景3: 队伍 (Queue)
+   ======================================== */
+.queue-scene {
+  position:relative; width:100%; max-width:440px; height:130px; margin:0 auto 10px;
+  background:linear-gradient(180deg, #FFF3E0 0%, #FFE0B2 100%);
+  border:3px solid #FFCC80; border-radius:16px; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; padding:0 10px;
+}
+.queue-scene .ground-line {
+  position:absolute; bottom:24px; left:10px; right:10px; height:3px;
+  background:#795548; border-radius:2px;
+}
+.queue-scene .queue-person {
+  position:relative; font-size:1.4em; text-align:center; z-index:2;
+  transition:all 0.3s; cursor:default;
+  display:flex; flex-direction:column; align-items:center; margin:0 4px;
+}
+.queue-scene .queue-person .qname {
+  font-size:0.45em; font-weight:bold; color:#333;
+  background:rgba(255,255,255,0.85); padding:1px 5px; border-radius:5px;
+  white-space:nowrap;
+}
+.queue-scene .queue-person .qnum {
+  font-size:0.4em; color:#999; font-weight:bold;
+}
+.queue-scene .dir-label {
+  position:absolute; font-size:0.7em; font-weight:bold; color:#888;
+}
+.queue-scene .spotlight {
+  position:absolute; bottom:30px; width:52px; height:80px;
+  background:rgba(255,215,0,0.2); border-radius:50%;
+  border:2px dashed #FFD700; animation:spotPulse 1.5s ease-in-out infinite;
+}
+@keyframes spotPulse { 0%,100%{opacity:0.4} 50%{opacity:0.9} }
+
+/* ========================================
+   场景4: 书桌上的物品 (Desk Items)
+   ======================================== */
+.desk-scene {
+  position:relative; width:100%; max-width:400px; height:200px; margin:0 auto 10px;
+  background:linear-gradient(180deg, #fffef5 0%, #faf5e8 100%);
+  border:3px solid #e0d5c0; border-radius:16px; overflow:hidden;
+}
+.desk-scene .desk-surface {
+  position:absolute; bottom:0; left:5%; right:5%; height:50%;
+  background:#DEB887; border-radius:8px 8px 0 0; border:3px solid #C9A96E;
+  border-bottom:none;
+}
+.desk-scene .desk-item {
+  position:absolute; font-size:1.5em; transition:all 0.3s; z-index:2; cursor:default;
+  text-align:center;
+}
+.desk-scene .desk-item .iname {
+  display:block; font-size:0.4em; color:#555; font-weight:bold;
+}
+
+/* === 答案按钮 === */
+.answer-options {
+  display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:4px;
+}
+.ans-btn {
+  padding:10px 18px; border-radius:22px; border:2.5px solid #e0e0e0;
+  background:#fff; font-size:0.95em; font-weight:bold; color:#333;
+  cursor:pointer; transition:all 0.2s; font-family:inherit;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  min-width:50px; text-align:center;
+}
+.ans-btn:hover { transform:translateY(-2px); border-color:#aaa; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.ans-btn:active { transform:scale(0.94); }
+.ans-btn.correct { background:#4CAF50; color:#fff; border-color:#4CAF50; animation:popFlash 0.5s ease; pointer-events:none; }
+.ans-btn.wrong { background:#f44336; color:#fff; border-color:#f44336; animation:shake 0.5s ease; pointer-events:none; }
+.ans-btn:disabled { pointer-events:none; }
+@keyframes popFlash { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+/* === 知识点标签 === */
+.knowledge-tag {
+  display:inline-block; font-size:0.7em; padding:3px 10px; border-radius:10px;
+  background:#f5f5f5; color:#888; margin-top:6px;
+}
+
+/* === 反馈浮层 === */
+.feedback-toast {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
+  font-size:2.8em; font-weight:bold; pointer-events:none; z-index:100;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  text-shadow:0 4px 16px rgba(0,0,0,0.1);
+}
+.feedback-toast.show { transform:translate(-50%,-50%) scale(1); }
+.particles-layer { position:fixed; top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99; }
+.star-particle {
+  position:absolute; font-size:24px;
+  animation:starUp 1.2s ease-out forwards;
+}
+@keyframes starUp {
+  0%{transform:translateY(0)scale(0);opacity:1}
+  50%{transform:translateY(-70px)scale(1.3);opacity:0.8}
+  100%{transform:translateY(-140px)scale(0.4);opacity:0}
+}
+
+/* === 模态 === */
+.modal-overlay {
+  position:fixed; top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; z-index:200;
+}
+.modal-overlay.hidden { display:none; }
+.modal-box {
+  background:#fff; border-radius:28px; padding:30px 22px; text-align:center;
+  max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);
+  animation:modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+.modal-box h2 { font-size:1.7em; color:#333; margin-bottom:8px; }
+.modal-box p { color:#666; line-height:1.6; margin-bottom:14px; }
+.modal-btn {
+  padding:12px 32px; border-radius:24px; border:none;
+  background:linear-gradient(135deg,#FF6B6B,#ee5a5a); color:#fff;
+  font-size:1.05em; font-weight:bold; cursor:pointer; font-family:inherit;
+  box-shadow:0 6px 18px rgba(255,107,107,0.3); transition:all 0.2s; margin:5px;
+}
+.modal-btn:hover { transform:translateY(-2px); }
+.modal-btn.secondary { background:#fff; color:#666; border:2px solid #ddd; box-shadow:none; }
+.stars-row { font-size:2.3em; letter-spacing:4px; margin:6px 0; }
+
+@media (max-width:480px) {
+  .stage-tab { padding:5px 9px; font-size:0.72em; }
+  .prompt-text { font-size:1em; }
+  .ans-btn { padding:8px 14px; font-size:0.85em; }
+  .classroom-scene { height:240px; }
+  .stairs-scene { height:220px; }
+  .queue-scene { height:110px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="stage-tabs" id="stageTabs">
+    <button class="stage-tab s0 active" data-stage="0">🏫 教室里的位置</button>
+    <button class="stage-tab s1" data-stage="1">🪜 楼梯上的位置</button>
+    <button class="stage-tab s2" data-stage="2">👫 队伍里的位置</button>
+    <button class="stage-tab s3" data-stage="3">🎯 综合大挑战</button>
+  </div>
+  <div class="info-pills">
+    <div class="info-pill">⭐ <span class="val" id="scoreEl">0</span></div>
+    <div class="info-pill">📝 <span class="val" id="levelEl">1</span>/<span id="totalEl">8</span></div>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill s0" id="progressFill" style="width:0%"></div></div>
+</div>
+
+<div class="game-area" id="gameArea"></div>
+
+<div class="feedback-toast" id="feedbackToast"></div>
+<div class="particles-layer" id="particlesLayer"></div>
+
+<div class="modal-overlay hidden" id="completeModal">
+  <div class="modal-box">
+    <span style="font-size:3.5em;display:block;">🏆</span>
+    <h2 id="completeTitle">太棒了！</h2>
+    <div class="stars-row" id="starsDisplay">⭐⭐⭐</div>
+    <p id="completeMsg"></p>
+    <p>总分：<strong style="color:#FF6B6B;font-size:1.2em;" id="finalScoreEl">0</strong></p>
+    <button class="modal-btn" onclick="restartStage()">再玩一次 🔄</button>
+    <button class="modal-btn secondary" id="nextBtn">下一场景 ➡️</button>
+  </div>
+</div>
+
+<script>
+// ==================== 状态 ====================
+var state = { stage:0, level:0, score:0, totalInStage:8, targetAnswer:null, isAnswering:true };
+var gameArea = document.getElementById('gameArea');
+var scoreEl = document.getElementById('scoreEl');
+var levelEl = document.getElementById('levelEl');
+var totalEl = document.getElementById('totalEl');
+var progressFill = document.getElementById('progressFill');
+var feedbackToast = document.getElementById('feedbackToast');
+var particlesLayer = document.getElementById('particlesLayer');
+var completeModal = document.getElementById('completeModal');
+var stageTabs = document.querySelectorAll('.stage-tab');
+
+// ==================== 随机工具 ====================
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randPick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// ==================== 学生角色库 ====================
+var STUDENTS = [
+  { name:'小明', emoji:'👦', color:'#FF6B6B' },
+  { name:'小红', emoji:'👧', color:'#FF80AB' },
+  { name:'小刚', emoji:'🧒', color:'#42A5F5' },
+  { name:'小丽', emoji:'👧🏻', color:'#FFB74D' },
+  { name:'小华', emoji:'👦🏻', color:'#4CAF50' },
+  { name:'小美', emoji:'👩', color:'#BA68C8' },
+  { name:'小强', emoji:'👦🏽', color:'#26C6DA' },
+  { name:'小芳', emoji:'👩🏻', color:'#EF5350' },
+];
+
+// ==================== 题目生成 ====================
+function genLevel(stageIdx, levelIdx) {
+  if (stageIdx === 0) return genClassroomQ(levelIdx);
+  if (stageIdx === 1) return genStairsQ(levelIdx);
+  if (stageIdx === 2) return genQueueQ(levelIdx);
+  return genMixedQ(levelIdx);
+}
+
+// ===== 教室题目 =====
+function genClassroomQ(lv) {
+  var templates = [
+    // 上下类
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'classroom', knowledge:'上下',
+        prompt:'在教室里，<span class="hl">'+p1.name+'</span>坐在<span class="hl2">'+p2.name+'</span>的<span class="hl3">上面一排</span>。<br>谁坐在<span class="hl">上面</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'above_below', above:p1, below:p2}
+      };
+    },
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'classroom', knowledge:'上下',
+        prompt:'<span class="hl">'+p1.name+'</span>在<span class="hl2">'+p2.name+'</span>的下面。<br>谁在<span class="hl">下面</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'above_below', above:p2, below:p1}
+      };
+    },
+    // 前后类
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'classroom', knowledge:'前后',
+        prompt:'教室座位：<span class="hl">'+p1.name+'</span>坐在<span class="hl2">'+p2.name+'</span>的<span class="hl3">前面</span>。<br>谁坐在<span class="hl">前面</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'front_back', front:p1, back:p2}
+      };
+    },
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'classroom', knowledge:'前后',
+        prompt:'<span class="hl">'+p2.name+'</span>坐在<span class="hl2">'+p1.name+'</span>的后面一排。<br>谁坐在<span class="hl">后面</span>？',
+        answer:p2.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'front_back', front:p1, back:p2}
+      };
+    },
+    // 左右类
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'classroom', knowledge:'左右',
+        prompt:'教室座位：<span class="hl">'+p1.name+'</span>坐在<span class="hl2">'+p2.name+'</span>的<span class="hl3">左边</span>。<br>谁在<span class="hl">左边</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'left_right', left:p1, right:p2}
+      };
+    },
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'classroom', knowledge:'左右',
+        prompt:'<span class="hl">'+p2.name+'</span>在<span class="hl2">'+p1.name+'</span>的右边。<br>谁在<span class="hl">右边</span>？',
+        answer:p2.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'left_right', left:p1, right:p2}
+      };
+    },
+    // 物品位置类
+    function() {
+      var items = ['黑板','窗户','门','书柜','讲台'];
+      var item = randPick(items);
+      var positions = ['前面','后面','左边','右边'];
+      var pos = randPick(positions);
+      var ansMap = { '黑板':'前面', '窗户':'左边', '门':'后面', '书柜':'后面', '讲台':'前面' };
+      var posAns = ansMap[item];
+      return {
+        scene:'classroom', knowledge:posAns === '前面'||posAns==='后面'?'前后':'左右',
+        prompt:'教室里，<span class="hl">'+item+'</span>在教室的哪边？',
+        answer:posAns, options:shuffle(['前面','后面','左边','右边']),
+        data:{type:'object_pos', item:item, position:posAns}
+      };
+    },
+    function() {
+      var item = randPick(['窗户','门','书柜','黑板']);
+      var ansMap = { '窗户':'左边', '门':'右边', '书柜':'后面', '黑板':'前面' };
+      return {
+        scene:'classroom', knowledge:'前后左右',
+        prompt:'在教室的<span class="hl">' + ansMap[item] + '</span>，你能找到什么？',
+        answer:item, options:shuffle(['窗户','门','书柜','黑板'].filter(function(i){return i!==item;}).slice(0,2).concat([item])),
+        data:{type:'pos_object', item:item, position:ansMap[item]}
+      };
+    },
+  ];
+  return templates[lv % templates.length]();
+}
+
+// ===== 楼梯题目 =====
+function genStairsQ(lv) {
+  var templates = [
+    // 谁在谁上面
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'stairs', knowledge:'上下',
+        prompt:'楼梯上，<span class="hl">'+p1.name+'</span>在<span class="hl2">'+p2.name+'</span>的<span class="hl3">上面</span>。<br>谁在<span class="hl">上面</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'stairs_above', above:p1, below:p2}
+      };
+    },
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'stairs', knowledge:'上下',
+        prompt:'<span class="hl">'+p1.name+'</span>在<span class="hl2">'+p2.name+'</span>的下面走。<br>谁在<span class="hl">下面</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'stairs_below', above:p2, below:p1}
+      };
+    },
+    // 谁在上面/下面几个台阶
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'stairs', knowledge:'上下',
+        prompt:'<span class="hl">'+p1.name+'</span>站在第5个台阶上，<span class="hl2">'+p2.name+'</span>站在第2个台阶上。<br>谁站得<span class="hl3">更高</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'stairs_compare', high:p1, low:p2, highStep:5, lowStep:2}
+      };
+    },
+    // 谁靠门/窗更近
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      return {
+        scene:'stairs', knowledge:'上下',
+        prompt:'<span class="hl">'+p1.name+'</span>快到楼上了，<span class="hl2">'+p2.name+'</span>还在楼下。<br>谁更<span class="hl3">高</span>？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;})).name]),
+        data:{type:'stairs_compare2', high:p1, low:p2}
+      };
+    },
+    // 下楼方向
+    function() {
+      var p1=randPick(STUDENTS);
+      var directions = ['上楼','下楼'];
+      var dir = randPick(directions);
+      return {
+        scene:'stairs', knowledge:'上下',
+        prompt:'<span class="hl">'+p1.name+'</span>正在<span class="hl3">'+dir+'</span>。<br>'+p1.name+'是在往<span class="hl">上面</span>走还是往<span class="hl2">下面</span>走？',
+        answer: dir==='上楼'?'上面':'下面',
+        options:shuffle(['上面','下面']),
+        data:{type:'stairs_dir', person:p1, direction:dir}
+      };
+    },
+    function() {
+      var p1=randPick(STUDENTS), p2=randPick(STUDENTS.filter(function(s){return s!==p1;}));
+      var p3=randPick(STUDENTS.filter(function(s){return s!==p1&&s!==p2;}));
+      return {
+        scene:'stairs', knowledge:'上下',
+        prompt:'楼梯上：<span class="hl">'+p2.name+'</span>在中间，<span class="hl2">'+p1.name+'</span>在上面，<span class="hl2">'+p3.name+'</span>在下面。<br>在<span class="hl3">最上面</span>的是谁？',
+        answer:p1.name, options:shuffle([p1.name,p2.name,p3.name]),
+        data:{type:'stairs_three', top:p1, middle:p2, bottom:p3}
+      };
+    },
+  ];
+  return templates[lv % templates.length]();
+}
+
+// ===== 队伍题目 =====
+function genQueueQ(lv) {
+  var templates = [
+    // 第几个
+    function() {
+      var count = randInt(4,7);
+      var players = shuffle(STUDENTS.slice()).slice(0, count);
+      var targetIdx = randInt(0, count-1);
+      var target = players[targetIdx];
+      return {
+        scene:'queue', knowledge:'第几',
+        prompt:players.map(function(p,i){return (i+1)+'.'+p.name;}).join('&nbsp;&nbsp;')+'<br>排在<span class="hl">第'+(targetIdx+1)+'个</span>的是谁？',
+        answer:target.name, options:shuffle(players.slice(Math.max(0,targetIdx-1),targetIdx+2).map(function(p){return p.name;}).concat(randPick(players.filter(function(p){return p!==target;})).name).slice(0,3)),
+        data:{type:'queue_nth', players:players, targetIdx:targetIdx}
+      };
+    },
+    // 前面/后面是谁
+    function() {
+      var count = randInt(4,6);
+      var players = shuffle(STUDENTS.slice()).slice(0, count);
+      var refIdx = randInt(1, count-2);
+      var isFront = Math.random() > 0.5;
+      var ansPerson = isFront ? players[refIdx-1] : players[refIdx+1];
+      return {
+        scene:'queue', knowledge:'前后',
+        prompt:players.map(function(p,i){return (i+1)+'.'+p.name;}).join('&nbsp;&nbsp;')+'<br><span class="hl">'+players[refIdx].name+'</span>的<span class="hl3">'+(isFront?'前面':'后面')+'</span>是谁？',
+        answer:ansPerson.name,
+        options:shuffle([ansPerson.name,players[Math.max(0,refIdx-(isFront?2:0))].name,players[Math.min(count-1,refIdx+(isFront?0:2))].name].filter(function(v,i,a){return a.indexOf(v)===i;})),
+        data:{type:'queue_neighbor', players:players, refIdx:refIdx, isFront:isFront}
+      };
+    },
+    // 谁和谁之间
+    function() {
+      var count = randInt(4,6);
+      var players = shuffle(STUDENTS.slice()).slice(0, count);
+      var midIdx = randInt(1, count-2);
+      return {
+        scene:'queue', knowledge:'中间',
+        prompt:players.map(function(p,i){return (i+1)+'.'+p.name;}).join('&nbsp;&nbsp;')+'<br>排在<span class="hl">'+players[midIdx-1].name+'</span>和<span class="hl2">'+players[midIdx+1].name+'</span><span class="hl3">之间</span>的是谁？',
+        answer:players[midIdx].name,
+        options:shuffle([players[midIdx].name,players[midIdx-1].name,players[midIdx+1].name]),
+        data:{type:'queue_between', players:players, midIdx:midIdx}
+      };
+    },
+    // 最前面/最后面
+    function() {
+      var count = randInt(4,7);
+      var players = shuffle(STUDENTS.slice()).slice(0, count);
+      var isFirst = Math.random() > 0.5;
+      return {
+        scene:'queue', knowledge:'前后',
+        prompt:players.map(function(p,i){return (i+1)+'.'+p.name;}).join('&nbsp;&nbsp;')+'<br>排在队伍<span class="hl3">最'+(isFirst?'前面':'后面')+'</span>的是谁？',
+        answer: (isFirst?players[0]:players[count-1]).name,
+        options:shuffle([players[0].name,players[1].name, players[count-2].name,players[count-1].name].filter(function(v,i,a){return a.indexOf(v)===i;}).slice(0,3)),
+        data:{type:'queue_extreme', players:players, isFirst:isFirst}
+      };
+    },
+    // 从前往后数 / 从后往前数
+    function() {
+      var count = randInt(5,7);
+      var players = shuffle(STUDENTS.slice()).slice(0, count);
+      var targetIdx = randInt(0, count-1);
+      var fromFront = Math.random() > 0.5;
+      var pos = fromFront ? (targetIdx+1) : (count-targetIdx);
+      return {
+        scene:'queue', knowledge:'第几',
+        prompt:players.map(function(p,i){return (i+1)+'.'+p.name;}).join('&nbsp;&nbsp;')+'<br>从<span class="hl3">'+(fromFront?'前':'后')+'</span>面数，<span class="hl2">'+players[targetIdx].name+'</span>排在第几个？',
+        answer:pos, options:shuffle([pos, pos-1>0?pos-1:pos+1, pos+1, pos+2].filter(function(v){return v>0&&v<=count;}).slice(0,4)),
+        data:{type:'queue_count', players:players, targetIdx:targetIdx, fromFront:fromFront}
+      };
+    },
+    // 前面/后面有几个人
+    function() {
+      var count = randInt(5,7);
+      var players = shuffle(STUDENTS.slice()).slice(0, count);
+      var refIdx = randInt(1, count-2);
+      var isFront = Math.random() > 0.5;
+      var num = isFront ? refIdx : (count-1-refIdx);
+      return {
+        scene:'queue', knowledge:'前后',
+        prompt:players.map(function(p,i){return (i+1)+'.'+p.name;}).join('&nbsp;&nbsp;')+'<br><span class="hl">'+players[refIdx].name+'</span>的<span class="hl3">'+(isFront?'前面':'后面')+'</span>有几个人？',
+        answer:num, options:shuffle([num, refIdx, count-1-refIdx, count].filter(function(v,i,a){return a.indexOf(v)===i&&v>=0;}).slice(0,4)),
+        data:{type:'queue_count_people', players:players, refIdx:refIdx, isFront:isFront}
+      };
+    },
+    // 综合：从前面数第X，从后面数第Y
+    function() {
+      var total = randInt(5,8);
+      var players = shuffle(STUDENTS.slice()).slice(0, total);
+      var targetIdx = randInt(0, total-1);
+      var frontPos = targetIdx + 1;
+      var backPos = total - targetIdx;
+      return {
+        scene:'queue', knowledge:'综合',
+        prompt:players.map(function(p){return p.emoji;}).join('&nbsp;')+'<br>这队共有<span class="hl">'+total+'</span>人。'+players[targetIdx].name+'<br>从前面数排第<span class="hl2">'+frontPos+'</span>，<br>从后面数排第几个？',
+        answer:backPos, options:shuffle([backPos, frontPos, backPos-1>0?backPos-1:backPos+1, backPos+1].filter(function(v){return v>0&&v<=total;}).slice(0,4)),
+        data:{type:'queue_both', players:players, total:total, targetIdx:targetIdx}
+      };
+    },
+  ];
+  return templates[lv % templates.length]();
+}
+
+// ===== 综合题目 =====
+function genMixedQ(lv) {
+  var allGens = [genClassroomQ, genStairsQ, genQueueQ];
+  var gen = allGens[lv % 3];
+  var q = gen(lv);
+  q.scene = gen === genClassroomQ ? 'classroom' : (gen === genStairsQ ? 'stairs' : 'queue');
+  return q;
+}
+
+// ==================== 渲染场景 ====================
+function renderLevel() {
+  var lv = genLevel(state.stage, state.level);
+  state.targetAnswer = lv.answer;
+  state.currentData = lv;
+  state.isAnswering = true;
+  gameArea.innerHTML = '';
+
+  var card = document.createElement('div'); card.className = 'scene-card';
+
+  // 场景标签
+  var badge = document.createElement('div');
+  badge.className = 'scene-badge ' + lv.scene;
+  var sceneNames = { classroom:'🏫 教室', stairs:'🪜 楼梯', queue:'👫 队伍', mixed:'🎯 综合' };
+  badge.textContent = sceneNames[lv.scene] || '🎯 综合';
+  card.appendChild(badge);
+
+  // 渲染对应场景图
+  if (lv.scene === 'classroom') card.appendChild(renderClassroom(lv));
+  else if (lv.scene === 'stairs') card.appendChild(renderStairs(lv));
+  else if (lv.scene === 'queue') card.appendChild(renderQueue(lv));
+  else card.appendChild(renderMixedScene(lv));
+
+  // 问题
+  var prompt = document.createElement('div'); prompt.className = 'prompt-text';
+  prompt.innerHTML = lv.prompt; card.appendChild(prompt);
+
+  // 答案选项
+  var optsRow = document.createElement('div'); optsRow.className = 'answer-options';
+  var options = lv.options.slice(0,5);
+  options.forEach(function(opt) {
+    var btn = document.createElement('button'); btn.className = 'ans-btn';
+    btn.textContent = opt;
+    btn.addEventListener('click', function(){ handleAnswer(opt, btn); });
+    optsRow.appendChild(btn);
+  });
+  card.appendChild(optsRow);
+
+  // 知识点标签
+  var ktag = document.createElement('div'); ktag.className = 'knowledge-tag';
+  ktag.textContent = '📖 知识点：' + lv.knowledge;
+  card.appendChild(ktag);
+
+  gameArea.appendChild(card);
+  updateUI();
+}
+
+// ===== 渲染教室场景 =====
+function renderClassroom(lv) {
+  var wrap = document.createElement('div'); wrap.className = 'classroom-scene';
+  wrap.innerHTML = '<div class="blackboard">黑板</div>' +
+    '<div class="podium"></div>' +
+    '<div class="window left"></div><div class="window right"></div>' +
+    '<div class="door"></div><div class="bookshelf"></div>';
+
+  var d = lv.data;
+  if (d && d.type === 'above_below') {
+    // 上方学生
+    var s1 = mkStudentEl(d.above, 120, 26); wrap.appendChild(s1);
+    var s2 = mkStudentEl(d.below, 120, 100); wrap.appendChild(s2);
+  } else if (d && d.type === 'front_back') {
+    var s1 = mkStudentEl(d.front, 180, 50); wrap.appendChild(s1);
+    var s2 = mkStudentEl(d.back, 180, 120); wrap.appendChild(s2);
+  } else if (d && d.type === 'left_right') {
+    var s1 = mkStudentEl(d.left, 100, 70); wrap.appendChild(s1);
+    var s2 = mkStudentEl(d.right, 200, 70); wrap.appendChild(s2);
+  } else if (d && (d.type === 'object_pos' || d.type === 'pos_object')) {
+    // 高亮物品
+    highlightItemInClassroom(wrap, d.item);
+  } else {
+    // 默认：随机散布学生
+    addDefaultStudents(wrap);
+  }
+  return wrap;
+}
+
+function mkStudentEl(student, left, top) {
+  var el = document.createElement('span'); el.className = 'student';
+  el.style.cssText = 'position:absolute;left:'+left+'px;top:'+top+'px;';
+  el.innerHTML = student.emoji + '<span class="name-tag">'+student.name+'</span>';
+  return el;
+}
+
+function highlightItemInClassroom(wrap, item) {
+  var posMap = { '黑板':[50,16], '窗户':[14,20], '门':[85,70], '书柜':[8,72], '讲台':[50,74] };
+  var pos = posMap[item];
+  if (pos) {
+    var hl = document.createElement('div');
+    hl.style.cssText = 'position:absolute;left:'+(pos[0]-4)+'%;top:'+(pos[1]-4)+'px;width:60px;height:50px;border:3px solid #FFD700;border-radius:8px;animation:spotPulse 1.5s ease-in-out infinite;pointer-events:none;z-index:5;';
+    wrap.appendChild(hl);
+  }
+}
+
+function addDefaultStudents(wrap) {
+  var positions = [[70,20],[180,18],[280,24],[90,90],[200,88],[300,94],[140,160],[260,155]];
+  var picked = shuffle(STUDENTS.slice()).slice(0,6);
+  picked.forEach(function(s,i) {
+    var pos = positions[i];
+    var el = mkStudentEl(s, pos[0], pos[1]);
+    wrap.appendChild(el);
+  });
+}
+
+// ===== 渲染楼梯场景 =====
+function renderStairs(lv) {
+  var wrap = document.createElement('div'); wrap.className = 'stairs-scene';
+
+  // 画台阶
+  for (var i = 0; i < 8; i++) {
+    var step = document.createElement('div'); step.className = 'stair-step';
+    var x = 20 + i * 42;
+    var y = 200 - i * 24;
+    var w = 44;
+    var h = 22;
+    step.style.cssText = 'left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px;';
+    step.innerHTML = '<span class="stair-label">'+(8-i)+'</span>';
+    wrap.appendChild(step);
+  }
+
+  // 上下指示
+  var upArrow = document.createElement('div'); upArrow.className = 'arrow-up';
+  upArrow.style.cssText = 'position:absolute;right:20px;top:10px;'; upArrow.textContent = '⬆ 上';
+  wrap.appendChild(upArrow);
+  var downArrow = document.createElement('div'); downArrow.className = 'arrow-down';
+  downArrow.style.cssText = 'position:absolute;right:16px;bottom:10px;'; downArrow.textContent = '⬇ 下';
+  wrap.appendChild(downArrow);
+
+  var d = lv.data;
+  // 人在台阶上
+  if (d && d.above && d.below) {
+    var stepAbove = 6, stepBelow = 2;
+    if (d.highStep) { stepAbove = d.highStep-1; stepBelow = d.lowStep-1; }
+    var sa = mkStairsPerson(d.above, stepAbove, 8); wrap.appendChild(sa);
+    var sb = mkStairsPerson(d.below, stepBelow, 8); wrap.appendChild(sb);
+    if (d.middle) {
+      var sm = mkStairsPerson(d.middle, 4, 8); wrap.appendChild(sm);
+    }
+  } else if (d && d.top && d.middle && d.bottom) {
+    wrap.appendChild(mkStairsPerson(d.top, 6, 8));
+    wrap.appendChild(mkStairsPerson(d.middle, 4, 8));
+    wrap.appendChild(mkStairsPerson(d.bottom, 2, 8));
+  } else {
+    // 默认3人
+    var r1=randPick(STUDENTS), r2=randPick(STUDENTS.filter(function(s){return s!==r1;})), r3=randPick(STUDENTS.filter(function(s){return s!==r1&&s!==r2;}));
+    wrap.appendChild(mkStairsPerson(r1, 6, 8)); wrap.appendChild(mkStairsPerson(r2, 4, 8)); wrap.appendChild(mkStairsPerson(r3, 2, 8));
+  }
+  return wrap;
+}
+
+function mkStairsPerson(person, stepIdx, totalSteps) {
+  var el = document.createElement('span'); el.className = 'person';
+  var x = 48 + stepIdx * 42;
+  var y = 210 - stepIdx * 24 - 36;
+  el.style.cssText = 'position:absolute;left:'+x+'px;top:'+y+'px;';
+  el.innerHTML = person.emoji + '<span class="pname">'+person.name+'</span>';
+  return el;
+}
+
+// ===== 渲染队伍场景 =====
+function renderQueue(lv) {
+  var wrap = document.createElement('div'); wrap.className = 'queue-scene';
+  wrap.innerHTML = '<div class="ground-line"></div>';
+
+  var d = lv.data;
+  var players = d.players || shuffle(STUDENTS.slice()).slice(0,5);
+  var count = players.length;
+  var spacing = Math.min(60, Math.floor(320/count));
+
+  // 标签
+  var frontLabel = document.createElement('div'); frontLabel.className = 'dir-label';
+  frontLabel.style.cssText = 'left:8px;top:40px;'; frontLabel.textContent = '← 前';
+  wrap.appendChild(frontLabel);
+  var backLabel = document.createElement('div'); backLabel.className = 'dir-label';
+  backLabel.style.cssText = 'right:8px;top:40px;'; backLabel.textContent = '后 →';
+  wrap.appendChild(backLabel);
+
+  // 高亮
+  if (d && d.targetIdx !== undefined) {
+    var spot = document.createElement('div'); spot.className = 'spotlight';
+    var spX = 20 + d.targetIdx * spacing;
+    spot.style.left = spX + 'px';
+    wrap.appendChild(spot);
+  }
+
+  // 人物
+  var startX = 20 + (380 - count * spacing) / 2;
+  players.forEach(function(p,i) {
+    var person = document.createElement('div'); person.className = 'queue-person';
+    person.style.position = 'absolute'; person.style.left = (startX + i*spacing) + 'px';
+    person.style.bottom = '26px';
+    person.innerHTML = p.emoji + '<span class="qname">'+p.name+'</span><span class="qnum">'+(i+1)+'</span>';
+    wrap.appendChild(person);
+  });
+
+  return wrap;
+}
+
+// ===== 渲染综合场景（随机选一种） =====
+function renderMixedScene(lv) {
+  if (lv.scene === 'classroom') return renderClassroom(lv);
+  if (lv.scene === 'stairs') return renderStairs(lv);
+  if (lv.scene === 'queue') return renderQueue(lv);
+  return renderQueue(lv);
+}
+
+// ==================== 答案处理 ====================
+function handleAnswer(ans, btnEl) {
+  if (!state.isAnswering) return;
+  state.isAnswering = false;
+  var correct = state.targetAnswer;
+  var isCorrect = (String(ans) === String(correct));
+
+  var allBtns = gameArea.querySelectorAll('.ans-btn');
+  allBtns.forEach(function(b){ b.disabled = true; });
+
+  if (isCorrect) {
+    btnEl.classList.add('correct');
+    state.score += 10;
+    showFeedback(true);
+    spawnParticles();
+    setTimeout(function(){ advanceLevel(); }, 1200);
+  } else {
+    btnEl.classList.add('wrong');
+    allBtns.forEach(function(b){
+      if (String(b.textContent) === String(correct)) b.classList.add('correct');
+    });
+    showFeedback(false);
+    setTimeout(function(){
+      allBtns.forEach(function(b){ b.disabled = false; b.className = 'ans-btn'; });
+      state.isAnswering = true;
+    }, 1300);
+  }
+  updateUI();
+}
+
+// ==================== 反馈 ====================
+function showFeedback(correct) {
+  var toast = feedbackToast;
+  toast.textContent = correct ? ['太棒了！🌟','真厉害！👏','答对了！✨'][Math.floor(Math.random()*3)] : ['再想想～💪','差一点！🤔','仔细观察！🔍'][Math.floor(Math.random()*3)];
+  toast.className = 'feedback-toast show' + (correct?'':' wrong');
+  setTimeout(function(){ toast.className = 'feedback-toast'; }, 800);
+}
+function spawnParticles() {
+  for (var i=0; i<16; i++) {
+    var p=document.createElement('span'); p.className='star-particle';
+    p.textContent=['⭐','🌟','✨','💫','🎉','👏'][Math.floor(Math.random()*6)];
+    p.style.left=(25+Math.random()*50)+'%'; p.style.top=(35+Math.random()*25)+'%';
+    p.style.animationDelay=Math.random()*0.3+'s';
+    particlesLayer.appendChild(p);
+    setTimeout(function(){p.remove();},1400);
+  }
+}
+
+// ==================== 进度 ====================
+function advanceLevel() {
+  state.level++;
+  if (state.level >= state.totalInStage) completeStage();
+  else renderLevel();
+}
+function completeStage() {
+  state.isAnswering=false;
+  var stars = state.score>=70?3:state.score>=40?2:1;
+  var names=['教室里的位置','楼梯上的位置','队伍里的位置','综合大挑战'];
+  document.getElementById('completeTitle').textContent='阶段完成！';
+  document.getElementById('starsDisplay').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('completeMsg').textContent='你完成了「'+names[state.stage]+'」！';
+  document.getElementById('finalScoreEl').textContent=state.score;
+  completeModal.classList.remove('hidden');
+  var nb=document.getElementById('nextBtn');
+  if (state.stage<3) { nb.style.display='inline-block'; nb.textContent='下一场景 ➡️'; }
+  else { nb.style.display='inline-block'; nb.textContent='全部完成！🔄'; }
+}
+function switchStage(idx) {
+  state.stage=idx; state.level=0; state.score=0; state.totalInStage=8; state.isAnswering=true;
+  var colors=['s0','s1','s2','s3'];
+  stageTabs.forEach(function(t,i){ t.classList.remove('active','s0','s1','s2','s3'); if(i===idx)t.classList.add('active',colors[i]); });
+  completeModal.classList.add('hidden'); updateUI(); renderLevel();
+}
+stageTabs.forEach(function(tab){ tab.addEventListener('click',function(){ var i=parseInt(tab.dataset.stage); if(i!==state.stage) switchStage(i); }); });
+document.getElementById('nextBtn').addEventListener('click',function(){ if(state.stage<3) switchStage(state.stage+1); else switchStage(0); });
+window.restartStage = function(){ switchStage(state.stage); };
+function updateUI() {
+  scoreEl.textContent=state.score; levelEl.textContent=state.level+1; totalEl.textContent=state.totalInStage;
+  progressFill.style.width=(state.level/state.totalInStage*100)+'%';
+  progressFill.className='progress-fill s'+state.stage;
+}
+
+// ==================== 辅助 ====================
+function shuffle(arr) { var a=arr.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+
+// ==================== 启动 ====================
+updateUI(); renderLevel();
+</script>
+</body>
+</html>

@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>认识东南西北 - 双人PK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#0d1b2a,#1b2838,#1a3a4a);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+.home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.home-title{font-size:2.2em;font-weight:bold;margin-bottom:6px;background:linear-gradient(90deg,#FF4757,#FFA502,#2ED573,#3742FA,#FF4757);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.home-subtitle{font-size:1em;color:#8899aa;margin-bottom:30px;text-align:center;line-height:1.5}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+.module-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent;position:relative;overflow:hidden}
+.module-card::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;opacity:0.08;transition:opacity 0.3s}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.5)}
+.module-card:hover::before{opacity:0.15}
+.module-card:active{transform:scale(0.96)}
+.module-card .card-icon{font-size:2.8em;margin-bottom:8px;display:block;position:relative}
+.module-card .card-title{font-size:1.15em;font-weight:bold;margin-bottom:4px;position:relative}
+.module-card .card-desc{font-size:0.72em;opacity:0.8;line-height:1.5;position:relative}
+.card-m1{background:linear-gradient(135deg,rgba(255,71,87,0.2),rgba(255,71,87,0.1));border-color:#FF4757}
+.card-m1 .card-icon{color:#FF4757}
+.card-m2{background:linear-gradient(135deg,rgba(255,165,2,0.2),rgba(255,165,2,0.1));border-color:#FFA502}
+.card-m2 .card-icon{color:#FFA502}
+.card-m3{background:linear-gradient(135deg,rgba(46,213,115,0.2),rgba(46,213,115,0.1));border-color:#2ED573}
+.card-m3 .card-icon{color:#2ED573}
+.card-m4{background:linear-gradient(135deg,rgba(55,66,250,0.2),rgba(55,66,250,0.1));border-color:#3742FA}
+.card-m4 .card-icon{color:#3742FA}
+
+.game-page{display:none;flex-direction:column;height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 10px;gap:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.btn-back{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.2s}
+.btn-back:hover{background:rgba(255,255,255,0.18)}
+.module-label{font-size:0.95em;font-weight:bold;color:#FFD700;white-space:nowrap}
+.round-info{font-size:0.8em;color:#aaa;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;min-width:55px;text-align:center;white-space:nowrap;transition:color 0.3s}
+.timer.urgent{color:#EF4444;animation:timerPulse 0.5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+.arena{display:flex;flex:1;min-height:0;gap:4px;padding:4px}
+.view-panel{flex:1;display:flex;flex-direction:column;min-width:0}
+.view-label{text-align:center;font-size:0.75em;color:#8899aa;padding:2px 0;flex-shrink:0}
+.view-content{flex:1;position:relative;border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.3);min-height:0}
+.view-content canvas{display:block;width:100%;height:100%}
+
+.pk-panel{width:420px;display:flex;flex-direction:column;flex-shrink:0;gap:2px}
+.player-row{display:flex;flex:1;gap:4px;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 4px;position:relative;overflow:hidden;border-radius:10px}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border:2px solid rgba(255,107,107,0.3)}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border:2px solid rgba(78,205,196,0.3)}
+.player-header{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.left .player-name{color:#FF6B6B;font-weight:bold;font-size:0.85em}
+.right .player-name{color:#4ECDC4;font-weight:bold;font-size:0.85em}
+.player-score{font-weight:bold;font-size:1.1em}.left .player-score{color:#FF6B6B}.right .player-score{color:#4ECDC4}
+.combo-text{font-size:0.65em;color:#FFD700;min-height:14px;flex-shrink:0}
+.question-display{background:rgba(255,255,255,0.12);border-radius:10px;padding:8px 6px;margin:2px 0;width:100%;text-align:center;font-size:0.85em;font-weight:bold;flex-shrink:0;min-height:36px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+.drop-zone{flex:1;width:100%;position:relative;overflow:hidden;margin-top:2px;border-radius:10px;background:rgba(0,0,0,0.15);min-height:80px}
+.falling-num{position:absolute;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1em;font-weight:bold;color:#fff;cursor:pointer;z-index:5;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 4px 12px rgba(0,0,0,0.3);-webkit-tap-highlight-color:transparent;transition:transform 0.1s}
+.falling-num:active{transform:scale(1.25)}
+.falling-num.correct-glow{box-shadow:0 0 25px rgba(255,215,0,0.9)!important;animation:correctFlash 0.5s forwards}
+.falling-num.wrong-pop{animation:wrongShake 0.4s forwards;pointer-events:none}
+@keyframes correctFlash{0%{transform:scale(1)}50%{transform:scale(1.25);background:#FFD700!important}100%{transform:scale(1);opacity:0.8}}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}100%{transform:scale(0);opacity:0}}
+.score-pop{position:absolute;font-size:1.2em;font-weight:bold;color:#FFD700;pointer-events:none;z-index:20;animation:floatUp 1s forwards}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
+
+.win-overlay,.ready-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show,.ready-overlay.show{display:flex}.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}.win-scores{display:flex;gap:36px;margin-bottom:18px}.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.left-w .wscore{color:#FF6B6B}.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-win{padding:12px 28px;border-radius:22px;border:none;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn-win.again{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.btn-win.again:hover{transform:scale(1.05)}
+.btn-win.home{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.3)}
+.btn-win.home:hover{background:rgba(255,255,255,0.2)}
+.btn-win.start{background:linear-gradient(135deg,#2ED573,#1abc9c);color:#fff;font-size:1.3em;padding:16px 50px;animation:pulseStart 1.5s infinite}
+.btn-win.start:hover{transform:scale(1.08)}
+@keyframes pulseStart{0%,100%{box-shadow:0 0 0 0 rgba(46,213,115,0.6)}50%{box-shadow:0 0 0 20px rgba(46,213,115,0)}}
+.ready-hint{font-size:0.85em;color:#8899aa;margin-top:10px;text-align:center;line-height:1.4}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:800px){
+  .arena{flex-direction:column}.pk-panel{width:100%;flex:1}.view-panel{height:220px;flex:none}.player-row{min-height:150px}
+  .home-title{font-size:1.6em}.module-card{padding:16px 10px}.module-card .card-icon{font-size:2.2em}
+}
+</style>
+</head>
+<body>
+
+<div class="home-page" id="homePage">
+  <div class="home-title">🧭 认识东南西北</div>
+  <div class="home-subtitle">3D立体象限 + 平面地图 · 双人对战 · 每题20秒 · 共101题</div>
+  <div class="module-grid">
+    <div class="module-card card-m1" onclick="startModule(1)">
+      <span class="card-icon">🧭</span>
+      <div class="card-title">模块一 · 辨认方向</div>
+      <div class="card-desc">3D立体象限<br>标明方向→认其他方向<br>身体朝向→判断左右前后</div>
+    </div>
+    <div class="module-card card-m2" onclick="startModule(2)">
+      <span class="card-icon">🏠</span>
+      <div class="card-title">模块二 · 方向与物体</div>
+      <div class="card-desc">3D立体象限<br>辨认物体所在方向<br>物体间相对位置推理</div>
+    </div>
+    <div class="module-card card-m3" onclick="startModule(3)">
+      <span class="card-icon">🗺️</span>
+      <div class="card-title">模块三 · 平面图辨认</div>
+      <div class="card-desc">上北下南左西右东<br>建筑位置辨认+方向判断<br>路径推理+多步思考</div>
+    </div>
+    <div class="module-card card-m4" onclick="startModule(4)">
+      <span class="card-icon">🎯</span>
+      <div class="card-title">模块四 · 综合挑战</div>
+      <div class="card-desc">八个方向+3D+平面图<br>生活常识+旋转推理<br>方向知识综合大闯关</div>
+    </div>
+  </div>
+</div>
+
+<div class="game-page" id="gamePage">
+  <div class="top-bar">
+    <button class="btn-back" onclick="goHome()">← 返回</button>
+    <span class="module-label" id="moduleLabel"></span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">15</span> 关</span>
+    <span class="timer" id="timerDisplay">⏱ 20s</span>
+  </div>
+  <div class="arena">
+    <div class="view-panel">
+      <div class="view-label" id="viewLabel">🎮 3D立体象限（可拖拽旋转/缩放）</div>
+      <div class="view-content" id="view3D"></div>
+    </div>
+    <div class="pk-panel">
+      <div class="player-row">
+        <div class="player left" id="player1">
+          <div class="player-header"><span class="player-name">🔴 红方</span><span class="player-score" id="s1">0</span></div>
+          <div class="combo-text" id="combo1"></div>
+          <div class="question-display" id="q1">准备开始...</div>
+          <div class="drop-zone" id="dropZone1"></div>
+        </div>
+        <div class="player right" id="player2">
+          <div class="player-header"><span class="player-name">🔵 蓝方</span><span class="player-score" id="s2">0</span></div>
+          <div class="combo-text" id="combo2"></div>
+          <div class="question-display" id="q2">准备开始...</div>
+          <div class="drop-zone" id="dropZone2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="btn-win again" onclick="restartModule()">🔄 再来一局</button>
+    <button class="btn-win home" onclick="goHome()">🏠 返回主页</button>
+  </div>
+</div>
+
+<div class="ready-overlay" id="readyOverlay">
+  <div class="win-title" style="color:#FFD700" id="readyTitle">准备开始</div>
+  <div class="win-subtitle" id="readySub">3D场景加载中…</div>
+  <div class="win-btns">
+    <button class="btn-win start" id="btnStart" onclick="beginGame()">⚡ 开始对战</button>
+  </div>
+  <div class="ready-hint">可以先拖拽旋转查看3D场景<br>准备好后点击按钮开始</div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {CSS2DRenderer,CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ==================== 3D 立体象限场景 ====================
+var scene, camera, renderer, labelRenderer, controls;
+var quadrantGroup, highlightRing, highlightLabel;
+var objTree, objHouse, objMountain, objLake;
+var pillarLabels={}, pillarSpheres={};
+
+// 方向颜色
+var DC={北:'#FF4757',南:'#3742FA',东:'#2ED573',西:'#FFA502',东北:'#FF6348',东南:'#1E90FF',西南:'#FF6B81',西北:'#A855F7'};
+
+function init3D(){
+  var vc=document.getElementById('view3D');
+  var w=vc.clientWidth,h=vc.clientHeight;
+  if(w<10)w=400;if(h<10)h=300;
+
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x1a2a3a);
+  scene.fog=new THREE.Fog(0x1a2a3a,15,45);
+
+  camera=new THREE.PerspectiveCamera(50,w/h,0.5,60);
+  camera.position.set(7,9,12);
+  camera.lookAt(0,0,0);
+
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(w,h);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  vc.appendChild(renderer.domElement);
+
+  labelRenderer=new CSS2DRenderer();
+  labelRenderer.setSize(w,h);
+  labelRenderer.domElement.style.position='absolute';
+  labelRenderer.domElement.style.top='0';
+  labelRenderer.domElement.style.pointerEvents='none';
+  vc.appendChild(labelRenderer.domElement);
+
+  controls=new OrbitControls(camera,renderer.domElement);
+  controls.target.set(0,0,0);
+  controls.enableDamping=true;
+  controls.dampingFactor=0.1;
+  controls.maxPolarAngle=Math.PI/2.4;
+  controls.minDistance=5;
+  controls.maxDistance=20;
+
+  // 光照
+  scene.add(new THREE.AmbientLight(0xffffff,0.5));
+  var sun=new THREE.DirectionalLight(0xffffff,0.9);
+  sun.position.set(10,15,8);
+  sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024);
+  sun.shadow.camera.near=0.5;
+  sun.shadow.camera.far=50;
+  sun.shadow.camera.left=-12;sun.shadow.camera.right=12;
+  sun.shadow.camera.top=12;sun.shadow.camera.bottom=-12;
+  scene.add(sun);
+
+  buildQuadrant();
+}
+
+function makeLabel(text,color,x,y,z,size){
+  var d=document.createElement('div');
+  d.textContent=text;
+  d.style.color=color||'#fff';
+  d.style.fontWeight='bold';
+  d.style.fontSize=(size||18)+'px';
+  d.style.textShadow='1px 1px 4px rgba(0,0,0,0.9)';
+  d.style.pointerEvents='none';
+  var l=new CSS2DObject(d);
+  l.position.set(x,y,z);
+  return l;
+}
+
+function buildQuadrant(){
+  quadrantGroup=new THREE.Group();
+  scene.add(quadrantGroup);
+
+  // ========== 地面：程序化草地质感 ==========
+  var grassCanvas=document.createElement('canvas');
+  grassCanvas.width=512;grassCanvas.height=512;
+  var gctx=grassCanvas.getContext('2d');
+  gctx.fillStyle='#3d6a3d';gctx.fillRect(0,0,512,512);
+  for(var gi=0;gi<3000;gi++){
+    var gx=Math.random()*512,gy=Math.random()*512;
+    var shade=130+Math.floor(Math.random()*80);
+    gctx.fillStyle='rgb('+(shade-30)+','+shade+','+(shade-70)+')';
+    gctx.fillRect(gx,gy,3+Math.random()*5,3+Math.random()*5);
+  }
+  for(var fi=0;fi<200;fi++){
+    var fx=Math.random()*512,fy=Math.random()*512;
+    gctx.fillStyle=['#ffffaa','#ffcccc','#ffeedd','#ffffff'][Math.floor(Math.random()*4)];
+    gctx.beginPath();gctx.arc(fx,fy,1.5+Math.random()*2,0,Math.PI*2);gctx.fill();
+  }
+  var grassTex=new THREE.CanvasTexture(grassCanvas);
+  grassTex.wrapS=THREE.RepeatWrapping;grassTex.wrapT=THREE.RepeatWrapping;
+  grassTex.repeat.set(6,6);
+
+  var fg=new THREE.PlaneGeometry(14,14);
+  var fm=new THREE.MeshStandardMaterial({map:grassTex,roughness:0.85,color:0xffffff});
+  var ground=new THREE.Mesh(fg,fm);
+  ground.rotation.x=-Math.PI/2;
+  ground.receiveShadow=true;
+  quadrantGroup.add(ground);
+
+  // ========== 中心人物 ==========
+  var personGroup=new THREE.Group();
+  personGroup.name='centerPerson';
+
+  // 小圆底座
+  var pBaseG=new THREE.CylinderGeometry(0.45,0.5,0.06,24);
+  var pBaseM=new THREE.MeshStandardMaterial({color:0xccbbaa,roughness:0.3,metalness:0.3});
+  var pBase=new THREE.Mesh(pBaseG,pBaseM);
+  pBase.position.y=0.05;pBase.receiveShadow=true;
+  personGroup.add(pBase);
+
+  // 裤子/腿
+  for(var legSide=-1;legSide<=1;legSide+=2){
+    var legG=new THREE.CylinderGeometry(0.08,0.09,0.55,8);
+    var legM=new THREE.MeshStandardMaterial({color:0x334466,roughness:0.5});
+    var leg=new THREE.Mesh(legG,legM);
+    leg.position.set(legSide*0.1,0.3,0);leg.castShadow=true;
+    personGroup.add(leg);
+  }
+
+  // 身体（蓝色T恤）
+  var torsoG=new THREE.CylinderGeometry(0.18,0.22,0.7,10);
+  var torsoM=new THREE.MeshStandardMaterial({color:0x3388ee,roughness:0.4});
+  var torso=new THREE.Mesh(torsoG,torsoM);
+  torso.position.y=0.7;torso.castShadow=true;
+  personGroup.add(torso);
+
+  // 手臂
+  for(var armSide=-1;armSide<=1;armSide+=2){
+    var upperArmG=new THREE.CylinderGeometry(0.05,0.06,0.35,8);
+    var upperArm=new THREE.Mesh(upperArmG,torsoM);
+    upperArm.position.set(armSide*0.25,0.88,0);
+    upperArm.rotation.z=armSide*0.35;
+    upperArm.castShadow=true;
+    personGroup.add(upperArm);
+  }
+
+  // 头
+  var headG=new THREE.SphereGeometry(0.17,14,14);
+  var headM=new THREE.MeshStandardMaterial({color:0xffddbb,roughness:0.45});
+  var head=new THREE.Mesh(headG,headM);
+  head.position.y=1.2;head.castShadow=true;
+  personGroup.add(head);
+
+  // 眼睛（两个小黑球）
+  for(var eyeSide=-1;eyeSide<=1;eyeSide+=2){
+    var eyeG=new THREE.SphereGeometry(0.03,6,6);
+    var eyeM=new THREE.MeshBasicMaterial({color:0x000000});
+    var eye=new THREE.Mesh(eyeG,eyeM);
+    eye.position.set(eyeSide*0.06,1.23,0.15);
+    personGroup.add(eye);
+  }
+  // 微笑嘴巴
+  var mouthShape=new THREE.Shape();
+  mouthShape.absarc(0,0,0.04,Math.PI*0.2,Math.PI*0.8,false);
+  var mouthGeo=new THREE.ShapeGeometry(mouthShape);
+  var mouthMat=new THREE.MeshBasicMaterial({color:0xcc6644,side:THREE.DoubleSide});
+  var mouth=new THREE.Mesh(mouthGeo,mouthMat);
+  mouth.position.set(0,1.18,0.16);
+  mouth.rotation.x=-0.1;
+  personGroup.add(mouth);
+
+  // 脚底指北箭头（地面）
+  var arrowShape=new THREE.Shape();
+  arrowShape.moveTo(0,0.5);
+  arrowShape.lineTo(-0.15,0);
+  arrowShape.lineTo(-0.06,0);
+  arrowShape.lineTo(-0.06,-0.35);
+  arrowShape.lineTo(0.06,-0.35);
+  arrowShape.lineTo(0.06,0);
+  arrowShape.lineTo(0.15,0);
+  arrowShape.closePath();
+  var arrowGeo=new THREE.ShapeGeometry(arrowShape);
+  var arrowMat=new THREE.MeshStandardMaterial({color:0xFF4757,roughness:0.2,emissive:0x330000,emissiveIntensity:0.4});
+  var arrow=new THREE.Mesh(arrowGeo,arrowMat);
+  arrow.rotation.x=-Math.PI/2;arrow.position.y=0.09;
+  // 箭头指向北方（Z轴负方向）
+  personGroup.add(arrow);
+
+  personGroup.position.set(0,0,0);
+  quadrantGroup.add(personGroup);
+
+  // 人物标签
+  quadrantGroup.add(makeLabel('🧑 我','#FFD700',0,1.7,0.35,16));
+
+  // 地面四方向小色块（人物脚下指北箭头之外的其他三个方向标）
+  function addFootDirMark(x,z,color,label){
+    var dotG=new THREE.CylinderGeometry(0.1,0.12,0.03,8);
+    var dotM=new THREE.MeshStandardMaterial({color:color,roughness:0.3,emissive:color,emissiveIntensity:0.3});
+    var dot=new THREE.Mesh(dotG,dotM);
+    dot.position.set(x,0.06,z);
+    quadrantGroup.add(dot);
+  }
+  addFootDirMark(0,0.5,0x3742FA,'南');
+  addFootDirMark(0.5,0,0x2ED573,'东');
+  addFootDirMark(-0.5,0,0xFFA502,'西');
+  function addRadialLine(angle, color){
+    var r = 6.0;
+    var pts=20,points=[];
+    for(var pi=0;pi<=pts;pi++){
+      var t=pi/pts;
+      var rr=r;
+      points.push(new THREE.Vector3(Math.cos(angle)*rr, 0.06, Math.sin(angle)*rr));
+    }
+    var geo = new THREE.BufferGeometry().setFromPoints(points);
+    var mat = new THREE.LineBasicMaterial({color:color, transparent:true, opacity:0.35});
+    quadrantGroup.add(new THREE.Line(geo, mat));
+  }
+  var radColors = [0xFF4757,0xFF6348,0x2ED573,0x1E90FF,0x3742FA,0xFF6B81,0xFFA502,0xA855F7];
+  for(var ri=0;ri<8;ri++){
+    addRadialLine(ri*Math.PI/4, radColors[ri]);
+  }
+
+  // 45度位置小标记石
+  var diagLabels = ['东北','东南','西南','西北'];
+  var diagAngles = [-Math.PI/4, Math.PI/4, 3*Math.PI/4, -3*Math.PI/4];
+  for(var di=0;di<4;di++){
+    var dx = Math.cos(diagAngles[di])*3.7;
+    var dz = Math.sin(diagAngles[di])*3.7;
+    var stoneG = new THREE.SphereGeometry(0.1,8,8);
+    var stoneM = new THREE.MeshStandardMaterial({color:0xeeeedd, roughness:0.4, metalness:0.3});
+    var stone = new THREE.Mesh(stoneG, stoneM);
+    stone.position.set(dx, 0.07, dz);
+    quadrantGroup.add(stone);
+    quadrantGroup.add(makeLabel(diagLabels[di], '#ddddcc', dx, 0.4, dz, 12));
+  }
+
+  // ========== 中心轴线 ==========
+  function addAxisLine(x1,z1,x2,z2,color){
+    var points=[new THREE.Vector3(x1,0.09,z1),new THREE.Vector3(x2,0.09,z2)];
+    var geo=new THREE.BufferGeometry().setFromPoints(points);
+    var mat=new THREE.LineBasicMaterial({color:color,transparent:true,opacity:0.5});
+    quadrantGroup.add(new THREE.Line(geo,mat));
+  }
+  addAxisLine(0,0,0,-6.2,0xff6666);
+  addAxisLine(0,0,0,6.2,0x6666ff);
+  addAxisLine(0,0,-6.2,0,0x66ff66);
+  addAxisLine(0,0,6.2,0,0xffaa66);
+
+  // ========== 四个方向彩色柱子（每种颜色鲜明区分）==========
+  function addPillar(x,z,colorHex,label,labelColor){
+    // 地面大色盘（柱子底座，用柱子的颜色）
+    var discG=new THREE.CylinderGeometry(0.55,0.6,0.06,32);
+    var discM=new THREE.MeshPhongMaterial({color:colorHex,shininess:30,specular:0xffffff});
+    var disc=new THREE.Mesh(discG,discM);
+    disc.position.set(x,0.06,z);
+    disc.receiveShadow=true;
+    quadrantGroup.add(disc);
+
+    // 底座台阶（深色石质）
+    var stepG=new THREE.CylinderGeometry(0.4,0.45,0.1,24);
+    var stepM=new THREE.MeshStandardMaterial({color:0x666666,roughness:0.4,metalness:0.3});
+    var step=new THREE.Mesh(stepG,stepM);
+    step.position.set(x,0.13,z);
+    step.castShadow=true;step.receiveShadow=true;
+    quadrantGroup.add(step);
+
+    // 主体柱 — 更粗，颜色更鲜艳
+    var pg=new THREE.CylinderGeometry(0.28,0.36,2.0,24);
+    var pm=new THREE.MeshPhongMaterial({color:colorHex,shininess:40,specular:0x444444});
+    var pillar=new THREE.Mesh(pg,pm);
+    pillar.position.set(x,1.1,z);
+    pillar.castShadow=true;pillar.receiveShadow=true;
+    quadrantGroup.add(pillar);
+
+    // 白色装饰环（3个）— 改白环，不抢色
+    for(var ri2=0;ri2<3;ri2++){
+      var rg=new THREE.TorusGeometry(0.38,0.05,8,24);
+      var rm=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.1,metalness:0.5});
+      var rng=new THREE.Mesh(rg,rm);
+      rng.position.set(x,0.4+ri2*0.7,z);
+      rng.rotation.x=Math.PI/2;
+      rng.castShadow=true;
+      quadrantGroup.add(rng);
+    }
+
+    // 柱顶大球 — 发光更明显
+    var sg=new THREE.SphereGeometry(0.4,28,28);
+    var sm=new THREE.MeshPhongMaterial({color:colorHex,shininess:60,specular:0xffffff,emissive:colorHex,emissiveIntensity:0.5});
+    var sphere=new THREE.Mesh(sg,sm);
+    sphere.position.set(x,2.25,z);
+    sphere.castShadow=true;
+    quadrantGroup.add(sphere);
+
+    // 球顶小尖 — 用白色而非金色
+    var tipG=new THREE.ConeGeometry(0.1,0.28,12);
+    var tipM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.1,metalness:0.4});
+    var tip=new THREE.Mesh(tipG,tipM);
+    tip.position.set(x,2.6,z);
+    quadrantGroup.add(tip);
+
+    // 浮动光点环（柱顶球周围）
+    for(var gi=0;gi<6;gi++){
+      var gAngle=gi*Math.PI/3;
+      var glowG=new THREE.SphereGeometry(0.06,6,6);
+      var glowM=new THREE.MeshBasicMaterial({color:colorHex});
+      var glow=new THREE.Mesh(glowG,glowM);
+      glow.position.set(x+Math.cos(gAngle)*0.5,2.25+Math.sin(gi*1.2)*0.15, z+Math.sin(gAngle)*0.5);
+      glow.name='pillarGlow_'+label;
+      quadrantGroup.add(glow);
+    }
+
+    // 文字标签（更大）
+    var lbl=makeLabel(label,labelColor,x,3.0,z,24);
+    quadrantGroup.add(lbl);
+    pillarLabels[label]=lbl;
+    pillarSpheres[label]=sphere;
+  }
+
+  addPillar(0,0,-5.8,0xFF4757,'北','#FF6B6B');  // 红色 — 北
+  addPillar(0,0,5.8,0x2979FF,'南','#448AFF');   // 亮蓝 — 南
+  addPillar(5.8,0,0,0x00E676,'东','#00E676');   // 亮绿 — 东
+  addPillar(-5.8,0,0,0xFF9100,'西','#FF9100');  // 亮橙 — 西
+
+  // ========== 精致的树（北边）==========
+  objTree=new THREE.Group();
+  var trunkG=new THREE.CylinderGeometry(0.08,0.22,1.0,12);
+  var trunkM2=new THREE.MeshStandardMaterial({color:0x8B4513,roughness:0.7});
+  var trunk=new THREE.Mesh(trunkG,trunkM2);
+  trunk.position.y=0.5;trunk.castShadow=true;
+  objTree.add(trunk);
+  for(var bi=0;bi<4;bi++){
+    var bAngle=bi*Math.PI/2+Math.random()*0.3;
+    var bLen=0.3+Math.random()*0.2;
+    var branchG=new THREE.CylinderGeometry(0.03,0.06,bLen,6);
+    var branch=new THREE.Mesh(branchG,trunkM2);
+    branch.position.set(Math.cos(bAngle)*0.2,0.65+Math.random()*0.3,Math.sin(bAngle)*0.2);
+    branch.rotation.z=Math.cos(bAngle)*0.6;
+    branch.rotation.x=Math.sin(bAngle)*0.6;
+    branch.castShadow=true;
+    objTree.add(branch);
+  }
+  for(var i=0;i<4;i++){
+    var leafG=new THREE.ConeGeometry(0.55-i*0.1,0.55,10);
+    var hue=0.22+i*0.05;
+    var leafM=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(hue,0.85,0.28+i*0.08),roughness:0.55});
+    var leaf=new THREE.Mesh(leafG,leafM);
+    leaf.position.y=1.05+i*0.38;leaf.castShadow=true;
+    objTree.add(leaf);
+  }
+  for(var fi2=0;fi2<5;fi2++){
+    var fruitG=new THREE.SphereGeometry(0.06,6,6);
+    var fruitM=new THREE.MeshStandardMaterial({color:0xff4444,roughness:0.3,emissive:0x330000,emissiveIntensity:0.2});
+    var fruit=new THREE.Mesh(fruitG,fruitM);
+    fruit.position.set((Math.random()-0.5)*0.5,1.2+Math.random()*1.2,(Math.random()-0.5)*0.5);
+    objTree.add(fruit);
+  }
+  objTree.position.set(0,0,-4.2);
+  quadrantGroup.add(objTree);
+  quadrantGroup.add(makeLabel('🌲 大树','#ffffff',0,2.2,-5.0,15));
+
+  // ========== 精致的房子（东边）==========
+  objHouse=new THREE.Group();
+  var bodyG=new THREE.BoxGeometry(1.0,0.85,0.9);
+  var bodyM2=new THREE.MeshStandardMaterial({color:0xdeb887,roughness:0.45});
+  var body=new THREE.Mesh(bodyG,bodyM2);
+  body.position.y=0.425;body.castShadow=true;body.receiveShadow=true;
+  objHouse.add(body);
+  var roofG=new THREE.ConeGeometry(0.8,0.6,4);
+  var roofM=new THREE.MeshStandardMaterial({color:0xC0392B,roughness:0.35,metalness:0.15});
+  var roof=new THREE.Mesh(roofG,roofM);
+  roof.position.y=1.15;roof.rotation.y=Math.PI/4;roof.castShadow=true;
+  objHouse.add(roof);
+  var chimG=new THREE.BoxGeometry(0.15,0.45,0.15);
+  var chimM=new THREE.MeshStandardMaterial({color:0x8B4513,roughness:0.6});
+  var chimney=new THREE.Mesh(chimG,chimM);
+  chimney.position.set(0.25,1.3,0.2);chimney.castShadow=true;
+  objHouse.add(chimney);
+  var doorG=new THREE.BoxGeometry(0.25,0.4,0.05);
+  var doorM=new THREE.MeshStandardMaterial({color:0x654321,roughness:0.5});
+  var door=new THREE.Mesh(doorG,doorM);
+  door.position.set(0,0.2,0.47);
+  objHouse.add(door);
+  for(var wi=0;wi<2;wi++){
+    var winG=new THREE.BoxGeometry(0.2,0.2,0.03);
+    var winM=new THREE.MeshStandardMaterial({color:0xaaddff,roughness:0.2,emissive:0x112233,emissiveIntensity:0.4});
+    var win2=new THREE.Mesh(winG,winM);
+    win2.position.set(wi===0?-0.25:0.25,0.55,0.47);
+    objHouse.add(win2);
+  }
+  objHouse.position.set(4.2,0,0);
+  quadrantGroup.add(objHouse);
+  quadrantGroup.add(makeLabel('🏠 房子','#ffffff',4.2,1.8,0.8,15));
+
+  // ========== 精致的山峰（南边）==========
+  objMountain=new THREE.Group();
+  for(var j=0;j<3;j++){
+    var mtH=1.5-j*0.3;
+    var mtR=0.7-j*0.15;
+    var mtG=new THREE.ConeGeometry(mtR,mtH,10);
+    var mtColor=new THREE.Color().setHSL(0.13,0.3,0.38+j*0.16);
+    var mtM=new THREE.MeshStandardMaterial({color:mtColor,roughness:0.65});
+    var mt=new THREE.Mesh(mtG,mtM);
+    mt.position.set((j-1)*0.55,mtH/2,0);mt.castShadow=true;mt.receiveShadow=true;
+    objMountain.add(mt);
+    if(j===1){
+      var snowG=new THREE.ConeGeometry(mtR*0.45,0.22,10);
+      var snowM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.2,emissive:0x111111,emissiveIntensity:0.1});
+      var snow=new THREE.Mesh(snowG,snowM);
+      snow.position.set((j-1)*0.55,mtH-0.05,0);
+      objMountain.add(snow);
+    }
+  }
+  for(var ri3=0;ri3<8;ri3++){
+    var sg3=new THREE.SphereGeometry(0.04+Math.random()*0.07,4,4);
+    var sm3=new THREE.MeshStandardMaterial({color:0x999999,roughness:0.7});
+    var stone2=new THREE.Mesh(sg3,sm3);
+    stone2.position.set((Math.random()-0.5)*1.8,0.03+Math.random()*0.1,3.8+Math.random()*0.5);
+    objMountain.add(stone2);
+  }
+  objMountain.position.set(0,0,4.2);
+  quadrantGroup.add(objMountain);
+  quadrantGroup.add(makeLabel('⛰️ 山峰','#ffffff',0,1.9,5.0,15));
+
+  // ========== 精致的湖泊（西边）==========
+  objLake=new THREE.Group();
+  var lakeG=new THREE.CylinderGeometry(0.75,0.8,0.05,32);
+  var lakeM2=new THREE.MeshStandardMaterial({color:0x2980B9,roughness:0.08,metalness:0.4,transparent:true,opacity:0.8});
+  var lake=new THREE.Mesh(lakeG,lakeM2);
+  lake.position.y=0.05;lake.name='lakeSurface';
+  objLake.add(lake);
+  for(var rip=0;rip<2;rip++){
+    var ripG=new THREE.TorusGeometry(0.3+rip*0.2,0.015,8,24);
+    var ripM=new THREE.MeshBasicMaterial({color:0xaaddff,transparent:true,opacity:0.4});
+    var ripple=new THREE.Mesh(ripG,ripM);
+    ripple.rotation.x=-Math.PI/2;ripple.position.y=0.08;
+    ripple.name='lakeRipple'+rip;
+    objLake.add(ripple);
+  }
+  for(var k=0;k<12;k++){
+    var angle=k*Math.PI/6;
+    var sg4=new THREE.SphereGeometry(0.06+Math.random()*0.07,5,5);
+    var sm4=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(0.1,0.05,0.4+Math.random()*0.3),roughness:0.75});
+    var stone3=new THREE.Mesh(sg4,sm4);
+    stone3.position.set(Math.cos(angle)*0.78,0.05,Math.sin(angle)*0.78);
+    stone3.castShadow=true;
+    objLake.add(stone3);
+  }
+  for(var ri4=0;ri4<6;ri4++){
+    var angle2=ri4*Math.PI/3+Math.random()*0.3;
+    var reedG=new THREE.CylinderGeometry(0.015,0.025,0.2+Math.random()*0.15,6);
+    var reedM=new THREE.MeshStandardMaterial({color:0x556B2F,roughness:0.7});
+    var reed=new THREE.Mesh(reedG,reedM);
+    reed.position.set(Math.cos(angle2)*0.85,0.12,Math.sin(angle2)*0.85);
+    objLake.add(reed);
+  }
+  objLake.position.set(-4.2,0,0);
+  quadrantGroup.add(objLake);
+  quadrantGroup.add(makeLabel('🌊 湖泊','#ffffff',-4.2,0.5,0.8,15));
+
+  // ========== 地面十字标记 ==========
+  function addGroundCross(x, z, color){
+    var size = 0.28;
+    var g1 = new THREE.BoxGeometry(size, 0.04, size*0.25);
+    var g2 = new THREE.BoxGeometry(size*0.25, 0.04, size);
+    var m = new THREE.MeshStandardMaterial({color:color, roughness:0.3, emissive:color, emissiveIntensity:0.4});
+    var c1 = new THREE.Mesh(g1, m);
+    var c2 = new THREE.Mesh(g2, m);
+    c1.position.set(x, 0.07, z);
+    c2.position.set(x, 0.07, z);
+    quadrantGroup.add(c1);
+    quadrantGroup.add(c2);
+  }
+  addGroundCross(0, -3.0, 0xFF4757);
+  addGroundCross(0, 3.0, 0x3742FA);
+  addGroundCross(3.0, 0, 0x2ED573);
+  addGroundCross(-3.0, 0, 0xFFA502);
+
+  // ========== 石子路 ==========
+  function addStonePath(x1, z1, x2, z2, count){
+    for(var si=0;si<count;si++){
+      var t = si/count;
+      var px = x1 + (x2-x1)*t + (Math.random()-0.5)*0.3;
+      var pz = z1 + (z2-z1)*t + (Math.random()-0.5)*0.3;
+      var stoneG = new THREE.SphereGeometry(0.04+Math.random()*0.07, 5, 5);
+      var stoneM = new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(0.1,0.03,0.5+Math.random()*0.35),roughness:0.7});
+      var stone = new THREE.Mesh(stoneG, stoneM);
+      stone.position.set(px, 0.045, pz);
+      stone.receiveShadow=true;
+      quadrantGroup.add(stone);
+    }
+  }
+  addStonePath(0, -1.5, 0, -5.5, 30);
+  addStonePath(0, 1.5, 0, 5.5, 30);
+  addStonePath(1.5, 0, 5.5, 0, 30);
+  addStonePath(-1.5, 0, -5.5, 0, 30);
+
+  // ========== 装饰灌木丛 ==========
+  function addBush(bx,bz){
+    var bushG=new THREE.Group();
+    for(var bi2=0;bi2<3;bi2++){
+      var bLeafG=new THREE.SphereGeometry(0.08+Math.random()*0.1,6,6);
+      var bLeafM=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(0.2+Math.random()*0.12,0.8,0.25+Math.random()*0.2),roughness:0.6});
+      var bLeaf=new THREE.Mesh(bLeafG,bLeafM);
+      bLeaf.position.set((Math.random()-0.5)*0.2,0.06+Math.random()*0.1,(Math.random()-0.5)*0.2);
+      bLeaf.castShadow=true;
+      bushG.add(bLeaf);
+    }
+    bushG.position.set(bx,0,bz);
+    quadrantGroup.add(bushG);
+  }
+  var bushPositions=[[1.5,1.2],[1.8,-1.6],[-1.3,1.8],[-1.8,-1.4],[2.8,2.5],[2.5,-2.8],[-2.5,2.8],[-2.8,-2.5],[3.8,1.5],[1.5,-3.8],[-3.5,1.8],[-1.8,-3.5]];
+  for(var bi3=0;bi3<bushPositions.length;bi3++){
+    addBush(bushPositions[bi3][0],bushPositions[bi3][1]);
+  }
+
+  // ========== 边界篱笆桩 ==========
+  function addFencePost(fx,fz){
+    var postG=new THREE.CylinderGeometry(0.04,0.06,0.35,6);
+    var postM=new THREE.MeshStandardMaterial({color:0xc4956b,roughness:0.6});
+    var post=new THREE.Mesh(postG,postM);
+    post.position.set(fx,0.17,fz);
+    post.castShadow=true;
+    quadrantGroup.add(post);
+    var topG=new THREE.SphereGeometry(0.06,5,5);
+    var topM=new THREE.MeshStandardMaterial({color:0xd4a57b,roughness:0.4});
+    var top=new THREE.Mesh(topG,topM);
+    top.position.set(fx,0.37,fz);
+    quadrantGroup.add(top);
+  }
+  var fenceAngles=[-Math.PI/4,Math.PI/4,3*Math.PI/4,-3*Math.PI/4];
+  for(var fi3=0;fi3<4;fi3++){
+    var fr=6.2;
+    addFencePost(Math.cos(fenceAngles[fi3])*fr,Math.sin(fenceAngles[fi3])*fr);
+  }
+
+  // ========== 萤火虫粒子 ==========
+  var particlesG=new THREE.BufferGeometry();
+  var particlesCount=60;
+  var particlesPositions=new Float32Array(particlesCount*3);
+  for(var pi2=0;pi2<particlesCount;pi2++){
+    particlesPositions[pi2*3]=(Math.random()-0.5)*12;
+    particlesPositions[pi2*3+1]=0.3+Math.random()*3.5;
+    particlesPositions[pi2*3+2]=(Math.random()-0.5)*12;
+  }
+  particlesG.setAttribute('position',new THREE.BufferAttribute(particlesPositions,3));
+  var particlesMat=new THREE.PointsMaterial({color:0xffffaa,size:0.06,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false});
+  var particles=new THREE.Points(particlesG,particlesMat);
+  particles.name='fireflies';
+  quadrantGroup.add(particles);
+
+}
+
+// 高亮组（存储高亮相关的所有对象）
+var highlightObjects=[];
+
+// 高亮某个方向 — 超级醒目的金色标注
+function highlightDirection(dir){
+  clearHighlight();
+  var pos={北:[0,0,-5.8],南:[0,0,5.8],东:[5.8,0,0],西:[-5.8,0,0]}[dir];
+  if(!pos)return;
+  var px=pos[0],pz=pos[2];
+
+  // 1) 地面大金环（发光圆盘）
+  var discG=new THREE.RingGeometry(0.5,1.0,48);
+  var discM=new THREE.MeshBasicMaterial({color:0xFFD700,side:THREE.DoubleSide,transparent:true,opacity:0.7});
+  var disc=new THREE.Mesh(discG,discM);
+  disc.rotation.x=-Math.PI/2;
+  disc.position.set(px,0.12,pz);
+  disc.name='hlDisc';
+  quadrantGroup.add(disc);highlightObjects.push(disc);
+
+  // 2) 金色光柱（半透明）
+  var beamG=new THREE.CylinderGeometry(0.2,0.5,4,16);
+  var beamM=new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:0.25});
+  var beam=new THREE.Mesh(beamG,beamM);
+  beam.position.set(px,2,pz);
+  beam.name='hlBeam';
+  quadrantGroup.add(beam);highlightObjects.push(beam);
+
+  // 3) 柱顶大球（闪烁标记）
+  var bigSphereG=new THREE.SphereGeometry(0.45,16,16);
+  var bigSphereM=new THREE.MeshStandardMaterial({color:0xFFD700,roughness:0.1,emissive:0xFFD700,emissiveIntensity:1.2});
+  var bigSphere=new THREE.Mesh(bigSphereG,bigSphereM);
+  bigSphere.position.set(px,4.2,pz);
+  bigSphere.name='hlSphere';
+  quadrantGroup.add(bigSphere);highlightObjects.push(bigSphere);
+
+  // 4) 大标签 "已标注：北" 等
+  var d=document.createElement('div');
+  d.textContent='⭐ 已标注：'+dir+'方 ⭐';
+  d.style.color='#FFD700';
+  d.style.fontWeight='bold';
+  d.style.fontSize='22px';
+  d.style.textShadow='0 0 12px #FFD700, 0 0 24px #FFA500';
+  d.style.background='rgba(0,0,0,0.7)';
+  d.style.padding='4px 14px';
+  d.style.borderRadius='20px';
+  d.style.border='2px solid #FFD700';
+  highlightLabel=new CSS2DObject(d);
+  highlightLabel.position.set(px,5.2,pz);
+  highlightLabel.name='hlLabel';
+  quadrantGroup.add(highlightLabel);highlightObjects.push(highlightLabel);
+
+  // 5) 地面闪烁粒子
+  for(var i=0;i<12;i++){
+    var angle=(i/12)*Math.PI*2;
+    var dist=1.15;
+    var pg=new THREE.SphereGeometry(0.06,4,4);
+    var pm=new THREE.MeshBasicMaterial({color:0xFFD700});
+    var particle=new THREE.Mesh(pg,pm);
+    particle.position.set(px+Math.cos(angle)*dist,0.2,pz+Math.sin(angle)*dist);
+    particle.name='hlPart';
+    quadrantGroup.add(particle);highlightObjects.push(particle);
+  }
+
+  // 6) 自动旋转相机看向高亮方向
+  var targetX=px*1.6,targetZ=pz*1.6;
+  if(dir==='北'){targetX=0;targetZ=-8;}
+  else if(dir==='南'){targetX=0;targetZ=8;}
+  else if(dir==='东'){targetX=8;targetZ=0;}
+  else if(dir==='西'){targetX=-8;targetZ=0;}
+  controls.target.set(px*0.3,1,pz*0.3);
+  camera.position.set(targetX,7,targetZ);
+  controls.update();
+}
+
+// 清除高亮
+function clearHighlight(){
+  highlightObjects.forEach(function(o){
+    if(o.parent)o.parent.remove(o);
+    if(o.element&&o.parent)o.parent.remove(o);
+  });
+  highlightObjects=[];
+  if(highlightLabel){quadrantGroup.remove(highlightLabel);highlightLabel=null;}
+}
+
+// 显示仅一个方向的标签（隐藏其他三个）
+function showOnlyDirectionLabel(dir){
+  for(var d in pillarLabels){
+    if(pillarLabels[d] && pillarLabels[d].element){
+      pillarLabels[d].element.style.display = (d === dir) ? '' : 'none';
+    }
+  }
+}
+// 显示所有方向标签
+function showAllDirectionLabels(){
+  for(var d in pillarLabels){
+    if(pillarLabels[d] && pillarLabels[d].element){
+      pillarLabels[d].element.style.display = '';
+    }
+  }
+}
+// 根据模块更新方向标签显示
+function updateDirectionLabels(hintDir, modId, question){
+  if(modId === 3) return; // 模块3使用平面图
+  if(modId === 1 && hintDir){
+    // 模块一：只显示提示的方向标签 + 金色高亮
+    showOnlyDirectionLabel(hintDir);
+    highlightDirection(hintDir);
+  }else if(modId === 2){
+    // 模块二：只标示北方，学生自行推断其他方向
+    showOnlyDirectionLabel('北');
+    clearHighlight();
+  }else if(modId === 4){
+    // 模块四：3D相关问题标示北方
+    var is3DQuestion = question.q.indexOf('大树')>=0 || question.q.indexOf('房子')>=0 || question.q.indexOf('山峰')>=0 || question.q.indexOf('湖泊')>=0;
+    if(is3DQuestion){
+      showOnlyDirectionLabel('北');
+    }else{
+      showAllDirectionLabels();
+    }
+    clearHighlight();
+  }else{
+    showAllDirectionLabels();
+    clearHighlight();
+  }
+}
+
+// ==================== 2D 平面图 ====================
+var mapCanvas,mapCtx;
+var MAP_BUILDINGS=[
+  {name:'学校',x:0.5,y:0.12,w:0.22,h:0.1,color:'#E74C3C',icon:'🏫'},
+  {name:'公园',x:0.5,y:0.88,w:0.2,h:0.1,color:'#27AE60',icon:'🌳'},
+  {name:'超市',x:0.85,y:0.5,w:0.12,h:0.12,color:'#F39C12',icon:'🏪'},
+  {name:'医院',x:0.15,y:0.5,w:0.12,h:0.1,color:'#E91E63',icon:'🏥'},
+  {name:'图书馆',x:0.78,y:0.18,w:0.14,h:0.1,color:'#9C27B0',icon:'📚'},
+  {name:'消防站',x:0.8,y:0.8,w:0.13,h:0.09,color:'#FF5722',icon:'🚒'},
+  {name:'邮局',x:0.2,y:0.82,w:0.12,h:0.09,color:'#607D8B',icon:'📮'},
+  {name:'银行',x:0.2,y:0.18,w:0.12,h:0.09,color:'#FFC107',icon:'🏦'},
+  {name:'花店',x:0.5,y:0.38,w:0.1,h:0.08,color:'#E91E63',icon:'🌸'},
+  {name:'咖啡店',x:0.5,y:0.6,w:0.1,h:0.08,color:'#795548',icon:'☕'}
+];
+
+function initMapCanvas(){
+  mapCanvas=document.createElement('canvas');
+  mapCanvas.style.display='none';
+  mapCanvas.style.width='100%';
+  mapCanvas.style.height='100%';
+  document.getElementById('view3D').appendChild(mapCanvas);
+}
+
+function showMap(){
+  if(renderer)renderer.domElement.style.display='none';
+  if(labelRenderer)labelRenderer.domElement.style.display='none';
+  mapCanvas.style.display='block';
+  document.getElementById('viewLabel').textContent='🗺️ 平面图（上北下南左西右东）';
+  drawMap();
+}
+
+function show3D(){
+  if(renderer)renderer.domElement.style.display='block';
+  if(labelRenderer)labelRenderer.domElement.style.display='block';
+  if(mapCanvas)mapCanvas.style.display='none';
+  document.getElementById('viewLabel').textContent='🎮 3D立体象限（可拖拽旋转/缩放）';
+}
+
+function drawMap(){
+  if(!mapCanvas)return;
+  var w=mapCanvas.clientWidth,h=mapCanvas.clientHeight;
+  if(w<10)w=400;if(h<10)h=300;
+  mapCanvas.width=w;mapCanvas.height=h;
+  mapCtx=mapCanvas.getContext('2d');
+
+  var cx=mapCtx;
+  cx.clearRect(0,0,w,h);
+
+  // 背景
+  cx.fillStyle='#2d5a27';
+  cx.fillRect(0,0,w,h);
+
+  // 道路网格
+  cx.fillStyle='#555';
+  cx.fillRect(w*0.45,0,w*0.1,h);        // 竖主路
+  cx.fillRect(0,h*0.45,w,h*0.1);         // 横主路
+  cx.fillRect(w*0.22,0,w*0.04,h);        // 竖辅路
+  cx.fillRect(w*0.74,0,w*0.04,h);
+  cx.fillRect(0,h*0.22,w,h*0.04);        // 横辅路
+  cx.fillRect(0,h*0.74,w,h*0.04);
+
+  // 建筑
+  MAP_BUILDINGS.forEach(function(b){
+    var bx=b.x*w,bw=b.w*w,by=b.y*h,bh=b.h*h;
+    cx.fillStyle=b.color;
+    cx.fillRect(bx-bw/2,by-bh/2,bw,bh);
+    cx.fillStyle='#fff';
+    cx.font='bold '+Math.max(10,Math.min(14,w/35))+'px "Microsoft YaHei"';
+    cx.textAlign='center';
+    cx.textBaseline='middle';
+    cx.fillText(b.icon+' '+b.name,bx,by);
+  });
+
+  // 指南针
+  var cx2=w*0.08,cy2=h*0.1,r=Math.min(w,h)*0.06;
+  cx.strokeStyle='#fff';cx.lineWidth=2;
+  cx.beginPath();cx.arc(cx2,cy2,r,0,Math.PI*2);cx.stroke();
+  cx.fillStyle='#FF4757';cx.font='bold '+Math.max(12,r)+'px "Microsoft YaHei"';cx.textAlign='center';
+  cx.fillText('北',cx2,cy2-r-4);
+  cx.fillStyle='#3742FA';cx.fillText('南',cx2,cy2+r+14);
+  cx.fillStyle='#2ED573';cx.fillText('东',cx2+r+14,cy2+4);
+  cx.fillStyle='#FFA502';cx.fillText('西',cx2-r-14,cy2+4);
+  cx.strokeStyle='#FF4757';cx.beginPath();cx.moveTo(cx2,cy2);cx.lineTo(cx2,cy2-r+2);cx.stroke();
+
+  // 方向标签在四边
+  [{t:'北 ↑',x:w/2,y:h*0.03,c:'#FF4757'},{t:'南 ↓',x:w/2,y:h*0.97,c:'#3742FA'},{t:'东 →',x:w*0.97,y:h/2,c:'#2ED573'},{t:'西 ←',x:w*0.03,y:h/2,c:'#FFA502'}].forEach(function(d){
+    cx.fillStyle=d.c;cx.font='bold 16px "Microsoft YaHei"';cx.textAlign='center';cx.fillText(d.t,d.x,d.y);
+  });
+}
+
+// ==================== 题库 ====================
+var DIRS=['东','南','西','北'];
+var DIRS8=['东','南','西','北','东北','东南','西南','西北'];
+var OBJS=['大树','房子','山峰','湖泊'];
+var BUILD_NAMES=MAP_BUILDINGS.map(function(b){return b.name;});
+
+var Q_BANKS={
+  1:[ // 模块一：辨认方向 — 从简单到进阶
+    // 基础：给定一个方向认其他方向
+    {q:'北已经标出（红色柱子），哪个是东？',a:'东',hint:'北'},
+    {q:'北已经标出（红色柱子），哪个是西？',a:'西',hint:'北'},
+    {q:'北已经标出（红色柱子），哪个是南？',a:'南',hint:'北'},
+    {q:'南已经标出（蓝色柱子），哪个是北？',a:'北',hint:'南'},
+    {q:'南已经标出（蓝色柱子），哪个是东？',a:'东',hint:'南'},
+    {q:'南已经标出（蓝色柱子），哪个是西？',a:'西',hint:'南'},
+    {q:'东已经标出（绿色柱子），哪个是北？',a:'北',hint:'东'},
+    {q:'东已经标出（绿色柱子），哪个是南？',a:'南',hint:'东'},
+    {q:'东已经标出（绿色柱子），哪个是西？',a:'西',hint:'东'},
+    {q:'西已经标出（橙色柱子），哪个是北？',a:'北',hint:'西'},
+    {q:'西已经标出（橙色柱子），哪个是东？',a:'东',hint:'西'},
+    {q:'西已经标出（橙色柱子），哪个是南？',a:'南',hint:'西'},
+    // 进阶：身体朝向推理
+    {q:'面向北方站着，你的右手边是什么方向？',a:'东'},
+    {q:'面向北方站着，你的左手边是什么方向？',a:'西'},
+    {q:'面向北方站着，你的背后是什么方向？',a:'南'},
+    {q:'面向东方站着，你的背后是什么方向？',a:'西'},
+    {q:'面向东方站着，你的右手边是什么方向？',a:'南'},
+    {q:'面向南方站着，你的左手边是什么方向？',a:'东'},
+    {q:'面向南方站着，你的背后是什么方向？',a:'北'},
+    {q:'面向西方站着，你的右手边是什么方向？',a:'北'},
+    {q:'面向西方站着，你的背后是什么方向？',a:'东'},
+    {q:'早晨面对太阳，你的前面是什么方向？',a:'东'},
+    {q:'早晨面对太阳，你的后面是什么方向？',a:'西'},
+    {q:'早晨面对太阳，你的左手边是什么方向？',a:'北'},
+    {q:'傍晚面对太阳，你的前面是什么方向？',a:'西'},
+  ],
+  2:[ // 模块二：方向与物体 — 从辨认到推理
+    // 基础：每个方向有什么
+    {q:'🌲 大树在什么方向？',a:'北'},
+    {q:'🏠 房子在什么方向？',a:'东'},
+    {q:'⛰️ 山峰在什么方向？',a:'南'},
+    {q:'🌊 湖泊在什么方向？',a:'西'},
+    // 基础：每个方向上的物体是什么
+    {q:'北边有什么物体？',a:'大树'},
+    {q:'东边有什么物体？',a:'房子'},
+    {q:'南边有什么物体？',a:'山峰'},
+    {q:'西边有什么物体？',a:'湖泊'},
+    // 衍生：物体之间的相对方向
+    {q:'🌲大树在🏠房子的什么方向？',a:'西'},
+    {q:'🏠房子在🌲大树的什么方向？',a:'东'},
+    {q:'⛰️山峰在🌊湖泊的什么方向？',a:'东'},
+    {q:'🌊湖泊在⛰️山峰的什么方向？',a:'西'},
+    {q:'⛰️山峰在🌲大树的什么方向？',a:'南'},
+    {q:'🌲大树在⛰️山峰的什么方向？',a:'北'},
+    {q:'🏠房子在🌊湖泊的什么方向？',a:'东'},
+    {q:'🌊湖泊在🏠房子的什么方向？',a:'西'},
+    {q:'🏠房子在⛰️山峰的什么方向？',a:'北'},
+    {q:'🌲大树在🌊湖泊的什么方向？',a:'东北'},
+    // 衍生：某方向有什么物体
+    {q:'🏠房子的西边有什么？',a:'湖泊'},
+    {q:'🌲大树的南边有什么？',a:'山峰'},
+    {q:'🌊湖泊的东边有什么？',a:'大树'},
+    {q:'⛰️山峰的北边有什么？',a:'大树'},
+    {q:'🌲大树的东边有什么？',a:'房子'},
+    {q:'🏠房子的南边有什么？',a:'山峰'},
+  ],
+  3:[ // 模块三：平面图辨认 — 从边缘定位到内部推理
+    // 基础：四边最边缘
+    {q:'平面图最北边是什么建筑？',a:'学校'},
+    {q:'平面图最南边是什么？',a:'公园'},
+    {q:'平面图最东边是什么建筑？',a:'超市'},
+    {q:'平面图最西边是什么建筑？',a:'医院'},
+    // 基础：紧邻关系
+    {q:'学校的南边是什么？',a:'花店'},
+    {q:'公园的北边是什么？',a:'咖啡店'},
+    {q:'超市的北边是什么？',a:'图书馆'},
+    {q:'超市的南边是什么建筑？',a:'消防站'},
+    {q:'医院的北边是什么建筑？',a:'银行'},
+    {q:'邮局的东边是什么建筑？',a:'消防站'},
+    {q:'银行的南边是什么？',a:'花店'},
+    {q:'图书馆的西边是什么建筑？',a:'学校'},
+    // 进阶：判断某建筑在另一个的什么方向
+    {q:'花店在学校的什么方向？',a:'南'},
+    {q:'图书馆在超市的什么方向？',a:'北'},
+    {q:'银行在医院的什么方向？',a:'北'},
+    {q:'咖啡店在公园的什么方向？',a:'北'},
+    {q:'消防站在邮局的什么方向？',a:'东'},
+    {q:'学校在图书馆的什么方向？',a:'西'},
+    {q:'花店在咖啡店的什么方向？',a:'北'},
+    // 对比选择
+    {q:'消防站和邮局，谁在西边？',a:'邮局'},
+    {q:'学校和超市，谁在南边？',a:'超市'},
+    {q:'医院和邮局，谁在北边？',a:'医院'},
+    // 路径推理
+    {q:'从学校向南走，第一个路口东边是什么？',a:'银行'},
+    {q:'从超市向西走，经过的第一个建筑是什么？',a:'学校'},
+    {q:'花店在咖啡店的北边还是南边？',a:'北'},
+  ],
+  4:[ // 模块四：综合挑战 — 知识面+应用推理
+    // 八个方向名称
+    {q:'东和北之间的方向叫什么？',a:'东北'},
+    {q:'南和西之间的方向叫什么？',a:'西南'},
+    {q:'东和南之间的方向叫什么？',a:'东南'},
+    {q:'北和西之间的方向叫什么？',a:'西北'},
+    // 3D物体综合
+    {q:'🌲大树在🏠房子的什么方向？',a:'西'},
+    {q:'⛰️山峰在🌊湖泊的什么方向？',a:'东'},
+    {q:'🏠房子在🌊湖泊的什么方向？',a:'东'},
+    {q:'🌊湖泊在🌲大树的什么方向？',a:'西南'},
+    {q:'🌲大树在⛰️山峰的什么方向？',a:'北'},
+    // 身体方向推理
+    {q:'面向东站着，你的左边是什么方向？',a:'北'},
+    {q:'面向西站着，你的后面是什么方向？',a:'东'},
+    {q:'面向南站着，你的右边是什么方向？',a:'西'},
+    {q:'面向北站着，你的左边是什么方向？',a:'西'},
+    // 生活常识
+    {q:'太阳从哪个方向升起？',a:'东'},
+    {q:'太阳从哪个方向落下？',a:'西'},
+    {q:'指南针红色一端指向哪个方向？',a:'南'},
+    {q:'指南针白色一端指向哪个方向？',a:'北'},
+    {q:'北极星在哪个方向？',a:'北'},
+    // 平面图综合
+    {q:'平面图上，学校在超市的什么方向？',a:'西北'},
+    {q:'平面图上，消防站在图书馆的什么方向？',a:'南'},
+    {q:'平面图上，公园在医院的什么方向？',a:'东南'},
+    {q:'平面图上，银行在邮局的什么方向？',a:'东北'},
+    // 旋转推理
+    {q:'从东出发顺时针转90度是什么方向？',a:'南'},
+    {q:'从北出发顺时针转180度是什么方向？',a:'南'},
+    {q:'从西出发逆时针转90度是什么方向？',a:'南'},
+    // 教室场景
+    {q:'坐在教室里，面向讲台（东），左手指的方向是？',a:'北'},
+    {q:'坐在教室里，面向讲台（东），右手指的方向是？',a:'南'},
+  ]
+};
+
+var MODULE_NAMES=['','模块一 · 辨认方向','模块二 · 方向与物体','模块三 · 平面图辨认','模块四 · 综合挑战'];
+
+// ==================== 游戏状态 ====================
+var G={
+  module:0,round:0,totalRounds:15,
+  scores:[0,0],combos:[0,0],
+  timer:20,timerInterval:null,
+  active:false,roundActive:false,
+  answered:[false,false],
+  questions:[],currentQ:null,
+  falling:[[],[]],
+  animFrame:null,spawnTimers:[]
+};
+
+function shuffle(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+function randFloat(min,max){return Math.random()*(max-min)+min;}
+
+function getOpts(ans,mod){
+  var bank;
+  if(mod===4)bank=DIRS8;
+  else if(mod===2)bank=DIRS.concat(OBJS);
+  else if(mod===3)bank=DIRS.concat(BUILD_NAMES);
+  else bank=DIRS8; // 模块1也用8方向，提供更多干扰项
+  var opts=[ans];
+  for(var i=0;i<bank.length&&opts.length<5;i++){if(bank[i]!==ans)opts.push(bank[i]);}
+  return shuffle(opts.slice(0,5));
+}
+
+// ==================== 音效 ====================
+var actx=null;
+function initAudio(){if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function playTone(f,d,ty,vol){if(!actx)return;try{var o=actx.createOscillator(),g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.12,'square',0.07);setTimeout(function(){playTone(659,0.12,'square',0.07);},80);setTimeout(function(){playTone(784,0.18,'square',0.07);},160);}
+function sfxWrong(){playTone(200,0.25,'sawtooth',0.05);}
+function sfxTick(){playTone(800,0.04,'sine',0.03);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.18,'square',0.06);},i*130);}}
+
+var DROP_COLORS=[
+  'linear-gradient(135deg,#FF6B6B,#ee5a5a)',
+  'linear-gradient(135deg,#4ECDC4,#44b3ab)',
+  'linear-gradient(135deg,#FF9800,#F57C00)',
+  'linear-gradient(135deg,#9C27B0,#7B1FA2)',
+  'linear-gradient(135deg,#66BB6A,#43A047)'
+];
+
+// ==================== 模块启动 ====================
+function startModule(modId){
+  initAudio();
+  G.module=modId;
+  G.questions=shuffle(Q_BANKS[modId]);
+  G.totalRounds=G.questions.length;
+  G.scores=[0,0];G.combos=[0,0];G.round=0;G.active=false;
+
+  document.getElementById('homePage').style.display='none';
+  document.getElementById('gamePage').style.display='flex';
+  document.getElementById('moduleLabel').textContent=MODULE_NAMES[modId];
+  document.getElementById('tr').textContent=G.totalRounds;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('combo1').textContent='';
+  document.getElementById('combo2').textContent='';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('readyOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+
+  // 显示准备开始遮罩
+  var ro=document.getElementById('readyOverlay');
+  ro.classList.add('show');
+  document.getElementById('readyTitle').textContent=MODULE_NAMES[modId];
+  document.getElementById('readySub').textContent='共 '+G.totalRounds+' 关 · 每题20秒';
+  var btn=document.getElementById('btnStart');
+  btn.textContent='⚡ 开始对战';
+  btn.style.display='';
+
+  function setupScene(){
+    if(modId===3){
+      if(!mapCanvas)initMapCanvas();
+      showMap();
+      document.getElementById('readySub').textContent='共 '+G.totalRounds+' 关 · 每题20秒 · 平面图模式';
+    }else{
+      show3D();
+      clearHighlight();
+      controls.target.set(0,0,0);
+      camera.position.set(7,9,12);
+      controls.update();
+      renderer.render(scene,camera);
+      labelRenderer.render(scene,camera);
+    }
+  }
+
+  if(!scene){
+    requestAnimationFrame(function(){
+      init3D();
+      setupScene();
+    });
+  } else {
+    setupScene();
+  }
+}
+window.startModule=startModule;
+
+function beginGame(){
+  document.getElementById('readyOverlay').classList.remove('show');
+  G.active=true;
+  nextRound();
+}
+window.beginGame=beginGame;
+
+function goHome(){
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  G.active=false;G.roundActive=false;
+  G.spawnTimers.forEach(function(t){clearTimeout(t);});
+  G.spawnTimers=[];
+  clearAllFalling();
+  clearHighlight();
+  showAllDirectionLabels();
+  document.getElementById('gamePage').style.display='none';
+  document.getElementById('homePage').style.display='flex';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('readyOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+  show3D();
+}
+window.goHome=goHome;
+
+function restartModule(){
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('readyOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+  startModule(G.module);
+}
+window.restartModule=restartModule;
+
+// ==================== 游戏循环 ====================
+function clearAllFalling(){
+  for(var p=0;p<2;p++){
+    G.falling[p].forEach(function(n){if(n.el&&n.el.parentNode)n.el.remove();});
+    G.falling[p]=[];
+  }
+}
+
+function nextRound(){
+  if(G.round>=G.totalRounds){endGame();return;}
+  clearAllFalling();
+  G.answered=[false,false];G.roundActive=true;G.timer=20;
+  G.currentQ=G.questions[G.round];
+
+  document.getElementById('rn').textContent=G.round+1;
+  // 在题目下方显示"点击气泡抢答"
+  document.getElementById('q1').innerHTML='<div style="font-size:1.05em">'+G.currentQ.q+'</div><div style="font-size:0.65em;color:#FFD700;margin-top:2px">👇 点击掉落的气泡抢答！</div>';
+  document.getElementById('q2').innerHTML='<div style="font-size:1.05em">'+G.currentQ.q+'</div><div style="font-size:0.65em;color:#FFD700;margin-top:2px">👇 点击掉落的气泡抢答！</div>';
+
+  var td=document.getElementById('timerDisplay');
+  td.textContent='⏱ 20s';td.classList.remove('urgent');
+
+  clearInterval(G.timerInterval);
+  G.timerInterval=setInterval(function(){
+    G.timer--;
+    var t=document.getElementById('timerDisplay');
+    t.textContent='⏱ '+G.timer+'s';
+    if(G.timer<=5&&G.timer>0){t.classList.add('urgent');sfxTick();}
+    if(G.timer<=0){clearInterval(G.timerInterval);t.classList.remove('urgent');timeUp();}
+  },1000);
+
+  // 更新3D场景（方向标签根据模块自动显示/隐藏）
+  var isMapQ = G.module===3 || (G.module===4 && G.currentQ.q.indexOf('平面图')>=0);
+  if(isMapQ){
+    if(!mapCanvas)initMapCanvas();
+    showMap();drawMap();
+    highlightMapBuilding(G.currentQ);
+  }else{
+    show3D();
+    updateDirectionLabels(G.currentQ.hint, G.module, G.currentQ);
+  }
+
+  spawnNumbers();
+  cancelAnimationFrame(G.animFrame);
+  G.animFrame=requestAnimationFrame(gameLoop);
+}
+
+function highlightMapBuilding(q){
+  // 在平面图上闪烁相关建筑（简单实现：重绘时加边框）
+  drawMap();
+  if(!mapCtx)return;
+  var w=mapCanvas.width,h=mapCanvas.height;
+  var highlighted=null;
+  var qLower=q.q;
+
+  MAP_BUILDINGS.forEach(function(b){
+    if(qLower.indexOf(b.name)>=0)highlighted=b;
+  });
+
+  if(highlighted&&mapCtx){
+    var bx=highlighted.x*w,by=highlighted.y*h,bw=highlighted.w*w,bh=highlighted.h*h;
+    mapCtx.strokeStyle='#FFD700';
+    mapCtx.lineWidth=3;
+    mapCtx.setLineDash([6,3]);
+    mapCtx.strokeRect(bx-bw/2-4,by-bh/2-4,bw+8,bh+8);
+    mapCtx.setLineDash([]);
+  }
+}
+
+function spawnNumbers(){
+  var correct=G.currentQ.a;
+  var allOpts=getOpts(correct,G.module);
+  var lanes=shuffle([8,26,44,62,80]);
+
+  G.spawnTimers.forEach(function(t){clearTimeout(t);});
+  G.spawnTimers=[];
+
+  for(var p=0;p<2;p++){
+    (function(pi){
+      var pvals=shuffle(allOpts.slice());
+      var pLanes=shuffle(lanes.slice());
+      for(var i=0;i<pvals.length;i++){
+        (function(val,idx,lx){
+          var delay=idx*1200+Math.random()*400;
+          var t=setTimeout(function(){
+            if(!G.roundActive)return;
+            spawnOne(pi,val,val===correct,lx);
+          },delay);
+          G.spawnTimers.push(t);
+        })(pvals[i],i,pLanes[i]);
+      }
+    })(p);
+  }
+}
+
+function spawnOne(pi,value,isCorrect,laneX){
+  var dz=document.getElementById('dropZone'+(pi+1));
+  if(!dz)return;
+  var el=document.createElement('div');
+  el.className='falling-num';
+  el.textContent=value;
+  el.style.background=DROP_COLORS[Math.floor(Math.random()*DROP_COLORS.length)];
+  el.style.left=laneX+'%';
+  el.style.top='2px';
+  el.style.fontSize=value.length>2?'0.75em':'1em';
+
+  var handled=false;
+  function onTap(e){
+    if(handled)return;
+    handled=true;
+    e.stopPropagation();e.preventDefault();
+    handleAnswer(pi,value,isCorrect,el);
+  }
+  el.addEventListener('touchstart',onTap,{passive:false});
+  el.addEventListener('mousedown',onTap);
+  dz.appendChild(el);
+
+  G.falling[pi].push({
+    el:el,value:value,isCorrect:isCorrect,
+    y:2,speed:randFloat(0.2,0.45),
+    baseX:laneX,wobblePhase:Math.random()*Math.PI*2
+  });
+}
+
+function handleAnswer(pi,value,isCorrect,el){
+  if(!G.roundActive||G.answered[pi])return;
+  if(el.classList.contains('wrong-pop')||el.classList.contains('correct-glow'))return;
+
+  if(isCorrect){
+    G.answered[pi]=true;G.roundActive=false;
+    clearInterval(G.timerInterval);
+    G.scores[pi]+=10;G.combos[pi]++;
+    document.getElementById('s'+(pi+1)).textContent=G.scores[pi];
+
+    var ce=document.getElementById('combo'+(pi+1));
+    ce.textContent=G.combos[pi]>=3?'🔥 '+G.combos[pi]+'连击！':'✅ 连续答对';
+
+    var oi=pi===0?1:0;
+    G.combos[oi]=0;G.answered[oi]=true;
+    document.getElementById('combo'+(oi+1)).textContent='';
+
+    el.classList.add('correct-glow');
+    sfxCorrect();
+    showScorePop(pi,'+10');
+    freezeAllNumbers();
+    document.getElementById('q'+(oi+1)).innerHTML='<span style="color:#aaa">'+G.currentQ.q+'</span> <span style="color:#FFD700">✓ '+G.currentQ.a+'</span>';
+
+    setTimeout(function(){G.round++;nextRound();},1200);
+  }else{
+    el.classList.add('wrong-pop');
+    sfxWrong();
+    removeFallingNum(pi,el);
+    setTimeout(function(){if(el.parentNode)el.remove();},400);
+  }
+}
+
+function showScorePop(pi,text){
+  var dz=document.getElementById('dropZone'+(pi+1));
+  var pop=document.createElement('div');
+  pop.className='score-pop';pop.textContent=text;
+  pop.style.left='50%';pop.style.top='40%';pop.style.transform='translateX(-50%)';
+  dz.appendChild(pop);
+  setTimeout(function(){pop.remove();},1000);
+}
+
+function freezeAllNumbers(){
+  for(var p=0;p<2;p++){
+    G.falling[p].forEach(function(n){n.el.style.pointerEvents='none';n.el.style.opacity='0.5';});
+  }
+}
+
+function removeFallingNum(pi,el){
+  var nums=G.falling[pi];
+  for(var i=nums.length-1;i>=0;i--){if(nums[i].el===el){nums.splice(i,1);break;}}
+}
+
+function timeUp(){
+  if(!G.roundActive)return;
+  G.roundActive=false;
+  G.answered=[true,true];G.combos=[0,0];
+  document.getElementById('combo1').textContent='';
+  document.getElementById('combo2').textContent='';
+  document.getElementById('q1').innerHTML='<span style="color:#EF4444">⏰ 时间到！</span> '+G.currentQ.q+' 答案：<span style="color:#FFD700">'+G.currentQ.a+'</span>';
+  document.getElementById('q2').innerHTML='<span style="color:#EF4444">⏰ 时间到！</span> '+G.currentQ.q+' 答案：<span style="color:#FFD700">'+G.currentQ.a+'</span>';
+  freezeAllNumbers();
+  setTimeout(function(){G.round++;nextRound();},1500);
+}
+
+function gameLoop(){
+  if(!G.roundActive&&G.falling[0].length===0&&G.falling[1].length===0)return;
+  var now=Date.now();
+  for(var p=0;p<2;p++){
+    var dz=document.getElementById('dropZone'+(p+1));
+    if(!dz)continue;
+    var maxY=dz.clientHeight+10;
+    for(var i=G.falling[p].length-1;i>=0;i--){
+      var n=G.falling[p][i];
+      n.y+=n.speed;
+      n.el.style.top=n.y+'px';
+      var wobble=Math.sin(now/400+n.wobblePhase)*0.6;
+      n.el.style.left=(n.baseX+wobble)+'%';
+      if(n.y>maxY){n.el.remove();G.falling[p].splice(i,1);}
+    }
+  }
+  G.animFrame=requestAnimationFrame(gameLoop);
+}
+
+// ==================== 结算 ====================
+function endGame(){
+  G.active=false;G.roundActive=false;
+  clearInterval(G.timerInterval);
+  cancelAnimationFrame(G.animFrame);
+  clearAllFalling();
+  clearHighlight();
+
+  var ov=document.getElementById('winOverlay');
+  ov.classList.add('show');
+  document.getElementById('ws1').textContent=G.scores[0];
+  document.getElementById('ws2').textContent=G.scores[1];
+
+  var wt=document.getElementById('winTitle'),ws=document.getElementById('winSub');
+  if(G.scores[0]>G.scores[1]){
+    wt.innerHTML='🔴 红方获胜！';wt.style.color='#FF6B6B';
+    ws.textContent='红方 '+G.scores[0]+' : '+G.scores[1]+' 蓝方';
+  }else if(G.scores[1]>G.scores[0]){
+    wt.innerHTML='🔵 蓝方获胜！';wt.style.color='#4ECDC4';
+    ws.textContent='蓝方 '+G.scores[1]+' : '+G.scores[0]+' 红方';
+  }else{
+    wt.innerHTML='🤝 平局！';wt.style.color='#FFD700';
+    ws.textContent='双方都是 '+G.scores[0]+' 分';
+  }
+  sfxWin();spawnConfetti();
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';
+    d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+// ==================== 窗口事件 ====================
+window.addEventListener('resize',function(){
+  if(!scene||!G.active)return;
+  var vc=document.getElementById('view3D');
+  var w=vc.clientWidth,h=vc.clientHeight;
+  if(w<10)return;
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+  renderer.setSize(w,h);labelRenderer.setSize(w,h);
+  if(mapCanvas&&mapCanvas.style.display!=='none')drawMap();
+});
+
+// ==================== 渲染循环 ====================
+function animate(){
+  requestAnimationFrame(animate);
+  if(!scene)return;
+  if(G.active){
+    controls.update();
+
+    // 高亮球体脉冲动画
+    var pulseTime=Date.now()*0.003;
+    highlightObjects.forEach(function(o){
+      if(o.name==='hlSphere'){
+        var s=1+Math.sin(pulseTime)*0.25;
+        o.scale.setScalar(s);
+        o.material.emissiveIntensity=0.8+Math.sin(pulseTime)*0.6;
+      }
+      if(o.name==='hlDisc'){
+        o.material.opacity=0.4+Math.sin(pulseTime*1.3)*0.3;
+      }
+      if(o.name==='hlBeam'){
+        o.material.opacity=0.15+Math.sin(pulseTime*0.9)*0.12;
+      }
+      if(o.name==='hlPart'){
+        var angle=Date.now()*0.002+highlightObjects.indexOf(o);
+        o.position.y=0.2+Math.sin(angle)*0.3;
+        o.material.opacity=0.5+Math.sin(angle)*0.5;
+      }
+    });
+
+    // 萤火虫粒子漂浮动画
+    var ft=Date.now()*0.0008;
+    quadrantGroup.children.forEach(function(child){
+      if(child.name==='fireflies'){
+        var pos=child.geometry.attributes.position;
+        for(var fi=0;fi<pos.count;fi++){
+          pos.array[fi*3+1]+=Math.sin(ft+fi*0.7)*0.004;
+          pos.array[fi*3]+=Math.cos(ft*0.7+fi)*0.003;
+          if(pos.array[fi*3+1]>3.8)pos.array[fi*3+1]=0.3;
+          if(pos.array[fi*3+1]<0.2)pos.array[fi*3+1]=3.5;
+        }
+        pos.needsUpdate=true;
+        child.material.opacity=0.35+Math.sin(ft*1.5)*0.2;
+      }
+    });
+
+    // 湖面涟漪旋转动画
+    if(objLake){
+      objLake.children.forEach(function(c){
+        if(c.name&&c.name.indexOf('lakeRipple')===0){
+          c.rotation.z+=0.003;
+          c.scale.setScalar(0.9+Math.sin(Date.now()*0.002)*0.15);
+        }
+      });
+    }
+
+    renderer.render(scene,camera);
+    labelRenderer.render(scene,camera);
+  }
+}
+animate();
+
+// ==================== 初始化 ====================
+document.getElementById('homePage').style.display='flex';
+document.getElementById('gamePage').style.display='none';
+document.getElementById('viewLabel').textContent='🎮 3D立体象限（可拖拽旋转/缩放）';
+
+// 延迟初始化3D
+setTimeout(function(){
+  if(!scene){
+    var vc=document.getElementById('view3D');
+    if(vc.clientWidth>10)init3D();
+  }
+},300);
+</script>
+</body>
+</html>

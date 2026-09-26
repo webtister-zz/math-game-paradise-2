@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>带余数的除法PK</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主页 ===== */
+.home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.home-title{font-size:2em;font-weight:bold;margin-bottom:8px;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.home-subtitle{font-size:1em;color:#aaa;margin-bottom:30px;text-align:center}
+.module-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px}
+.module-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent;position:relative;overflow:hidden}
+.module-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.4)}
+.module-card:active{transform:scale(0.96)}
+.module-card .card-icon{font-size:2.8em;margin-bottom:8px;display:block}
+.module-card .card-title{font-size:1.15em;font-weight:bold;margin-bottom:4px}
+.module-card .card-desc{font-size:0.72em;opacity:0.8;line-height:1.4}
+.card-m1{background:linear-gradient(135deg,rgba(255,152,0,0.25),rgba(255,87,34,0.3));border-color:#FF9800}
+.card-m2{background:linear-gradient(135deg,rgba(33,150,243,0.25),rgba(25,118,210,0.3));border-color:#2196F3}
+.card-m1 .card-icon{color:#FF9800}
+.card-m2 .card-icon{color:#2196F3}
+
+/* ===== 游戏页 ===== */
+.game-page{display:none;flex-direction:column;height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 10px;gap:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.btn-back{padding:6px 14px;border-radius:16px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.btn-back:hover{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.6)}
+.module-label{font-size:0.95em;font-weight:bold;color:#FFD700;white-space:nowrap}
+.round-info{font-size:0.8em;color:#aaa;white-space:nowrap}
+.timer{font-size:1.4em;font-weight:bold;min-width:55px;text-align:center;white-space:nowrap}
+.timer.urgent{color:#EF4444;animation:timerPulse 0.5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 2px;position:relative;overflow-y:auto;overflow-x:hidden}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.25));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.25));border-left:3px solid #4ECDC4}
+.player-header{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-shrink:0}
+.left .player-name{color:#FF6B6B;font-weight:bold;font-size:1em}
+.right .player-name{color:#4ECDC4;font-weight:bold;font-size:1em}
+.player-score{font-weight:bold;font-size:1.3em}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.combo-text{font-size:0.7em;color:#FFD700;min-height:16px;flex-shrink:0;text-align:center}
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.module-container{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:4px 2px}
+
+.question-display{background:rgba(255,255,255,0.12);border-radius:12px;padding:10px 8px;margin:4px 0;width:95%;text-align:center;font-size:1em;font-weight:bold;flex-shrink:0;min-height:44px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+
+/* ===== 花瓶视觉区 ===== */
+.visual-area{width:95%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;margin:2px 0}
+
+/* 花朵池 */
+.flower-pool{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:6px;min-height:38px;background:rgba(0,0,0,0.18);border-radius:10px;width:100%}
+.flower-pool .pool-label{width:100%;text-align:center;font-size:0.65em;color:rgba(255,255,255,0.45);margin-bottom:2px}
+.flower-item{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.16);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;font-size:1.3em;cursor:grab;transition:transform 0.12s,box-shadow 0.12s,opacity 0.12s;-webkit-tap-highlight-color:transparent}
+.flower-item:active{cursor:grabbing}
+.flower-item.dragging{opacity:0.3;transform:scale(0.85)}
+.flower-item.in-vase{cursor:pointer;width:30px;height:30px;font-size:1.1em;border-color:rgba(255,215,0,0.5);background:rgba(255,215,0,0.12)}
+
+/* 花瓶区 */
+.vases-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px;width:100%}
+.vase-target{min-width:70px;min-height:55px;border:2px dashed rgba(255,255,255,0.3);border-radius:14px;background:rgba(255,255,255,0.03);display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:center;padding:18px 4px 4px 4px;position:relative;transition:border-color 0.2s,background 0.2s}
+.vase-target .vase-label{position:absolute;top:1px;left:50%;transform:translateX(-50%);font-size:0.65em;color:rgba(255,255,255,0.6);white-space:nowrap;pointer-events:none}
+.vase-target .vase-capacity{position:absolute;bottom:1px;right:5px;font-size:0.55em;color:rgba(255,255,255,0.3);pointer-events:none}
+.vase-target.drag-over{border-color:#FFD700;background:rgba(255,215,0,0.12);border-style:solid}
+.vase-target.full{border-color:rgba(76,175,80,0.5);background:rgba(76,175,80,0.08)}
+
+/* 拖拽幽灵 */
+.drag-ghost{position:fixed;pointer-events:none;z-index:200;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.25);border:3px solid #FFD700;display:flex;align-items:center;justify-content:center;font-size:1.5em;box-shadow:0 8px 28px rgba(0,0,0,0.5);transform:translate(-50%,-50%)}
+
+/* ===== 答案选项 ===== */
+.answer-label-row{width:95%;text-align:center;font-size:0.72em;color:#aaa;margin-top:2px;flex-shrink:0}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:95%;margin:4px 0;flex-shrink:0}
+.opt-btn{padding:10px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:#fff;font-size:0.85em;font-weight:bold;cursor:pointer;font-family:inherit;text-align:center;transition:all 0.15s;min-height:40px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+.opt-btn:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.5)}
+.opt-btn:active{transform:scale(0.95)}
+.opt-btn.correct{background:#10B981!important;border-color:#10B981!important;animation:btnPop 0.4s}
+.opt-btn.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.opt-btn:disabled{pointer-events:none;opacity:0.5}
+@keyframes btnPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.score-pop{position:absolute;font-size:1.4em;font-weight:bold;color:#FFD700;pointer-events:none;z-index:20;animation:floatUp 1s forwards;text-shadow:0 0 10px rgba(255,215,0,0.8)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+/* ===== 结算弹窗 ===== */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:36px;margin-bottom:18px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-win{padding:12px 28px;border-radius:22px;border:none;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.btn-win.again{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.btn-win.home{background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.3)}
+.btn-win:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .home-title{font-size:1.5em}
+  .module-grid{gap:10px;padding:0 8px}
+  .module-card{padding:16px 10px}
+  .module-card .card-icon{font-size:2em}
+  .module-card .card-title{font-size:0.95em}
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{flex:1;min-height:0;padding:3px 2px}
+  .vs-badge{font-size:1.3em}
+  .top-bar{gap:5px;padding:6px}
+  .top-bar .module-label{font-size:0.78em}
+  .timer{font-size:1.1em}
+  .question-display{font-size:0.82em;min-height:34px;padding:6px}
+  .flower-item{width:30px;height:30px;font-size:1.1em}
+  .flower-item.in-vase{width:26px;height:26px;font-size:0.95em}
+  .drag-ghost{width:38px;height:38px;font-size:1.3em}
+  .vase-target{min-width:56px;min-height:44px;padding:16px 3px 3px 3px}
+  .opt-btn{font-size:0.78em;padding:8px 4px;min-height:34px}
+  .win-title{font-size:1.5em}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 主页 ==================== -->
+<div class="home-page" id="homePage">
+  <div class="home-title">带余数的除法PK</div>
+  <div class="home-subtitle">两人对战 · 花瓶插花分组 · 每题20秒 · 100以内</div>
+  <div class="module-grid">
+    <div class="module-card card-m1" onclick="startModule(1)">
+      <span class="card-icon">💐</span>
+      <div class="card-title">一 · 每份几个</div>
+      <div class="card-desc">已知总数和每份个数<br>求可以分成几份，余几个<br>例：17朵花，每5朵插一瓶</div>
+    </div>
+    <div class="module-card card-m2" onclick="startModule(2)">
+      <span class="card-icon">🏺</span>
+      <div class="card-title">二 · 平均分几份</div>
+      <div class="card-desc">已知总数和份数<br>求每份几个，余几个<br>例：17朵花，平均插到3瓶</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 游戏页 ==================== -->
+<div class="game-page" id="gamePage">
+  <div class="top-bar">
+    <button class="btn-back" onclick="goHome()">← 返回主页</button>
+    <span class="module-label" id="moduleLabel">每份几个</span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">15</span> 关</span>
+    <span class="timer" id="timerDisplay">⏱ 20s</span>
+  </div>
+  <div class="arena">
+    <div class="player left" id="player1">
+      <div class="player-header">
+        <span class="player-name">🔴 红方</span>
+        <span class="player-score" id="s1">0</span>
+      </div>
+      <div class="combo-text" id="combo1"></div>
+      <div class="module-container" id="mc1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="player2">
+      <div class="player-header">
+        <span class="player-name">🔵 蓝方</span>
+        <span class="player-score" id="s2">0</span>
+      </div>
+      <div class="combo-text" id="combo2"></div>
+      <div class="module-container" id="mc2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 结算弹窗 ==================== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="btn-win again" onclick="restartModule()">🔄 再来一局</button>
+    <button class="btn-win home" onclick="goHome()">🏠 返回主页</button>
+  </div>
+</div>
+
+<script>
+// ==================== 题库 ====================
+// 模块1：总数÷每份个数→份数+余数
+var M1_BANK = [
+  {total:17, per:5, emoji:'🌸', desc:'17朵花，每5朵插一瓶，可以插满几瓶？还剩几朵？', q:3, r:2, opts:[[3,2],[2,7],[4,0],[3,1]]},
+  {total:23, per:4, emoji:'🌷', desc:'23朵花，每4朵插一瓶，可以插满几瓶？还剩几朵？', q:5, r:3, opts:[[5,3],[6,0],[4,7],[5,1]]},
+  {total:13, per:3, emoji:'🌸', desc:'13朵花，每3朵插一瓶，可以插满几瓶？还剩几朵？', q:4, r:1, opts:[[4,1],[3,4],[5,0],[4,2]]},
+  {total:19, per:6, emoji:'🌺', desc:'19朵花，每6朵插一瓶，可以插满几瓶？还剩几朵？', q:3, r:1, opts:[[3,1],[2,7],[4,0],[3,2]]},
+  {total:25, per:7, emoji:'🌻', desc:'25朵花，每7朵插一瓶，可以插满几瓶？还剩几朵？', q:3, r:4, opts:[[3,4],[4,0],[2,11],[3,2]]},
+  {total:31, per:5, emoji:'🌸', desc:'31朵花，每5朵插一瓶，可以插满几瓶？还剩几朵？', q:6, r:1, opts:[[6,1],[5,6],[7,0],[6,2]]},
+  {total:22, per:4, emoji:'🌷', desc:'22朵花，每4朵插一瓶，可以插满几瓶？还剩几朵？', q:5, r:2, opts:[[5,2],[4,6],[6,0],[5,1]]},
+  {total:27, per:6, emoji:'🌺', desc:'27朵花，每6朵插一瓶，可以插满几瓶？还剩几朵？', q:4, r:3, opts:[[4,3],[3,9],[5,0],[4,1]]},
+  {total:33, per:7, emoji:'🌻', desc:'33朵花，每7朵插一瓶，可以插满几瓶？还剩几朵？', q:4, r:5, opts:[[4,5],[5,0],[3,12],[4,3]]},
+  {total:38, per:8, emoji:'💮', desc:'38朵花，每8朵插一瓶，可以插满几瓶？还剩几朵？', q:4, r:6, opts:[[4,6],[5,0],[3,14],[4,4]]},
+  {total:41, per:9, emoji:'🌸', desc:'41朵花，每9朵插一瓶，可以插满几瓶？还剩几朵？', q:4, r:5, opts:[[4,5],[5,0],[3,14],[4,3]]},
+  {total:15, per:4, emoji:'🌷', desc:'15朵花，每4朵插一瓶，可以插满几瓶？还剩几朵？', q:3, r:3, opts:[[3,3],[4,0],[2,7],[3,1]]},
+  {total:29, per:5, emoji:'🌺', desc:'29朵花，每5朵插一瓶，可以插满几瓶？还剩几朵？', q:5, r:4, opts:[[5,4],[6,0],[4,9],[5,2]]},
+  {total:35, per:8, emoji:'🌻', desc:'35朵花，每8朵插一瓶，可以插满几瓶？还剩几朵？', q:4, r:3, opts:[[4,3],[5,0],[3,11],[4,1]]},
+  {total:43, per:6, emoji:'💮', desc:'43朵花，每6朵插一瓶，可以插满几瓶？还剩几朵？', q:7, r:1, opts:[[7,1],[6,7],[8,0],[7,2]]}
+];
+
+// 模块2：总数÷份数→每份个数+余数
+var M2_BANK = [
+  {total:17, groups:3, emoji:'🌸', desc:'17朵花，平均插到3个花瓶里，每瓶几朵？还剩几朵？', q:5, r:2, opts:[[5,2],[4,5],[6,0],[5,1]]},
+  {total:22, groups:4, emoji:'🌷', desc:'22朵花，平均插到4个花瓶里，每瓶几朵？还剩几朵？', q:5, r:2, opts:[[5,2],[4,6],[6,0],[5,3]]},
+  {total:13, groups:2, emoji:'🌸', desc:'13朵花，平均插到2个花瓶里，每瓶几朵？还剩几朵？', q:6, r:1, opts:[[6,1],[5,3],[7,0],[6,2]]},
+  {total:19, groups:3, emoji:'🌺', desc:'19朵花，平均插到3个花瓶里，每瓶几朵？还剩几朵？', q:6, r:1, opts:[[6,1],[5,4],[7,0],[6,2]]},
+  {total:25, groups:4, emoji:'🌻', desc:'25朵花，平均插到4个花瓶里，每瓶几朵？还剩几朵？', q:6, r:1, opts:[[6,1],[5,5],[7,0],[6,3]]},
+  {total:31, groups:5, emoji:'🌸', desc:'31朵花，平均插到5个花瓶里，每瓶几朵？还剩几朵？', q:6, r:1, opts:[[6,1],[5,6],[7,0],[6,2]]},
+  {total:23, groups:3, emoji:'🌷', desc:'23朵花，平均插到3个花瓶里，每瓶几朵？还剩几朵？', q:7, r:2, opts:[[7,2],[6,5],[8,0],[7,1]]},
+  {total:27, groups:4, emoji:'🌺', desc:'27朵花，平均插到4个花瓶里，每瓶几朵？还剩几朵？', q:6, r:3, opts:[[6,3],[5,7],[7,0],[6,1]]},
+  {total:33, groups:5, emoji:'🌻', desc:'33朵花，平均插到5个花瓶里，每瓶几朵？还剩几朵？', q:6, r:3, opts:[[6,3],[5,8],[7,0],[6,1]]},
+  {total:38, groups:6, emoji:'💮', desc:'38朵花，平均插到6个花瓶里，每瓶几朵？还剩几朵？', q:6, r:2, opts:[[6,2],[5,8],[7,0],[6,4]]},
+  {total:41, groups:7, emoji:'🌸', desc:'41朵花，平均插到7个花瓶里，每瓶几朵？还剩几朵？', q:5, r:6, opts:[[5,6],[6,0],[4,13],[5,4]]},
+  {total:15, groups:2, emoji:'🌷', desc:'15朵花，平均插到2个花瓶里，每瓶几朵？还剩几朵？', q:7, r:1, opts:[[7,1],[6,3],[8,0],[7,2]]},
+  {total:29, groups:6, emoji:'🌺', desc:'29朵花，平均插到6个花瓶里，每瓶几朵？还剩几朵？', q:4, r:5, opts:[[4,5],[5,0],[3,11],[4,3]]},
+  {total:35, groups:4, emoji:'🌻', desc:'35朵花，平均插到4个花瓶里，每瓶几朵？还剩几朵？', q:8, r:3, opts:[[8,3],[7,7],[9,0],[8,1]]},
+  {total:44, groups:5, emoji:'💮', desc:'44朵花，平均插到5个花瓶里，每瓶几朵？还剩几朵？', q:8, r:4, opts:[[8,4],[7,9],[9,0],[8,2]]}
+];
+
+var MODULE_NAMES = ['', '一 · 每份几个', '二 · 平均分几份'];
+
+// ==================== 游戏状态 ====================
+var G = {
+  module: 0,
+  round: 0,
+  totalRounds: 0,
+  scores: [0,0],
+  combos: [0,0],
+  timer: 20,
+  timerInterval: null,
+  active: false,
+  roundActive: false,
+  answered: [false,false],
+  questions: [],
+  currentQ: null,
+  dragState: [null,null]
+};
+
+// ==================== 工具函数 ====================
+function shuffle(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+// ==================== 音效 ====================
+var actx=null;
+function initAudio(){if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function playTone(f,d,ty,vol){
+  if(!actx)return;
+  try{var o=actx.createOscillator(),g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}
+}
+function sfxCorrect(){playTone(523,0.12,'square',0.07);setTimeout(function(){playTone(659,0.12,'square',0.07);},80);setTimeout(function(){playTone(784,0.18,'square',0.07);},160);}
+function sfxWrong(){playTone(200,0.25,'sawtooth',0.05);}
+function sfxTick(){playTone(800,0.04,'sine',0.03);}
+function sfxRoundStart(){playTone(600,0.1,'sine',0.05);playTone(900,0.15,'sine',0.05);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.18,'square',0.06);},i*130);}}
+
+// ==================== 主页导航 ====================
+function startModule(modId){
+  initAudio();
+  G.module=modId;
+  var bank = modId===1 ? M1_BANK : M2_BANK;
+  G.questions=shuffle(bank);
+  G.totalRounds=G.questions.length;
+  G.scores=[0,0];G.combos=[0,0];G.round=0;G.active=true;
+  document.getElementById('homePage').style.display='none';
+  document.getElementById('gamePage').style.display='flex';
+  document.getElementById('moduleLabel').textContent=MODULE_NAMES[modId];
+  document.getElementById('tr').textContent=G.totalRounds;
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('combo1').textContent='';document.getElementById('combo2').textContent='';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+  nextRound();
+}
+
+function goHome(){
+  clearInterval(G.timerInterval);
+  G.active=false;G.roundActive=false;
+  G.dragState=[null,null];
+  document.querySelectorAll('.drag-ghost').forEach(function(g){g.remove();});
+  document.getElementById('gamePage').style.display='none';
+  document.getElementById('homePage').style.display='flex';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+}
+
+function restartModule(){
+  document.getElementById('winOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(function(c){c.remove();});
+  startModule(G.module);
+}
+
+// ==================== 游戏流程 ====================
+function timerTick(){
+  G.timer--;
+  var tEl=document.getElementById('timerDisplay');
+  tEl.textContent='⏱ '+G.timer+'s';
+  if(G.timer<=5&&G.timer>0){tEl.classList.add('urgent');sfxTick();}
+  if(G.timer<=0){clearInterval(G.timerInterval);tEl.classList.remove('urgent');timeUp();}
+}
+
+function nextRound(){
+  if(G.round>=G.totalRounds){endGame();return;}
+  G.answered=[false,false];G.roundActive=true;G.timer=20;
+  G.currentQ=G.questions[G.round];
+  document.getElementById('rn').textContent=G.round+1;
+  var td=document.getElementById('timerDisplay');
+  td.textContent='⏱ 20s';td.classList.remove('urgent');
+  clearInterval(G.timerInterval);
+  G.timerInterval=setInterval(timerTick,1000);
+  G.dragState=[null,null];
+  document.querySelectorAll('.drag-ghost').forEach(function(g){g.remove();});
+  setupRound();
+  sfxRoundStart();
+}
+
+function timeUp(){
+  if(!G.roundActive)return;
+  G.roundActive=false;G.answered=[true,true];G.combos=[0,0];
+  document.getElementById('combo1').textContent='';document.getElementById('combo2').textContent='';
+  for(var p=0;p<2;p++){
+    var mc=document.getElementById('mc'+(p+1));
+    var ansEl=mc.querySelector('.answer-show');
+    if(!ansEl){
+      ansEl=document.createElement('div');ansEl.className='answer-show question-display';
+      ansEl.style.color='#FFD700';mc.appendChild(ansEl);
+    }
+    var q=G.currentQ;
+    var ansText=G.module===1 ? ('⏰ 可以插满 '+q.q+' 瓶，余 '+q.r+' 朵') : ('⏰ 每瓶 '+q.q+' 朵，余 '+q.r+' 朵');
+    ansEl.textContent=ansText;
+    var btns=mc.querySelectorAll('.opt-btn');
+    btns.forEach(function(b){b.disabled=true;});
+    // 高亮正确答案
+    btns.forEach(function(b){
+      var bq=parseInt(b.getAttribute('data-q')),br=parseInt(b.getAttribute('data-r'));
+      if(bq===q.q&&br===q.r)b.classList.add('correct');
+    });
+  }
+  setTimeout(function(){G.round++;nextRound();},1500);
+}
+
+function playerCorrect(playerIdx){
+  if(!G.roundActive||G.answered[playerIdx])return;
+  G.answered[playerIdx]=true;G.roundActive=false;
+  clearInterval(G.timerInterval);
+  G.scores[playerIdx]+=10;G.combos[playerIdx]++;
+  document.getElementById('s'+(playerIdx+1)).textContent=G.scores[playerIdx];
+  var comboEl=document.getElementById('combo'+(playerIdx+1));
+  comboEl.textContent=G.combos[playerIdx]>=3?'🔥 '+G.combos[playerIdx]+'连击！':'✅ 连续答对';
+  var otherIdx=playerIdx===0?1:0;
+  G.combos[otherIdx]=0;G.answered[otherIdx]=true;
+  document.getElementById('combo'+(otherIdx+1)).textContent='';
+  sfxCorrect();
+  showScorePop(playerIdx,'+10');
+  // 对方显示正确答案
+  var otherMc=document.getElementById('mc'+(otherIdx+1));
+  var q=G.currentQ;
+  var ansEl=otherMc.querySelector('.answer-show');
+  if(!ansEl){
+    ansEl=document.createElement('div');ansEl.className='answer-show question-display';
+    ansEl.style.color='#FFD700';otherMc.appendChild(ansEl);
+  }
+  ansEl.textContent=G.module===1 ? ('✅ '+q.q+' 瓶，余 '+q.r+' 朵') : ('✅ 每瓶 '+q.q+' 朵，余 '+q.r+' 朵');
+  var obtn=otherMc.querySelectorAll('.opt-btn');
+  obtn.forEach(function(b){b.disabled=true;});
+  setTimeout(function(){G.round++;nextRound();},1200);
+}
+
+function showScorePop(playerIdx,text){
+  var dz=document.getElementById('mc'+(playerIdx+1));
+  var pop=document.createElement('div');
+  pop.className='score-pop';pop.textContent=text;
+  pop.style.left='50%';pop.style.top='40%';pop.style.transform='translateX(-50%)';
+  dz.appendChild(pop);
+  setTimeout(function(){pop.remove();},1000);
+}
+
+// ==================== 回合设置 ====================
+function setupRound(){
+  var q=G.currentQ;
+  for(var p=0;p<2;p++){
+    var mc=document.getElementById('mc'+(p+1));
+    mc.innerHTML='';
+
+    // 题目
+    var qd=document.createElement('div');qd.className='question-display';qd.textContent=q.desc;mc.appendChild(qd);
+
+    // 视觉区
+    var va=document.createElement('div');va.className='visual-area';
+
+    // 花朵池
+    var pool=document.createElement('div');pool.className='flower-pool';pool.id='pool'+(p+1);
+    pool.setAttribute('data-player',p);
+    var pl=document.createElement('div');pl.className='pool-label';pl.textContent='🌸 花朵篮（点击拖拽）';
+    pool.appendChild(pl);
+    for(var i=0;i<q.total;i++){
+      var item=document.createElement('div');item.className='flower-item';
+      item.textContent=q.emoji;item.setAttribute('data-idx',i);item.setAttribute('data-player',p);
+      item.setAttribute('data-source','pool');
+      pool.appendChild(item);
+    }
+    va.appendChild(pool);
+
+    // 花瓶区
+    var vasesRow=document.createElement('div');vasesRow.className='vases-row';vasesRow.id='vases'+(p+1);
+    if(G.module===1){
+      // 模块1：每份per个→花瓶数=ceil(total/per)，每个花瓶容量=per
+      var vaseCount=Math.ceil(q.total/q.per);
+      for(var v=0;v<vaseCount;v++){
+        var vase=createVase(p,v,q.per);
+        vasesRow.appendChild(vase);
+      }
+    }else{
+      // 模块2：份数=groups个花瓶，每个容量=ceil(total/groups)
+      var cap=Math.ceil(q.total/q.groups);
+      for(var v=0;v<q.groups;v++){
+        var vase=createVase(p,v,cap);
+        vasesRow.appendChild(vase);
+      }
+    }
+    va.appendChild(vasesRow);
+    mc.appendChild(va);
+
+    // 答案选项
+    var al=document.createElement('div');al.className='answer-label-row';
+    al.textContent=G.module===1 ? '👇 选择正确答案（几瓶？余几朵？）' : '👇 选择正确答案（每瓶几朵？余几朵？）';
+    mc.appendChild(al);
+
+    var grid=document.createElement('div');grid.className='options-grid';
+    var shuffledOpts=shuffle(q.opts.slice());
+    for(var o=0;o<shuffledOpts.length;o++){
+      var btn=document.createElement('button');btn.className='opt-btn';
+      btn.setAttribute('data-q',shuffledOpts[o][0]);btn.setAttribute('data-r',shuffledOpts[o][1]);
+      btn.setAttribute('data-player',p);
+      if(G.module===1){
+        btn.textContent=shuffledOpts[o][0]+'瓶，余'+shuffledOpts[o][1]+'朵';
+      }else{
+        btn.textContent='每瓶'+shuffledOpts[o][0]+'朵，余'+shuffledOpts[o][1]+'朵';
+      }
+      btn.onclick=(function(optQ,optR,playerIdx){return function(e){
+        if(!G.roundActive||G.answered[playerIdx])return;
+        var btns=document.querySelectorAll('#mc'+(playerIdx+1)+' .opt-btn');
+        btns.forEach(function(b){b.disabled=true;});
+        if(optQ===q.q&&optR===q.r){e.target.classList.add('correct');playerCorrect(playerIdx);}
+        else{e.target.classList.add('wrong');sfxWrong();
+          // 高亮正确答案
+          btns.forEach(function(b){
+            var bq=parseInt(b.getAttribute('data-q')),br=parseInt(b.getAttribute('data-r'));
+            if(bq===q.q&&br===q.r)b.classList.add('correct');
+          });
+        }
+      };})(shuffledOpts[o][0],shuffledOpts[o][1],p);
+      grid.appendChild(btn);
+    }
+    mc.appendChild(grid);
+  }
+  ensureDragEvents();
+}
+
+function createVase(playerIdx, idx, capacity){
+  var vase=document.createElement('div');vase.className='vase-target';
+  vase.setAttribute('data-vase',idx);vase.setAttribute('data-player',playerIdx);
+  vase.setAttribute('data-capacity',capacity);
+  var label=document.createElement('span');label.className='vase-label';
+  label.textContent='🏺'+(idx+1);
+  vase.appendChild(label);
+  var cap=document.createElement('span');cap.className='vase-capacity';
+  cap.textContent='容量'+capacity;
+  vase.appendChild(cap);
+  return vase;
+}
+
+// ==================== 拖拽系统 ====================
+var _dragEventsReady=false;
+
+function setupDragEventsOnce(){
+  if(_dragEventsReady)return;_dragEventsReady=true;
+  document.addEventListener('mousemove',dragMove);
+  document.addEventListener('mouseup',dragEnd);
+  document.addEventListener('touchmove',dragMove,{passive:false});
+  document.addEventListener('touchend',dragEnd);
+  document.addEventListener('touchcancel',dragEnd);
+  var gp=document.getElementById('gamePage');
+  gp.addEventListener('mousedown',dragStart);
+  gp.addEventListener('touchstart',dragStart,{passive:false});
+}
+
+function ensureDragEvents(){
+  if(!_dragEventsReady)setupDragEventsOnce();
+}
+
+function anyDragging(){return G.dragState[0]!==null||G.dragState[1]!==null;}
+
+function dragStart(e){
+  if(!G.roundActive||G.answered[0]||G.answered[1])return;
+  var item=findFlowerItem(e.target);
+  if(!item)return;
+  var p=parseInt(item.getAttribute('data-player'));
+  if(isNaN(p)||G.dragState[p]!==null)return;
+  e.preventDefault();
+  var clientX,clientY,touchId=null;
+  if(e.touches){clientX=e.touches[0].clientX;clientY=e.touches[0].clientY;touchId=e.touches[0].identifier;}
+  else{clientX=e.clientX;clientY=e.clientY;}
+  // 如果花已经在花瓶里，先移除
+  var source=item.getAttribute('data-source');
+  var sourceVase=null;
+  if(source==='vase')sourceVase=parseInt(item.parentElement.getAttribute('data-vase'));
+  // 创建幽灵
+  var ghost=document.createElement('div');ghost.className='drag-ghost';
+  ghost.textContent=item.textContent;ghost.style.left=clientX+'px';ghost.style.top=clientY+'px';
+  document.body.appendChild(ghost);
+  item.classList.add('dragging');
+  G.dragState[p]={item:item,ghost:ghost,source:source,sourceVase:sourceVase,touchId:touchId,startX:clientX,startY:clientY,hasMoved:false,player:p};
+}
+
+function dragMove(e){
+  if(!anyDragging())return;
+  e.preventDefault();
+  for(var p=0;p<2;p++){
+    var ds=G.dragState[p];if(!ds)continue;
+    var clientX,clientY;
+    if(e.touches){
+      for(var t=0;t<e.touches.length;t++){
+        if(e.touches[t].identifier===ds.touchId){clientX=e.touches[t].clientX;clientY=e.touches[t].clientY;break;}
+      }
+      if(clientX===undefined){
+        for(var t=0;t<e.changedTouches.length;t++){
+          if(e.changedTouches[t].identifier===ds.touchId){clientX=e.changedTouches[t].clientX;clientY=e.changedTouches[t].clientY;break;}
+        }
+      }
+    }else{clientX=e.clientX;clientY=e.clientY;}
+    if(clientX===undefined)continue;
+    ds.lastX=clientX;ds.lastY=clientY;
+    var dx=clientX-ds.startX,dy=clientY-ds.startY;
+    if(Math.abs(dx)>3||Math.abs(dy)>3)ds.hasMoved=true;
+    ds.ghost.style.left=clientX+'px';ds.ghost.style.top=clientY+'px';
+    ds.ghost.style.display='none';
+    var under=document.elementFromPoint(clientX,clientY);
+    ds.ghost.style.display='';
+    clearDragOver(p);
+    if(under){
+      var vase=findVase(under,p);
+      if(vase){vase.classList.add('drag-over');ds.hoverVase=vase;}
+    }
+  }
+}
+
+function dragEnd(e){
+  for(var p=0;p<2;p++){
+    var ds=G.dragState[p];if(!ds)continue;
+    var clientX,clientY;
+    if(e.changedTouches){
+      for(var t=0;t<e.changedTouches.length;t++){
+        if(e.changedTouches[t].identifier===ds.touchId){clientX=e.changedTouches[t].clientX;clientY=e.changedTouches[t].clientY;break;}
+      }
+    }else{clientX=e.clientX;clientY=e.clientY;}
+    if(clientX===undefined){clientX=ds.lastX||ds.startX;clientY=ds.lastY||ds.startY;}
+    ds.ghost.remove();ds.item.classList.remove('dragging');clearDragOver(p);
+
+    if(!ds.hasMoved){
+      // 没移动：如果花在花瓶里，点击送回花篮
+      if(ds.source==='vase'){
+        returnFlowerToPool(ds.item,p);
+      }
+      G.dragState[p]=null;
+      continue;
+    }
+
+    // 从原位置移除
+    if(ds.item.parentElement)ds.item.parentElement.removeChild(ds.item);
+
+    var under=document.elementFromPoint(clientX,clientY);
+    var targetVase=findVase(under,p);
+
+    if(targetVase){
+      var capacity=parseInt(targetVase.getAttribute('data-capacity'));
+      var currentCount=targetVase.querySelectorAll('.flower-item').length;
+      if(currentCount<capacity){
+        ds.item.setAttribute('data-source','vase');
+        ds.item.classList.add('in-vase');
+        targetVase.appendChild(ds.item);
+        updateVaseAppearance(targetVase);
+      }else{
+        // 花瓶满了，送回花篮
+        returnFlowerToPool(ds.item,p);
+      }
+    }else{
+      // 检查是否在花篮上方
+      var onPool=findPool(under,p);
+      if(onPool||ds.source==='pool'){
+        returnFlowerToPool(ds.item,p);
+      }else if(ds.source==='vase'&&ds.sourceVase!==null){
+        // 放回原花瓶
+        var origVase=findVaseByIdx(p,ds.sourceVase);
+        if(origVase){
+          ds.item.setAttribute('data-source','vase');
+          ds.item.classList.add('in-vase');
+          origVase.appendChild(ds.item);
+          updateVaseAppearance(origVase);
+        }else{
+          returnFlowerToPool(ds.item,p);
+        }
+      }else{
+        returnFlowerToPool(ds.item,p);
+      }
+    }
+    G.dragState[p]=null;
+  }
+}
+
+function returnFlowerToPool(item,p){
+  var pool=document.getElementById('pool'+(p+1));
+  if(!pool||!item)return;
+  if(item.parentElement)item.parentElement.removeChild(item);
+  item.setAttribute('data-source','pool');
+  item.classList.remove('in-vase');
+  pool.appendChild(item);
+}
+
+function updateVaseAppearance(vase){
+  var capacity=parseInt(vase.getAttribute('data-capacity'));
+  var count=vase.querySelectorAll('.flower-item').length;
+  if(count>=capacity)vase.classList.add('full');
+  else vase.classList.remove('full');
+}
+
+function findVaseByIdx(p,idx){
+  var vases=document.querySelectorAll('#vases'+(p+1)+' .vase-target');
+  for(var i=0;i<vases.length;i++){
+    if(parseInt(vases[i].getAttribute('data-vase'))===idx)return vases[i];
+  }
+  return null;
+}
+
+function findFlowerItem(el){
+  while(el){
+    if(el.classList.contains('flower-item'))return el;
+    if(el.classList.contains('opt-btn'))return null;
+    if(el.classList.contains('vase-target'))return null;
+    if(el===document.body)return null;
+    el=el.parentElement;
+  }
+  return null;
+}
+
+function findVase(el,playerIdx){
+  while(el){
+    if(el.classList.contains('vase-target')&&parseInt(el.getAttribute('data-player'))===playerIdx)return el;
+    if(el.classList.contains('flower-pool'))return null;
+    if(el.id==='mc'+(playerIdx+1))return null;
+    if(el===document.body)return null;
+    el=el.parentElement;
+  }
+  return null;
+}
+
+function findPool(el,playerIdx){
+  while(el){
+    if(el.classList.contains('flower-pool')&&parseInt(el.getAttribute('data-player'))===playerIdx)return el;
+    if(el.id==='mc'+(playerIdx+1))return null;
+    if(el===document.body)return null;
+    el=el.parentElement;
+  }
+  return null;
+}
+
+function clearDragOver(playerIdx){
+  var vases=document.querySelectorAll('#vases'+(playerIdx+1)+' .vase-target');
+  vases.forEach(function(z){z.classList.remove('drag-over');});
+}
+
+// ==================== 游戏结束 ====================
+function endGame(){
+  G.active=false;G.roundActive=false;
+  clearInterval(G.timerInterval);
+  G.dragState=[null,null];
+  document.querySelectorAll('.drag-ghost').forEach(function(g){g.remove();});
+  var ov=document.getElementById('winOverlay');ov.classList.add('show');
+  document.getElementById('ws1').textContent=G.scores[0];document.getElementById('ws2').textContent=G.scores[1];
+  var wt=document.getElementById('winTitle'),ws=document.getElementById('winSub');
+  if(G.scores[0]>G.scores[1]){
+    wt.innerHTML='🔴 红方获胜！';wt.style.color='#FF6B6B';ws.textContent='红方 '+G.scores[0]+' : '+G.scores[1]+' 蓝方';
+  }else if(G.scores[1]>G.scores[0]){
+    wt.innerHTML='🔵 蓝方获胜！';wt.style.color='#4ECDC4';ws.textContent='蓝方 '+G.scores[1]+' : '+G.scores[0]+' 红方';
+  }else{
+    wt.innerHTML='🤝 平局！';wt.style.color='#FFD700';ws.textContent='双方都是 '+G.scores[0]+' 分';
+  }
+  sfxWin();spawnConfetti();
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*10+6)+'px';d.style.height=(Math.random()*10+6)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+// ==================== 初始化 ====================
+document.getElementById('homePage').style.display='flex';
+document.getElementById('gamePage').style.display='none';
+</script>
+</body>
+</html>

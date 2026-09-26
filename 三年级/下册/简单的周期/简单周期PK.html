@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>简单的周期 PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:linear-gradient(180deg,#0f0c29,#1a1a2e,#16213e);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.menu-screen.hide{display:none}
+.menu-hero{text-align:center;margin-bottom:20px}
+.menu-hero .icon{font-size:3.5em;display:block;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.menu-hero h1{font-size:1.6em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite;margin:6px 0}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.menu-hero .sub{color:rgba(255,255,255,0.5);font-size:0.85em}
+.menu-cards{display:flex;gap:12px;max-width:700px;width:100%;flex-wrap:wrap;justify-content:center}
+.menu-card{flex:1;min-width:145px;max-width:165px;padding:18px 10px;border-radius:18px;cursor:pointer;transition:all 0.3s;text-align:center;border:2px solid transparent}
+.menu-card:hover{transform:translateY(-6px)}
+.menu-card .card-icon{font-size:2.5em;display:block;margin-bottom:4px}
+.menu-card .card-title{font-size:1.05em;font-weight:bold;margin-bottom:3px}
+.menu-card .card-desc{font-size:0.7em;color:rgba(255,255,255,0.55);line-height:1.4;margin-bottom:4px}
+.menu-card .card-info{display:inline-block;padding:2px 10px;border-radius:8px;font-size:0.65em;font-weight:bold}
+.menu-card.m1{background:linear-gradient(180deg,rgba(76,175,80,0.2),rgba(76,175,80,0.05));border-color:rgba(76,175,80,0.35)}
+.menu-card.m1:hover{border-color:rgba(76,175,80,0.7);box-shadow:0 12px 40px rgba(76,175,80,0.2)}
+.menu-card.m1 .card-title{color:#81C784}
+.menu-card.m2{background:linear-gradient(180deg,rgba(255,152,0,0.2),rgba(255,152,0,0.05));border-color:rgba(255,152,0,0.35)}
+.menu-card.m2:hover{border-color:rgba(255,152,0,0.7);box-shadow:0 12px 40px rgba(255,152,0,0.2)}
+.menu-card.m2 .card-title{color:#FFB74D}
+.menu-card.m3{background:linear-gradient(180deg,rgba(156,39,176,0.2),rgba(156,39,176,0.05));border-color:rgba(156,39,176,0.35)}
+.menu-card.m3:hover{border-color:rgba(156,39,176,0.7);box-shadow:0 12px 40px rgba(156,39,176,0.2)}
+.menu-card.m3 .card-title{color:#CE93D8}
+.menu-card.m4{background:linear-gradient(180deg,rgba(0,188,212,0.2),rgba(0,188,212,0.05));border-color:rgba(0,188,212,0.35)}
+.menu-card.m4:hover{border-color:rgba(0,188,212,0.7);box-shadow:0 12px 40px rgba(0,188,212,0.2)}
+.menu-card.m4 .card-title{color:#4DD0E1}
+
+.game-screen{display:none;flex-direction:column;height:100vh}
+.game-screen.show{display:flex}
+.mod-bar{text-align:center;padding:4px;background:rgba(0,0,0,0.3);font-size:0.8em;color:#FFD700;flex-shrink:0}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px 12px;gap:14px;background:rgba(0,0,0,0.4);flex-shrink:0}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.4em;font-weight:bold;color:#FFD700;min-width:55px;text-align:center}
+.timer.urgent{color:#FF5252;animation:blink 0.5s infinite}
+@keyframes blink{50%{opacity:0.4}}
+.round-info{font-size:0.8em;color:#aaa}
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 8px;position:relative;overflow-y:auto}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.8em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.75em;color:#FFD700;min-height:18px}
+.question-box{background:rgba(255,255,255,0.1);border-radius:12px;padding:10px 8px;margin:4px 0;width:100%;text-align:center;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:0.95em;line-height:1.3}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;margin:4px 0}
+.p-opt{padding:8px 5px;border-radius:10px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.82em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:40px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:0.8em;font-weight:bold;min-height:20px;text-align:center;margin:2px 0}
+.explain{font-size:0.7em;color:#aaa;min-height:16px;text-align:center;margin:2px 0;line-height:1.3}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:8px 18px;border-radius:18px;border:none;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn.back{background:rgba(255,255,255,0.08);color:#ccc;border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.1em;color:#ccc;margin-bottom:16px}
+.win-scores{display:flex;gap:30px;margin-bottom:16px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+.win-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:600px){
+  .menu-card{min-width:120px;max-width:140px;padding:14px 8px}
+  .arena{flex-direction:column;min-height:0}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:6px}
+  .question-box{font-size:0.82em;min-height:38px;padding:8px 6px}
+  .p-opt{font-size:0.72em;padding:6px 4px;min-height:34px}
+  .vs-badge{font-size:1.4em}
+  .player-score{font-size:1.3em}
+  .win-title{font-size:1.5em}
+}
+</style>
+</head>
+<body>
+
+<div class="menu-screen" id="mu">
+  <div class="menu-hero">
+    <span class="icon">🔁</span>
+    <h1>简单的周期</h1>
+    <div class="sub">苏教版 三年级下册 · 双人PK对战</div>
+  </div>
+  <div class="menu-cards">
+    <div class="menu-card m1" onclick="pickMod(1)"><span class="card-icon">🎨</span><div class="card-title">图形与物体</div><div class="card-desc">找规律·下一个·周期是几</div><span class="card-info">20s x 8轮</span></div>
+    <div class="menu-card m2" onclick="pickMod(2)"><span class="card-icon">🔢</span><div class="card-title">数字周期</div><div class="card-desc">数字规律·第N个计算</div><span class="card-info">20s x 8轮</span></div>
+    <div class="menu-card m3" onclick="pickMod(3)"><span class="card-icon">🧮</span><div class="card-title">余数大法</div><div class="card-desc">N÷周期=商余R·第N个=第R个</div><span class="card-info">22s x 8轮</span></div>
+    <div class="menu-card m4" onclick="pickMod(4)"><span class="card-icon">⚡</span><div class="card-title">终极挑战</div><div class="card-desc">混合题库·综合闯关</div><span class="card-info">15s x 8轮</span></div>
+  </div>
+</div>
+
+<div class="game-screen" id="gs">
+  <div class="mod-bar" id="modBar"></div>
+  <div class="top-bar">
+    <h1 id="gt">PK对战</h1>
+    <span class="round-info">第 <span id="rn">1</span>/8 轮</span>
+    <span class="timer" id="td">⏱ <span id="tm">20</span>s</span>
+  </div>
+  <div class="arena">
+    <div class="player left" id="p1">
+      <div class="player-name">🔴 红方</div>
+      <div class="player-score" id="s1">0</div>
+      <div class="streak" id="st1"></div>
+      <div class="question-box" id="q1">准备开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+      <div class="explain" id="ex1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player right" id="p2">
+      <div class="player-name">🔵 蓝方</div>
+      <div class="player-score" id="s2">0</div>
+      <div class="streak" id="st2"></div>
+      <div class="question-box" id="q2">准备开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+      <div class="explain" id="ex2"></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn back" onclick="backToMenu()">📋 选模块</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重来</button>
+  </div>
+</div>
+
+<div class="win-overlay" id="wo">
+  <div class="win-title" id="wt"></div>
+  <div class="win-subtitle" id="ws"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-buttons">
+    <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1em;padding:12px 28px">🔄 再来一局</button>
+    <button class="ctrl-btn back" onclick="backToMenu()" style="font-size:1em;padding:12px 28px">📋 换个模块</button>
+  </div>
+</div>
+
+<script>
+// ==================== 题库 ====================
+// 模块1：图形与物体周期（找规律、周期识别）
+var rawQ1=[
+{q:"红、蓝、红、蓝、红、_？按规律下一个是什么颜色？",o:["红","蓝","黄","绿"],a:1,ex:"规律：红蓝红蓝...两色交替。红后是蓝。"},
+{q:"○△□、○△□、○△_？按规律下一个是什么？",o:["○","△","□","☆"],a:2,ex:"周期为3(○△□)。每组○△□，第三个图形是□。"},
+{q:"按规律△△○、△△○、△△○，第7个是什么图形？",o:["△","○","□","☆"],a:0,ex:"周期为3(△△○)。7÷3=2余1，第7个=第1个=△。"},
+{q:"一组图形：□○□○□○...，它的周期是几？",o:["1","2","3","4"],a:1,ex:"周期=2(□○)，每两个图形重复一次。"},
+{q:"☆☆★、☆☆★、☆☆★...，第8个是什么？",o:["☆","★","○","□"],a:0,ex:"周期为3(☆☆★)。8÷3=2余2，第8个=第2个=☆。"},
+{q:"⚽⚾、⚽⚾、⚽⚾...，第11个是什么球？",o:["⚽","⚾","🏀","⚽⚾"],a:0,ex:"周期为2(⚽⚾)。11÷2=5余1，第11个=第1个=⚽。"},
+{q:"🌸🌿、🌸🌿、🌸🌿...，周期是几？",o:["1","2","3","4"],a:1,ex:"周期=2(🌸🌿)，两个一组重复出现。"},
+{q:"🔴🔵🔴🔵🔴🔵...，第15个是什么颜色？",o:["🔴","🔵","🟡","🟢"],a:0,ex:"周期为2。15÷2=7余1，第15个=第1个=🔴。"},
+{q:"月、星、日、月、星、日...的周期是？",o:["1","2","3","4"],a:2,ex:"周期=3(月星日)，每3个循环一次。"},
+{q:"🔺🔻🔺🔻🔺🔻...，第20个是什么？",o:["🔺","🔻","⬜","🔴"],a:1,ex:"周期为2。20÷2=10余0，余0=周期最后=第2个=🔻。"},
+{q:"🟡🟢🟡🟢🟡🟢...，第9个什么颜色？",o:["🟡","🟢","🔵","🟠"],a:0,ex:"周期为2。9÷2=4余1，第9个=第1个=🟡。"},
+{q:"按规律□△○□△○...，周期是几？",o:["1","2","3","6"],a:2,ex:"周期=3(□△○)，每3个图形重复。"},
+{q:"红红黄、红红黄、红红黄...，第10个什么颜色？",o:["红","黄","蓝","绿"],a:0,ex:"周期为3(红红黄)。10÷3=3余1，第10个=第1个=红。"},
+{q:"★★★☆、★★★☆...，这组图形的周期是？",o:["2","3","4","5"],a:2,ex:"周期=4(★★★☆)，4个一组重复。"},
+{q:"🔵🟡🔵🟡...，第13个什么颜色？",o:["🔵","🟡","🟢","🔴"],a:0,ex:"周期为2。13÷2=6余1，奇数位都是🔵。"},
+{q:"三组图形：△○□△○□△○□，共几个图形？",o:["6个","8个","9个","12个"],a:2,ex:"周期=3(△○□)，3组×3=9个图形。"},
+{q:"按规律🍎🍊🍎🍊...，第14个是什么水果？",o:["🍎","🍊","🍋","🍇"],a:1,ex:"周期为2。14÷2=7余0，余0=第2个=🍊。"},
+{q:"⬛⬜⬛⬜⬛⬜...，这列图形的周期是？",o:["1","2","3","4"],a:1,ex:"周期=2(⬛⬜)，黑白交替。"}
+];
+
+// 模块2：数字周期
+var rawQ2=[
+{q:"1,2,3,1,2,3,1,2,3...，第10个数字是？",o:["1","2","3","4"],a:0,ex:"周期为3(1,2,3)。10÷3=3余1，第10个=第1个=1。"},
+{q:"2,0,2,4,2,0,2,4...，周期是几？",o:["1","2","3","4"],a:3,ex:"周期=4(2,0,2,4)。四个数字循环。"},
+{q:"2,0,2,4,2,0,2,4...，第18个数字是？",o:["2","0","4","8"],a:1,ex:"周期为4。18÷4=4余2，第18个=第2个=0。"},
+{q:"5,5,3,5,5,3...，第12个数字是？",o:["5","3","2","1"],a:1,ex:"周期为3(5,5,3)。12÷3=4余0，余0=第3个=3。"},
+{q:"9,8,7,6,9,8,7,6...，第25个数字是？",o:["9","8","7","6"],a:0,ex:"周期为4。25÷4=6余1，第25个=第1个=9。"},
+{q:"1,0,1,0,1,0...，第31个数字是？",o:["1","0","2","3"],a:0,ex:"周期为2。31÷2=15余1，第31个=第1个=1。奇数位都是1。"},
+{q:"4,7,2,4,7,2...的周期是？",o:["2","3","4","6"],a:1,ex:"周期=3(4,7,2)，三个数字循环。"},
+{q:"0,1,2,3,0,1,2,3...，第17个数字是？",o:["0","1","2","3"],a:0,ex:"周期为4。17÷4=4余1，第17个=第1个=0。"},
+{q:"6,6,8,6,6,8...，第14个数字是？",o:["6","8","4","2"],a:0,ex:"周期为3(6,6,8)。14÷3=4余2，第14个=第2个=6。"},
+{q:"1,3,5,7,1,3,5,7...，第22个数字是？",o:["1","3","5","7"],a:1,ex:"周期为4。22÷4=5余2，第22个=第2个=3。"},
+{q:"按数字规律3,1,4,3,1,4...，周期是几？",o:["2","3","4","6"],a:1,ex:"周期=3(3,1,4)，三个数字一循环。"},
+{q:"8,8,2,2,8,8,2,2...，第16个数字是？",o:["8","2","4","0"],a:1,ex:"周期为4(8,8,2,2)。16÷4=4余0，余0=第4个=2。"},
+{q:"202520252025...，第23个数字是？",o:["2","0","5","3"],a:0,ex:"周期为4(2,0,2,5)。23÷4=5余3，第23个=第3个=2。"},
+{q:"3,3,3,4,3,3,3,4...，第19个数字是？",o:["3","4","2","1"],a:0,ex:"周期为4(3,3,3,4)。19÷4=4余3，第19个=第3个=3。"},
+{q:"1,1,2,3,5,1,1,2,3,5...，周期是几？",o:["3","4","5","10"],a:2,ex:"周期=5(1,1,2,3,5)，五个数字一循环。"},
+{q:"按规律2,4,6,2,4,6...，第20个是？",o:["2","4","6","8"],a:1,ex:"周期为3。20÷3=6余2，第20个=第2个=4。"},
+{q:"111211121112...，第18个数字是？",o:["1","2","3","4"],a:0,ex:"周期为4(1,1,1,2)。18÷4=4余2，第18个=第2个=1。"},
+{q:"5,0,0,5,0,0...，第21个数字是？",o:["5","0","1","2"],a:1,ex:"周期为3(5,0,0)。21÷3=7余0，余0=第3个=0。"}
+];
+
+// 模块3：余数大法（用除法计算第N个 = 第(余数)个）
+var rawQ3=[
+{q:"一组彩灯按红黄蓝绿顺序排列，第50盏什么颜色？",o:["红","黄","蓝","绿"],a:1,ex:"周期=4。50÷4=12余2，第50盏=第2个=黄。"},
+{q:"一排小旗按2红3黄的规律排列。第18面什么颜色？",o:["红","黄","蓝","绿"],a:1,ex:"周期=5(红红黄黄黄)。18÷5=3余3，第18面=第3个=黄。"},
+{q:"按规律△△○△△○...排列，第35个是什么图形？",o:["△","○","□","☆"],a:0,ex:"周期=3(△△○)。35÷3=11余2，第35个=第2个=△。"},
+{q:"1234512345...，第67个数字是？",o:["1","2","3","5"],a:1,ex:"周期=5。67÷5=13余2，第67个=第2个=2。"},
+{q:"A B C A B C...，第100个字母是？",o:["A","B","C","无法确定"],a:0,ex:"周期=3。100÷3=33余1，第100个=第1个=A。"},
+{q:"一排灯笼：红红黄蓝红红黄蓝...，第45个什么颜色？",o:["红","黄","蓝","绿"],a:0,ex:"周期=4(红红黄蓝)。45÷4=11余1，第45个=第1个=红。"},
+{q:"☆★☆★☆★...，第88个是什么？",o:["☆","★","○","□"],a:1,ex:"周期=2。88÷2=44余0，余0=第2个=★。偶数位都是★。"},
+{q:"20242024...，第52个数字是？",o:["2","0","4","8"],a:2,ex:"周期=4(2,0,2,4)。52÷4=13余0，余0=第4个=4。"},
+{q:"围墙按3白2灰排列，第27块什么颜色？",o:["白","灰","黑","黄"],a:0,ex:"周期=5(白白白灰灰)。27÷5=5余2，第27块=第2个=白。"},
+{q:"▲▲△▲▲△...，第62个是什么图形？",o:["▲","△","□","○"],a:0,ex:"周期=3(▲▲△)。62÷3=20余2，第62个=第2个=▲。"},
+{q:"按规律2,4,8,6,2,4,8,6...，第33个数字是？",o:["2","4","8","6"],a:0,ex:"周期=4(2,4,8,6)。33÷4=8余1，第33个=第1个=2。"},
+{q:"学生按男男女男男女...排队，第41人是？",o:["男","女","无法确定","一样多"],a:0,ex:"周期=3(男男女)。41÷3=13余2，第41人=第2个=男。"},
+{q:"1,3,5,7,9,1,3,5,7,9...，第73个是？",o:["1","3","5","9"],a:2,ex:"周期=5。73÷5=14余3，第73个=第3个=5。"},
+{q:"地板砖按◇◆◇◆...铺设，第120块是？",o:["◇","◆","△","□"],a:1,ex:"周期=2。120÷2=60余0，余0=第2个=◆。偶数位都是◆。"},
+{q:"按1红2蓝3黄排列，第30个什么颜色？",o:["红","蓝","黄","绿"],a:2,ex:"周期=6(红蓝蓝黄黄黄)。30÷6=5余0，余0=第6个=黄。"},
+{q:"○△□☆○△□☆...，第50个是什么？",o:["○","△","□","☆"],a:1,ex:"周期=4。50÷4=12余2，第50个=第2个=△。"},
+{q:"循环小数0.142857142857...，第20位是？",o:["1","4","2","7"],a:1,ex:"周期=6(142857)。20÷6=3余2，第20位=第2个=4。"},
+{q:"跑道每3米一红4米一蓝交替，第22米处什么颜色？",o:["红","蓝","紫","绿"],a:0,ex:"周期=7(红红红蓝蓝蓝蓝)。22÷7=3余1，第22米=第1个=红。"}
+];
+
+function toQ(arr){
+  return arr.map(function(x){
+    return {q:x.q,q1:"",q2:"",o1:x.o,a1:x.a,o2:x.o,a2:x.a,o:x.o,a:x.a,ex:x.ex||""};
+  });
+}
+
+// ==================== 全局 ====================
+var Q=[], sc=[0,0], cr=0, tr=8, tm=20, baseTm=20, ti=null, go=false, ans=[false,false];
+var curMod=0;
+var modNames=["","🎨 图形与物体","🔢 数字周期","🧮 余数大法","⚡ 终极挑战"];
+var modTimers=[0,20,20,22,15];
+var sk='pk_cycle_', musicOn=true, actx=null;
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.15,'square',0.08);setTimeout(function(){playTone(659,0.15,'square',0.08);},100);setTimeout(function(){playTone(784,0.2,'square',0.08);},200);}
+function sfxWrong(){playTone(200,0.3,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.2,'square',0.07);},i*150);}}
+function sfxTick(){playTone(800,0.05,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn)playTone(440,0.1,'sine',0.05);}
+
+// ==================== 模块选择 ====================
+function pickMod(m){
+  initAudio();
+  curMod=m;
+  if(m===4){Q=toQ(rawQ1).concat(toQ(rawQ2)).concat(toQ(rawQ3));}
+  else{Q=toQ([rawQ1,rawQ2,rawQ3][m-1]);}
+  tr=8; tm=baseTm=modTimers[m];
+  document.getElementById('mu').classList.add('hide');
+  document.getElementById('gs').classList.add('show');
+  document.getElementById('modBar').textContent=modNames[m]+' | '+tr+'轮 | '+tm+'秒/题';
+  document.getElementById('gt').textContent=modNames[m]+' PK';
+  document.getElementById('tm').textContent=tm;
+  resetState();
+  document.getElementById('wo').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+}
+
+function backToMenu(){
+  clearInterval(ti); go=false;
+  document.getElementById('wo').classList.remove('show');
+  document.getElementById('gs').classList.remove('show');
+  document.getElementById('mu').classList.remove('hide');
+  var cf=document.querySelectorAll('.confetti');
+  for(var i=0;i<cf.length;i++)cf[i].remove();
+}
+
+function resetState(){
+  clearInterval(ti); go=false;
+  sc=[0,0]; cr=0; ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';
+  document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';
+  document.getElementById('st2').textContent='';
+  document.getElementById('ex1').textContent='';
+  document.getElementById('ex2').textContent='';
+  document.getElementById('rn').textContent='1';
+  tm=baseTm;
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('q1').textContent='准备开始...';
+  document.getElementById('q2').textContent='准备开始...';
+  document.getElementById('op1').innerHTML='';
+  document.getElementById('op2').innerHTML='';
+}
+
+// ==================== 游戏流程 ====================
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display='none';
+  go=true; sc=[0,0]; cr=0; ans=[false,false];
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  document.getElementById('wo').classList.remove('show');
+  Q=sf(Q);
+  nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];
+  document.getElementById('rn').textContent=cr+1;
+  var q=Q[cr];
+  renderPlayer(1,q,0);
+  renderPlayer(2,q,1);
+  tm=baseTm;
+  document.getElementById('tm').textContent=tm;
+  document.getElementById('td').classList.remove('urgent');
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    document.getElementById('tm').textContent=tm;
+    if(tm<=5){sfxTick();document.getElementById('td').classList.add('urgent');}
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+function renderPlayer(pn,q,qi){
+  var qText=q.q;
+  var opts=qi===0?(q.o1||q.o):(q.o2||q.o);
+  var ansIdx=qi===0?(q.a1!==undefined?q.a1:q.a):(q.a2!==undefined?q.a2:q.a);
+  document.getElementById('q'+pn).textContent='第'+(cr+1)+'题：'+qText;
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'], h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('st'+pn).textContent='';
+  document.getElementById('ex'+pn).textContent='';
+  document.getElementById('q'+pn).style.display='';
+  document.getElementById('op'+pn).style.display='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');
+    sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';
+    document.getElementById('ex'+pn).textContent='💡 '+(Q[cr].ex||'');
+    sfxCorrect();
+    var other=pn===1?2:1;
+    if(!ans[other-1]){
+      ans[other-1]=true;
+      var obs=document.querySelectorAll('#op'+other+' .p-opt');
+      obs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+other).innerHTML='对方已抢答';
+      document.getElementById('ex'+other).textContent='💡 '+(Q[cr].ex||'');
+    }
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){nextRound();},2000);
+  }else{
+    btn.classList.add('wrong');
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了';
+    document.getElementById('ex'+pn).textContent='💡 '+(Q[cr].ex||'');
+    document.getElementById('st'+pn).textContent='';
+    sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+    if(ans[0]&&ans[1]){
+      clearInterval(ti);
+      cr++;
+      setTimeout(function(){nextRound();},2000);
+    }
+  }
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！';
+    }
+  }
+  cr++;
+  setTimeout(function(){nextRound();},2000);
+}
+
+function endGame(){
+  go=false; clearInterval(ti);
+  document.getElementById('wo').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  if(sc[0]>sc[1]){
+    document.getElementById('wt').innerHTML='🔴 红方获胜！';
+    document.getElementById('wt').style.color='#FF6B6B';
+    document.getElementById('ws').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+    sfxWin();
+  }else if(sc[1]>sc[0]){
+    document.getElementById('wt').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('wt').style.color='#4ECDC4';
+    document.getElementById('ws').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方';
+    sfxWin();
+  }else{
+    document.getElementById('wt').innerHTML='🤝 平局！';
+    document.getElementById('wt').style.color='#FFD700';
+    document.getElementById('ws').textContent='双方都是 '+sc[0]+' 分';
+    playTone(523,0.3,'sine',0.08);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk+curMod)||'0');
+  var mx=Math.max(sc[0],sc[1]);
+  if(mx>best)localStorage.setItem(sk+curMod,mx);
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*8+5)+'px';
+    d.style.height=(Math.random()*8+5)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';
+    d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){d.remove();},4000);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti); go=false;
+  document.getElementById('wo').classList.remove('show');
+  var cf=document.querySelectorAll('.confetti');
+  for(var i=0;i<cf.length;i++)cf[i].remove();
+  resetState();
+  document.getElementById('btnStart').style.display='inline-block';
+  Q=sf(Q);
+}
+</script>
+</body>
+</html>

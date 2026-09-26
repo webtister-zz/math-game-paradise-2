@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数量关系的分析 PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+
+/* ===== 主菜单 ===== */
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:linear-gradient(180deg,#0f0c29,#1a1a2e,#16213e);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.menu-screen.hide{display:none}
+.menu-hero{text-align:center;margin-bottom:30px}
+.menu-hero .icon{font-size:4em;display:block;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.menu-hero h1{font-size:2em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4,#FFD700);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 4s ease infinite;margin:8px 0}
+@keyframes gs{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.menu-hero .sub{color:rgba(255,255,255,0.5);font-size:0.9em}
+.menu-cards{display:flex;gap:24px;max-width:800px;width:100%;flex-wrap:wrap;justify-content:center}
+.menu-card{flex:1;min-width:280px;max-width:380px;padding:32px 24px;border-radius:24px;cursor:pointer;transition:all 0.35s;text-align:center;position:relative;overflow:hidden;border:2px solid transparent}
+.menu-card:hover{transform:translateY(-8px)}
+.menu-card.m1{background:linear-gradient(180deg,rgba(255,152,0,0.2),rgba(255,152,0,0.05));border-color:rgba(255,152,0,0.4);box-shadow:0 8px 32px rgba(255,152,0,0.15)}
+.menu-card.m1:hover{border-color:rgba(255,152,0,0.7);box-shadow:0 16px 48px rgba(255,152,0,0.25)}
+.menu-card.m2{background:linear-gradient(180deg,rgba(76,175,80,0.2),rgba(76,175,80,0.05));border-color:rgba(76,175,80,0.4);box-shadow:0 8px 32px rgba(76,175,80,0.15)}
+.menu-card.m2:hover{border-color:rgba(76,175,80,0.7);box-shadow:0 16px 48px rgba(76,175,80,0.25)}
+.menu-card .card-icon{font-size:3.5em;display:block;margin-bottom:10px}
+.menu-card .card-title{font-size:1.4em;font-weight:bold;margin-bottom:8px}
+.menu-card.m1 .card-title{color:#FF9800}
+.menu-card.m2 .card-title{color:#4CAF50}
+.menu-card .card-desc{font-size:0.85em;color:rgba(255,255,255,0.6);line-height:1.5;margin-bottom:10px}
+.menu-card .card-info{display:inline-block;padding:4px 14px;border-radius:12px;font-size:0.75em;font-weight:bold;margin-top:6px}
+.menu-card.m1 .card-info{background:rgba(255,152,0,0.25);color:#FFB74D}
+.menu-card.m2 .card-info{background:rgba(76,175,80,0.25);color:#81C784}
+.menu-footer{position:absolute;bottom:20px;color:rgba(255,255,255,0.25);font-size:0.75em}
+
+/* ===== 游戏区 ===== */
+.game-screen{display:none;flex-direction:column;height:100vh}
+.game-screen.show{display:flex}
+
+.mod-banner{text-align:center;padding:6px 12px;background:rgba(0,0,0,0.3);font-size:0.85em;color:#FFD700;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0}
+.mod-banner.m1{background:linear-gradient(90deg,rgba(255,152,0,0.2),rgba(0,0,0,0.3),rgba(255,152,0,0.2))}
+.mod-banner.m2{background:linear-gradient(90deg,rgba(76,175,80,0.2),rgba(0,0,0,0.3),rgba(76,175,80,0.2))}
+
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px;gap:16px;background:rgba(0,0,0,0.4);flex-shrink:0}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:60px;text-align:center}
+.timer.urgent{color:#FF5252;animation:blink 0.5s infinite}
+@keyframes blink{50%{opacity:0.4}}
+.round-info{font-size:0.85em;color:#aaa}
+
+.arena{display:flex;flex:1;min-height:0}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px 8px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.15),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.15),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:1em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:2em;font-weight:bold;margin:4px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.8em;color:#FFD700;min-height:20px}
+.first-badge{font-size:0.75em;color:#FFD700;min-height:18px}
+
+/* Progress dots */
+.progress-dots{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;max-width:200px;margin:4px 0}
+.progress-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all 0.3s}
+.progress-dot.done{background:#10B981}
+.progress-dot.current{background:#FFD700;box-shadow:0 0 8px #FFD700;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* Question display */
+.visual-area{width:100%;background:rgba(255,255,255,0.04);border-radius:12px;padding:10px;margin:4px 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.question-box{background:rgba(255,255,255,0.1);border-radius:14px;padding:12px 10px;margin:4px 0;width:100%;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;font-size:0.95em;line-height:1.5;word-break:break-word;flex-direction:column}
+.question-box .q-tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.7em;background:rgba(255,255,255,0.15);margin-bottom:4px}
+
+/* Condition-hint display */
+.cond-hint{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:2px 0;font-size:0.72em}
+.cond-hint span{padding:3px 8px;border-radius:6px}
+.cond-hint .given{background:rgba(255,215,0,0.15);color:#FFD700}
+.cond-hint .ask{background:rgba(16,185,129,0.15);color:#10B981}
+
+/* ===== 线段图 ===== */
+.seg-diagram{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;width:100%;max-width:320px;margin:0 auto}
+.seg-row{display:flex;align-items:center;gap:6px;width:100%;position:relative}
+.seg-label{font-size:0.75em;color:#aaa;min-width:32px;text-align:right;flex-shrink:0}
+.seg-bar-wrap{flex:1;height:24px;background:rgba(255,255,255,0.06);border-radius:4px;position:relative;overflow:visible}
+.seg-bar{height:100%;border-radius:4px;position:absolute;left:0;top:0;display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:bold;transition:all 0.3s}
+.seg-bar.val{position:absolute;right:-36px;top:50%;transform:translateY(-50%);font-size:0.75em;color:#FFD700;font-weight:bold;white-space:nowrap}
+.seg-bar.main{background:linear-gradient(90deg,#FF6B6B,#ff8a80)}
+.seg-bar.sub{background:linear-gradient(90deg,#4ECDC4,#80cbc4)}
+.seg-bar.total{background:linear-gradient(90deg,#FFD700,#FFC107)}
+.seg-brace{text-align:center;font-size:0.7em;color:#FFD700;margin-top:2px}
+.seg-arrow{color:#FFD700;font-weight:bold;font-size:0.8em;margin:0 4px}
+
+/* ===== 表格 ===== */
+.data-table{border-collapse:collapse;margin:4px auto;font-size:0.78em;width:100%;max-width:300px}
+.data-table th{background:rgba(255,215,0,0.15);color:#FFD700;padding:6px 8px;border:1px solid rgba(255,255,255,0.2);text-align:center;font-weight:bold;font-size:0.9em}
+.data-table td{padding:5px 8px;border:1px solid rgba(255,255,255,0.15);text-align:center;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.04)}
+.data-table .hdr-row th{border-bottom:2px solid rgba(255,215,0,0.4)}
+
+/* Options */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;margin:6px 0}
+.p-opt{padding:10px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.8em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.3;min-height:44px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);transform:scale(1.04)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 20px rgba(255,107,107,0.6)}
+.right .p-opt.correct{box-shadow:0 0 20px rgba(78,205,196,0.6)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:0.85em;font-weight:bold;min-height:22px;text-align:center;margin:3px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2.2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.6;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:8px;background:rgba(0,0,0,0.5);flex-wrap:wrap;flex-shrink:0}
+.ctrl-btn{padding:10px 22px;border-radius:20px;border:none;font-size:0.9em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.back{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.ctrl-btn:disabled{opacity:0.4;pointer-events:none;transform:none;box-shadow:none}
+
+/* Win overlay */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2.5em;font-weight:bold;margin-bottom:10px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1.2em;color:#ccc;margin-bottom:20px}
+.win-scores{display:flex;gap:40px;margin-bottom:20px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+.win-detail{font-size:0.85em;color:#aaa;margin-bottom:20px;text-align:center;line-height:1.6}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.win-btns .ctrl-btn{font-size:1.05em;padding:14px 28px}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+/* ===== 响应式 ===== */
+@media(max-width:600px){
+  .arena{flex-direction:column}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:8px 6px}
+  .question-box{font-size:0.85em;min-height:40px;padding:8px}
+  .p-opt{font-size:0.72em;padding:8px 4px;min-height:36px}
+  .vs-badge{font-size:1.5em;top:50%}
+  .player-score{font-size:1.4em}
+  .win-title{font-size:1.6em}
+  .options-grid{gap:4px}
+  .progress-dots{max-width:140px}
+  .progress-dot{width:8px;height:8px}
+  .menu-hero h1{font-size:1.4em}
+  .menu-card{min-width:240px;padding:22px 16px}
+  .menu-card .card-icon{font-size:2.5em}
+  .menu-card .card-title{font-size:1.2em}
+  .seg-diagram{max-width:260px}
+  .data-table{font-size:0.7em}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 主菜单 ===== -->
+<div class="menu-screen" id="menuScreen">
+  <div class="menu-hero">
+    <span class="icon">🧮</span>
+    <h1>数量关系的分析 PK对战</h1>
+    <p class="sub">苏教版 · 三年级上册 · 从条件和问题出发</p>
+  </div>
+  <div class="menu-cards">
+    <div class="menu-card m1" onclick="startGame(1)">
+      <span class="card-icon">➖</span>
+      <div class="card-title">模块一</div>
+      <div class="card-desc">用连减计算解决实际问题<br>从条件出发分析数量关系</div>
+      <span class="card-info">⏱ 20秒/题 · 8轮</span>
+    </div>
+    <div class="menu-card m2" onclick="startGame(2)">
+      <span class="card-icon">➗➕</span>
+      <div class="card-title">模块二</div>
+      <div class="card-desc">除法+加法解决实际问题<br>线段图 · 表格 · 逐步深入</div>
+      <span class="card-info">⏱ 25秒/题 · 8轮</span>
+    </div>
+  </div>
+  <div class="menu-footer">叫上小伙伴，双人PK对战！</div>
+</div>
+
+<!-- ===== 游戏区 ===== -->
+<div class="game-screen" id="gameScreen">
+  <div class="mod-banner m1" id="modBanner">
+    <span class="mod-icon" id="modIconL">➖</span>
+    <span id="modLabel">模块一：用连减计算解决实际问题</span>
+    <span class="mod-icon" id="modIconR">➖</span>
+  </div>
+
+  <div class="top-bar">
+    <h1>数量关系的分析 PK对战</h1>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tt">8</span> 轮</span>
+    <span class="timer">⏱ <span id="tm">20</span>s</span>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="player left" id="p1">
+      <div class="player-name">🔴 红方玩家</div>
+      <div class="player-score" id="s1">0</div>
+      <div class="streak" id="st1"></div>
+      <div class="first-badge" id="fb1b"></div>
+      <div class="progress-dots" id="pd1"></div>
+      <div class="visual-area" id="vis1"></div>
+      <div class="question-box" id="q1">准备开始...</div>
+      <div class="options-grid" id="op1"></div>
+      <div class="feedback" id="fb1"></div>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="player right" id="p2">
+      <div class="player-name">🔵 蓝方玩家</div>
+      <div class="player-score" id="s2">0</div>
+      <div class="streak" id="st2"></div>
+      <div class="first-badge" id="fb2b"></div>
+      <div class="progress-dots" id="pd2"></div>
+      <div class="visual-area" id="vis2"></div>
+      <div class="question-box" id="q2">准备开始...</div>
+      <div class="options-grid" id="op2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+    <button class="ctrl-btn back" onclick="goToMenu()">🏠 返回主界面</button>
+  </div>
+</div>
+
+<!-- ===== 胜利弹窗 ===== -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w">
+      <div style="color:#FF6B6B;margin-bottom:4px">🔴 红方</div>
+      <div class="wscore" id="ws1">0</div>
+    </div>
+    <div class="win-player right-w">
+      <div style="color:#4ECDC4;margin-bottom:4px">🔵 蓝方</div>
+      <div class="wscore" id="ws2">0</div>
+    </div>
+  </div>
+  <div class="win-detail" id="winDetail"></div>
+  <div class="win-btns">
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 再来一局</button>
+    <button class="ctrl-btn back" onclick="goToMenu()">🏠 返回主界面</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 数量关系的分析 PK — 完整游戏逻辑
+// ============================================================
+
+// ===== 线段图生成函数 =====
+function segDiagram(rows){
+  // rows: [{label, width%, color:'main'|'sub'|'total', val, bold:bool}]
+  var h='<div class="seg-diagram">';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    var cls=r.color||'main';
+    var brd=r.bold?'font-weight:bold;font-size:0.8em':'';
+    h+='<div class="seg-row">';
+    h+='<span class="seg-label">'+r.label+'</span>';
+    h+='<div class="seg-bar-wrap">';
+    h+='<div class="seg-bar '+cls+'" style="width:'+Math.max(r.width,5)+'%">';
+    h+='<span class="seg-bar val" style="'+brd+'color:#FFD700">'+(r.val||'')+'</span>';
+    h+='</div></div></div>';
+  }
+  if(rows.length>1){
+    h+='<div class="seg-brace">&#x23DE; 分析线段之间的关系</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// ===== 表格生成函数 =====
+function dataTable(headers, rows){
+  // headers: [{text, colSpan?}], rows: [[text1,text2,...]]
+  var h='<table class="data-table"><thead><tr class="hdr-row">';
+  for(var i=0;i<headers.length;i++){
+    h+='<th'+(headers[i].colSpan?' colspan="'+headers[i].colSpan+'"':'')+'>'+headers[i].text+'</th>';
+  }
+  h+='</tr></thead><tbody>';
+  for(var i=0;i<rows.length;i++){
+    h+='<tr>';
+    for(var j=0;j<rows[i].length;j++){
+      h+='<td>'+(rows[i][j]||'')+'</td>';
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
+  return h;
+}
+
+// ===== 条件/问题提示 =====
+function condHint(given, ask){
+  return '<div class="cond-hint"><span class="given">📋 已知：'+given+'</span><span class="ask">❓ 问题：'+ask+'</span></div>';
+}
+
+// ===== 题目数据 =====
+var ALL_Q = [
+
+  // ================================================================
+  // 模块一：用连减计算解决的实际问题 (8题，难度递增)
+  // ================================================================
+
+  // Q1 ★ 简单两步连减
+  { mod:1, level:1,
+    visual: function(){ return condHint('小明有50元，买书花18元，买笔花12元','还剩多少元？'); },
+    q:"小明有50元，买书花了18元，买笔花了12元。还剩多少元？",
+    opts:["20元","22元","18元","32元"], answer:0,
+    explain:"方法一：50-18-12=20（元）<br>方法二：18+12=30，50-30=20（元）" },
+
+  // Q2 ★ 两步连减
+  { mod:1, level:2,
+    visual: function(){ return condHint('图书馆原有85本，第一天借出23本，第二天借出31本','还剩多少本？'); },
+    q:"图书馆有85本书，第一天借出23本，第二天借出31本。还剩多少本？",
+    opts:["31本","29本","33本","41本"], answer:0,
+    explain:"85-23-31=31（本）<br>或：23+31=54，85-54=31（本）" },
+
+  // Q3 ★★ 大数连减
+  { mod:1, level:3,
+    visual: function(){ return condHint('绳子长100米，第一次剪28米，第二次剪36米','还剩多少米？'); },
+    q:"一根绳子长100米，第一次剪去28米，第二次剪去36米。还剩多少米？",
+    opts:["36米","38米","34米","40米"], answer:0,
+    explain:"100-28-36=36（米）<br>或：28+36=64，100-64=36（米）" },
+
+  // Q4 ★★ 生活场景连减
+  { mod:1, level:4,
+    visual: function(){ return condHint('运来200个鸡蛋，上午卖68个，下午卖75个','还剩多少个？'); },
+    q:"超市运来200个鸡蛋，上午卖出68个，下午卖出75个。还剩多少个？",
+    opts:["57个","55个","67个","47个"], answer:0,
+    explain:"200-68-75=57（个）<br>或：68+75=143，200-143=57（个）" },
+
+  // Q5 ★★★ 三项连减
+  { mod:1, level:5,
+    visual: function(){ return condHint('妈妈带150元，买菜42元，水果38元，日用品25元','还剩多少元？'); },
+    q:"妈妈带150元去超市，买菜花了42元，买水果花了38元，买日用品花了25元。一共花了多少元？还剩多少元？",
+    opts:["花105元剩45元","花95元剩55元","花105元剩55元","花95元剩45元"], answer:0,
+    explain:"一共花：42+38+25=105（元）<br>剩余：150-105=45（元）<br>也可以：150-42-38-25=45（元）" },
+
+  // Q6 ★★★ 单位换算+连减
+  { mod:1, level:6,
+    visual: function(){ return condHint('彩带3米，第一次用85厘米，第二次用1米15厘米','还剩多少？'); },
+    q:"一条彩带长3米，第一次用去85厘米，第二次用去1米15厘米。还剩多少厘米？",
+    opts:["100厘米","90厘米","95厘米","105厘米"], answer:0,
+    explain:"3米=300厘米<br>1米15厘米=115厘米<br>300-85-115=100（厘米）=1米" },
+
+  // Q7 ★★★ 三批问题
+  { mod:1, level:7,
+    visual: function(){ return condHint('152人参观，第一批45人，第二批39人','第三批多少人？'); },
+    q:"三年级共152人参观博物馆，第一批去45人，第二批去39人。剩下的人第三批去，第三批多少人？",
+    opts:["68人","72人","58人","70人"], answer:0,
+    explain:"152-45-39=68（人）<br>或：45+39=84，152-84=68（人）" },
+
+  // Q8 ★★★★ 综合难题：连减+除法
+  { mod:1, level:8,
+    visual: function(){ return condHint('有200元，书包98元，文具盒35元，笔记本8元/本','买完后能买几本笔记本？'); },
+    q:"小明有200元，买了98元的书包和35元的文具盒。剩下的钱全买笔记本，每本8元。能买几本？还剩多少元？",
+    opts:["8本剩3元","7本剩4元","9本剩1元","8本剩0元"], answer:0,
+    explain:"200-98-35=67（元）<br>67÷8=8（本）……3（元）<br>答：能买8本，还剩3元" },
+
+  // ================================================================
+  // 模块二：用除法和加法解决的实际问题 (8题，难度递增)
+  // ================================================================
+
+  // Q1 ★ 简单除加 — 文本题
+  { mod:2, level:1,
+    visual: function(){ return condHint('72个苹果分6班，48个梨分6班','每班共得多少水果？'); },
+    q:"把72个苹果平均分给6个班，又把48个梨平均分给6个班。每个班一共得到多少个水果？",
+    opts:["20个","18个","22个","16个"], answer:0,
+    explain:"苹果每班：72÷6=12（个）<br>梨每班：48÷6=8（个）<br>一共：12+8=20（个）<br>也可：（72+48）÷6=20（个）" },
+
+  // Q2 ★★ 线段图 — 和倍问题
+  { mod:2, level:2,
+    visual: function(){
+      return segDiagram([
+        {label:'小明',width:30,color:'sub',val:'? 张'},
+        {label:'小红',width:90,color:'main',val:'? 张'}
+      ])+condHint('两人共96张，小红是小明的3倍','两人各多少张？');
+    },
+    q:"小红和小明共有邮票96张，小红的邮票张数是小明的3倍。小明有多少张？小红有多少张？",
+    opts:["小明24张小红72张","小明32张小红64张","小明20张小红76张","小明30张小红66张"], answer:0,
+    explain:"把小明看作1份，小红是3份<br>共：1+3=4份<br>每份：96÷4=24（张）—小明<br>小红：24×3=72（张）" },
+
+  // Q3 ★★ 表格 — 班费分摊
+  { mod:2, level:3,
+    visual: function(){
+      return dataTable(
+        [{text:'支出项目'},{text:'总金额'},{text:'分摊人数'}],
+        [['买图书','84元','6人'],['买文具','48元','6人']]
+      )+condHint('两项支出由6人平均分摊','每人各出多少？一共多少？');
+    },
+    q:"三(1)班6位同学均摊班费。买图书花了84元，买文具花了48元。平均每人买书出多少元？买文具出多少元？一共出多少元？",
+    opts:["14+8=22元","16+8=24元","14+6=20元","12+8=20元"], answer:0,
+    explain:"买书：84÷6=14（元）<br>买文具：48÷6=8（元）<br>每人共出：14+8=22（元）<br>也可：（84+48）÷6=22（元）" },
+
+  // Q4 ★★★ 线段图 — 工作效率
+  { mod:2, level:4,
+    visual: function(){
+      return segDiagram([
+        {label:'王师傅',width:64,color:'main',val:'48个/3时'},
+        {label:'李师傅',width:60,color:'sub',val:'60个/4时'}
+      ])+condHint('王师傅3时48个，李师傅4时60个','两人1时共加工多少个？');
+    },
+    q:"王师傅3小时加工48个零件，李师傅4小时加工60个零件。王师傅和李师傅每小时各加工多少个？两人一小时一共加工多少个？",
+    opts:["16+15=31个","18+15=33个","16+12=28个","14+15=29个"], answer:0,
+    explain:"王师傅：48÷3=16（个/时）<br>李师傅：60÷4=15（个/时）<br>两人共：16+15=31（个/时）" },
+
+  // Q5 ★★★ 表格 — 分组活动
+  { mod:2, level:5,
+    visual: function(){
+      return dataTable(
+        [{text:'活动'},{text:'总人数'},{text:'每组人数'}],
+        [['跳绳','56人','8人/组'],['踢毽子','36人','6人/组']]
+      )+condHint('两组活动各有总人数和每组人数','各分几组？一共几组？');
+    },
+    q:"体育活动课上，跳绳的有56人，每8人一组；踢毽子的有36人，每6人一组。跳绳分了几组？踢毽子分了几组？一共分了多少组？",
+    opts:["7+6=13组","8+6=14组","7+5=12组","6+6=12组"], answer:0,
+    explain:"跳绳：56÷8=7（组）<br>踢毽子：36÷6=6（组）<br>一共：7+6=13（组）" },
+
+  // Q6 ★★★ 综合 — 两步除加
+  { mod:2, level:6,
+    visual: function(){ return condHint('三(1)班48人，4人/船; 三(2)班42人，6人/船','两班各租几条？共几条？'); },
+    q:"三(1)班48人去划船，每4人一条小船。三(2)班42人去划船，每6人一条小船。两个班各租了多少条船？一共租了多少条？",
+    opts:["12+7=19条","10+8=18条","12+8=20条","11+7=18条"], answer:0,
+    explain:"三(1)班：48÷4=12（条）<br>三(2)班：42÷6=7（条）<br>一共：12+7=19（条）" },
+
+  // Q7 ★★★★ 线段图 — 倍数比较
+  { mod:2, level:7,
+    visual: function(){
+      return segDiagram([
+        {label:'梨树',width:25,color:'sub',val:'? 棵'},
+        {label:'苹果树',width:75,color:'main',val:'72棵(是梨树的3倍)'}
+      ])+condHint('苹果树72棵=梨树的3倍','一共多少棵？');
+    },
+    q:"果园里有苹果树72棵，苹果树的棵数是梨树的3倍。梨树有多少棵？苹果树和梨树一共有多少棵？",
+    opts:["24+72=96棵","26+78=104棵","20+72=92棵","28+84=112棵"], answer:0,
+    explain:"梨树：72÷3=24（棵）<br>一共：24+72=96（棵）<br>或：把梨树看作1份，苹果树是3份，总数是4份，每份24棵" },
+
+  // Q8 ★★★★★ 综合表格 — 多步计算
+  { mod:2, level:8,
+    visual: function(){
+      return dataTable(
+        [{text:'费用项目'},{text:'总费用'},{text:'参加人数'}],
+        [['租车费','240元','40人'],['门票费','200元','40人'],['午餐费','360元','40人']]
+      )+condHint('三项费用各由40人分摊','每人各出多少？每人共出多少？');
+    },
+    q:"40位同学春游，租车费240元、门票费200元、午餐费360元，均由同学们平均分摊。每人租车多少元？门票多少元？午餐多少元？每人一共要交多少元？",
+    opts:["6+5+9=20元","8+5+9=22元","6+5+8=19元","7+5+9=21元"], answer:0,
+    explain:"租车：240÷40=6（元）<br>门票：200÷40=5（元）<br>午餐：360÷40=9（元）<br>每人共：6+5+9=20（元）" }
+
+];
+
+// ===== 模块标签 =====
+var MOD_NAMES = ['','一 · 用连减计算解决实际问题','二 · 用除法和加法解决实际问题'];
+var MOD_ICONS = ['','➖','➗➕'];
+var MOD_BANNER_CLASS = ['','m1','m2'];
+
+// ===== 全局状态 =====
+var Q=[], sc=[0,0], cr=0, tr=0, tm=20, baseTm=20, ti=null, go=false, ans=[false,false];
+var streak=[0,0], firstToAnswer=null, currentMod=0;
+var baseSk='pk_quantity_relation';
+var musicOn=true, actx=null;
+
+// ===== 工具函数 =====
+function sf(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function gebi(id){ return document.getElementById(id); }
+
+// ===== 音频 =====
+function initAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function playTone(f,d,ty,vol){
+  if(!actx||!musicOn) return;
+  try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'square';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.3,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start(actx.currentTime);o.stop(actx.currentTime+d);}catch(e){}
+}
+function sfxCorrect(){ playTone(523,0.12,'square',0.3);setTimeout(function(){playTone(659,0.12,'square',0.3);},100);setTimeout(function(){playTone(784,0.15,'square',0.3);},200); }
+function sfxWrong(){ playTone(200,0.3,'sawtooth',0.3); }
+function sfxWin(){ for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.12,'square',0.3);},i*120);} }
+function sfxTick(){ playTone(800,0.04,'sine',0.2); }
+function sfxFirst(){ playTone(880,0.08,'square',0.3);setTimeout(function(){playTone(1100,0.1,'square',0.3);},80); }
+function toggleMusic(){ initAudio(); musicOn=!musicOn; gebi('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音'; if(musicOn) playTone(440,0.1,'sine',0.15); }
+
+// ===== 菜单/游戏流程 =====
+function startGame(mod){
+  initAudio();
+  currentMod=mod;
+  Q=sf(ALL_Q.filter(function(q){return q.mod===mod;}));
+  tr=Q.length;
+  baseTm=(mod===1)?20:25;
+
+  var banner=gebi('modBanner');
+  banner.className='mod-banner '+MOD_BANNER_CLASS[mod];
+  gebi('modLabel').textContent='模块'+MOD_NAMES[mod];
+  gebi('modIconL').textContent=MOD_ICONS[mod];
+  gebi('modIconR').textContent=MOD_ICONS[mod];
+  gebi('tt').textContent=tr;
+
+  sc=[0,0]; cr=0; streak=[0,0]; firstToAnswer=null;
+  go=false; ans=[false,false];
+  if(ti) clearInterval(ti); ti=null;
+
+  gebi('s1').textContent='0'; gebi('s2').textContent='0';
+  gebi('st1').textContent=''; gebi('st2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('q1').innerHTML='准备开始...'; gebi('q2').innerHTML='准备开始...';
+  gebi('op1').innerHTML=''; gebi('op2').innerHTML='';
+  gebi('vis1').innerHTML=''; gebi('vis2').innerHTML='';
+  gebi('rn').textContent='1'; gebi('tm').textContent=baseTm;
+  gebi('tm').parentElement.classList.remove('urgent');
+  gebi('winOverlay').classList.remove('show');
+
+  gebi('menuScreen').classList.add('hide');
+  gebi('gameScreen').classList.add('show');
+
+  updateProgressDots();
+  nextRound();
+}
+
+function goToMenu(){
+  if(ti) clearInterval(ti); ti=null; go=false;
+  gebi('gameScreen').classList.remove('show');
+  gebi('menuScreen').classList.remove('hide');
+  gebi('winOverlay').classList.remove('show');
+}
+
+function updateProgressDots(){
+  var h='';
+  for(var i=0;i<tr;i++){
+    var cls='progress-dot';
+    if(i<cr) cls+=' done';
+    if(i===cr) cls+=' current';
+    h+='<div class="'+cls+'"></div>';
+  }
+  gebi('pd1').innerHTML=h; gebi('pd2').innerHTML=h;
+}
+
+// ===== 游戏循环 =====
+function nextRound(){
+  if(cr>=tr){ endGame(); return; }
+  tm=baseTm;
+  ans=[false,false]; firstToAnswer=null;
+  go=true;
+
+  gebi('rn').textContent=cr+1;
+  gebi('tm').textContent=tm;
+  gebi('tm').parentElement.classList.remove('urgent');
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+  gebi('st1').textContent=streak[0]>=2?'🔥 连击x'+streak[0]:'';
+  gebi('st2').textContent=streak[1]>=2?'🔥 连击x'+streak[1]:'';
+  gebi('op1').innerHTML=''; gebi('op2').innerHTML='';
+
+  updateProgressDots();
+
+  var q=Q[cr];
+  var visHTML=q.visual?q.visual():'';
+  var prefix='<span class="q-tag">📝 第'+(cr+1)+'题</span>';
+
+  gebi('vis1').innerHTML=visHTML;
+  gebi('vis2').innerHTML=visHTML;
+  gebi('q1').innerHTML=prefix+q.q;
+  gebi('q2').innerHTML=prefix+q.q;
+
+  var idx1=sf([0,1,2,3]), idx2=sf([0,1,2,3]);
+  renderOpts(1,q,idx1);
+  renderOpts(2,q,idx2);
+
+  if(ti) clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;
+    gebi('tm').textContent=tm;
+    if(tm<=5){ gebi('tm').parentElement.classList.add('urgent'); sfxTick(); }
+    if(tm<=0){ clearInterval(ti); ti=null; timeUp(); }
+  },1000);
+}
+
+function renderOpts(pn,q,idx){
+  var h='';
+  for(var i=0;i<4;i++){
+    var oi=idx[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+q.answer+',this)">'+q.opts[oi]+'</button>';
+  }
+  gebi('op'+pn).innerHTML=h;
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1]) return;
+  ans[pn-1]=true;
+  disablePlayerOpts(pn);
+
+  if(oi===ai){
+    btn.classList.add('correct');
+    var bonus=10;
+    streak[pn-1]++;
+    if(streak[pn-1]>=3) bonus+=2;
+    if(firstToAnswer===null){ firstToAnswer=pn; bonus+=3; sfxFirst(); }
+    sc[pn-1]+=bonus;
+    gebi('s'+pn).textContent=sc[pn-1];
+    gebi('fb'+pn).innerHTML='✅ 正确！+'+bonus;
+    gebi('fb'+pn).style.color='#10B981';
+    gebi('st'+pn).textContent=streak[pn-1]>=2?'🔥 连击x'+streak[pn-1]:'';
+    if(firstToAnswer===pn) gebi('fb'+pn+'b').textContent='⚡ 抢先答对！';
+    sfxCorrect();
+    go=false;
+    if(ti) clearInterval(ti);
+    var otherPn=pn===1?2:1;
+    if(!ans[otherPn-1]){
+      disablePlayerOpts(otherPn);
+      gebi('fb'+otherPn).textContent='对方已答对，进入下一题';
+    }
+    setTimeout(function(){ cr++; nextRound(); },2000);
+  } else {
+    btn.classList.add('wrong');
+    streak[pn-1]=0;
+    sc[pn-1]=Math.max(0,sc[pn-1]-2);
+    gebi('s'+pn).textContent=sc[pn-1];
+    gebi('fb'+pn).innerHTML='❌ 答错了 -2';
+    gebi('fb'+pn).style.color='#EF4444';
+    gebi('st'+pn).textContent='';
+    sfxWrong();
+    var otherPn=pn===1?2:1;
+    if(ans[otherPn-1]){
+      go=false; if(ti) clearInterval(ti);
+      setTimeout(function(){ cr++; nextRound(); },2000);
+    }
+  }
+}
+
+function timeUp(){
+  go=false;
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      disablePlayerOpts(p);
+      gebi('fb'+p).innerHTML='⏰ 时间到！';
+      streak[p-1]=0;
+    }
+  }
+  setTimeout(function(){ cr++; nextRound(); },2000);
+}
+
+function endGame(){
+  go=false; if(ti) clearInterval(ti); ti=null;
+  gebi('winOverlay').classList.add('show');
+  gebi('ws1').textContent=sc[0]; gebi('ws2').textContent=sc[1];
+  gebi('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方';
+  var detailEl=gebi('winDetail');
+
+  if(sc[0]>sc[1]){
+    gebi('winTitle').innerHTML='🔴 红方获胜！';
+    gebi('winTitle').style.color='#FF6B6B';
+    detailEl.textContent='红方对数量关系的分析更出色！';
+  } else if(sc[1]>sc[0]){
+    gebi('winTitle').innerHTML='🔵 蓝方获胜！';
+    gebi('winTitle').style.color='#4ECDC4';
+    detailEl.textContent='蓝方对数量关系的分析更出色！';
+  } else {
+    gebi('winTitle').innerHTML='🤝 平局！';
+    gebi('winTitle').style.color='#FFD700';
+    detailEl.textContent='双方旗鼓相当，分析能力都很强！';
+  }
+  sfxWin(); spawnConfetti();
+
+  try{
+    var key=baseSk+'_m'+currentMod;
+    var best=parseInt(localStorage.getItem(key)||'0');
+    var mx=Math.max(sc[0],sc[1]);
+    if(mx>best) localStorage.setItem(key,mx);
+  }catch(e){}
+}
+
+function restartGame(){
+  if(ti) clearInterval(ti); ti=null; go=false;
+  sc=[0,0]; cr=0; streak=[0,0]; firstToAnswer=null;
+  ans=[false,false];
+  gebi('s1').textContent='0'; gebi('s2').textContent='0';
+  gebi('st1').textContent=''; gebi('st2').textContent='';
+  gebi('fb1b').textContent=''; gebi('fb2b').textContent='';
+  gebi('fb1').textContent=''; gebi('fb2').textContent='';
+  gebi('q1').innerHTML='准备开始...'; gebi('q2').innerHTML='准备开始...';
+  gebi('op1').innerHTML=''; gebi('op2').innerHTML='';
+  gebi('vis1').innerHTML=''; gebi('vis2').innerHTML='';
+  gebi('rn').textContent='1'; gebi('tm').textContent=baseTm;
+  gebi('tm').parentElement.classList.remove('urgent');
+  gebi('winOverlay').classList.remove('show');
+  Q=sf(ALL_Q.filter(function(q){return q.mod===currentMod;}));
+  updateProgressDots();
+  nextRound();
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#10B981','#AB47BC','#42A5F5','#FFEE58'];
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<60;i++){
+    var el=document.createElement('div');
+    el.className='confetti';
+    el.style.left=Math.random()*100+'%';
+    el.style.top=-(Math.random()*40+10)+'px';
+    el.style.width=(Math.random()*10+6)+'px';
+    el.style.height=(Math.random()*10+6)+'px';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.borderRadius=Math.random()>0.5?'50%':'0';
+    el.style.animationDuration=(Math.random()*2+2)+'s';
+    el.style.animationDelay=Math.random()*1.5+'s';
+    frag.appendChild(el);
+  }
+  document.body.appendChild(frag);
+  setTimeout(function(){
+    var all=document.querySelectorAll('.confetti');
+    for(var i=0;i<all.length;i++) all[i].remove();
+  },4000);
+}
+
+function disablePlayerOpts(pn){
+  var btns=gebi('op'+pn).querySelectorAll('.p-opt');
+  for(var i=0;i<btns.length;i++) btns[i].disabled=true;
+}
+</script>
+</body>
+</html>

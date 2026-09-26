@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>立体图形 - 一年级数学游戏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+  background:linear-gradient(180deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+}
+.loading-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(15,12,41,0.95);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:300;color:#fff;
+}
+.loading-overlay.hidden{display:none}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:1.1em;color:rgba(255,255,255,0.7)}
+.loading-error{color:#EF4444;font-size:0.9em;margin-top:8px;display:none}
+.loading-retry{margin-top:16px;padding:10px 28px;border-radius:20px;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:0.95em;cursor:pointer;font-family:inherit;display:none}
+
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;gap:6px;flex-shrink:0;background:rgba(255,255,255,0.06);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.1);z-index:10;flex-wrap:wrap}
+.mode-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.mode-tab{padding:6px 11px;border-radius:18px;border:2px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:0.78em;font-weight:bold;cursor:pointer;transition:all 0.25s;font-family:inherit;white-space:nowrap}
+.mode-tab:hover{border-color:rgba(255,255,255,0.5);color:#fff}
+.mode-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);border-color:transparent;color:#fff}
+.info-pills{display:flex;gap:8px}
+.info-pill{background:rgba(255,255,255,0.1);color:#fff;padding:5px 12px;border-radius:16px;font-size:0.82em;font-weight:bold;border:1px solid rgba(255,255,255,0.12);white-space:nowrap;display:flex;align-items:center;gap:3px}
+.info-pill .val{color:#FFD700;font-size:1.05em}
+
+.canvas-wrap{flex:1;position:relative;min-height:0;overflow:hidden;background:radial-gradient(ellipse at center,#1a1a3e 0%,#0a0a1a 100%)}
+.canvas-wrap canvas{display:block}
+.hint-tag{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.35);font-size:0.7em;pointer-events:none;transition:opacity 0.3s}
+.reveal-btn{position:absolute;top:10px;right:14px;padding:8px 16px;border-radius:16px;border:none;background:rgba(255,215,0,0.2);color:#FFD700;font-size:0.78em;font-weight:bold;cursor:pointer;font-family:inherit;border:1px solid rgba(255,215,0,0.3);transition:all 0.2s;z-index:5}
+.reveal-btn:hover{background:rgba(255,215,0,0.35)}
+.reveal-btn.active{background:rgba(255,215,0,0.5);color:#fff}
+.prop-indicator{position:absolute;top:10px;left:14px;padding:6px 14px;border-radius:14px;font-size:0.78em;font-weight:bold;color:#fff;pointer-events:none;z-index:5;display:none}
+.prop-indicator.show{display:block}
+.prop-indicator.roll{background:rgba(76,175,80,0.5);border:1px solid rgba(76,175,80,0.6)}
+.prop-indicator.slide{background:rgba(255,152,0,0.5);border:1px solid rgba(255,152,0,0.6)}
+.prop-indicator.both{background:rgba(33,150,243,0.5);border:1px solid rgba(33,150,243,0.6)}
+
+.qa-area{flex-shrink:0;padding:10px 14px 12px;background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.08);z-index:10;display:flex;flex-direction:column;align-items:center;gap:8px}
+.question-text{color:#fff;font-size:1.15em;font-weight:bold;text-align:center;min-height:28px;line-height:1.5}
+.question-text .hl{color:#FFD700;font-size:1.1em}
+.question-text .hl2{color:#4ECDC4;font-size:1.05em}
+.answers-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:620px}
+.ans-btn{padding:9px 16px;border-radius:22px;border:2px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.07);color:#fff;font-size:0.9em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;min-width:50px;text-align:center;touch-action:manipulation}
+.ans-btn:hover{background:rgba(255,255,255,0.16);border-color:rgba(255,255,255,0.45);transform:translateY(-2px)}
+.ans-btn:active{transform:scale(0.94)}
+.ans-btn.correct{background:#10B981!important;border-color:#10B981!important;pointer-events:none;animation:popFlash 0.5s ease}
+.ans-btn.wrong{background:#EF4444!important;border-color:#EF4444!important;pointer-events:none;animation:shake 0.5s ease}
+.ans-btn:disabled{pointer-events:none;opacity:0.5}
+@keyframes popFlash{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.feedback-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:2.8em;font-weight:bold;pointer-events:none;z-index:100;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);text-shadow:0 0 30px rgba(255,215,0,0.5)}
+.feedback-toast.show{transform:translate(-50%,-50%) scale(1)}
+.particles-layer{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99}
+.star-particle{position:absolute;font-size:22px;animation:starUp 1.2s ease-out forwards}
+@keyframes starUp{0%{transform:translateY(0)scale(0);opacity:1}50%{transform:translateY(-70px)scale(1.2);opacity:0.8}100%{transform:translateY(-140px)scale(0.4);opacity:0}}
+
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.hidden{display:none}
+.modal-box{background:linear-gradient(145deg,#1e1e3f,#2a2a5a);border:1px solid rgba(255,255,255,0.12);border-radius:26px;padding:30px 22px;text-align:center;max-width:400px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.5);color:#fff;animation:modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes modalIn{0%{transform:scale(0.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.modal-box h2{font-size:1.7em;margin-bottom:8px}
+.modal-box p{color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:14px}
+.modal-btn{padding:12px 32px;border-radius:24px;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:1.05em;font-weight:bold;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px rgba(102,126,234,0.3);transition:all 0.2s;margin:5px}
+.modal-btn:hover{transform:translateY(-2px)}
+.modal-btn.secondary{background:rgba(255,255,255,0.08);box-shadow:none;border:1px solid rgba(255,255,255,0.2)}
+.stars-row{font-size:2.2em;letter-spacing:4px;margin:6px 0}
+@media(max-width:600px){.mode-tab{padding:5px 8px;font-size:0.7em}.question-text{font-size:1em}.ans-btn{padding:7px 12px;font-size:0.8em}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div><div class="loading-text">加载3D引擎...</div>
+  <div class="loading-error" id="loadingError">加载失败，请刷新重试</div>
+  <button class="loading-retry" id="loadingRetry" onclick="location.reload()">重新加载</button>
+</div>
+
+<div class="top-bar">
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-tab active" data-mode="0">🔍 认识图形</button>
+    <button class="mode-tab" data-mode="1">⚡ 图形性质</button>
+    <button class="mode-tab" data-mode="2">🔢 排列顺序</button>
+    <button class="mode-tab" data-mode="3">📦 正方体拼组</button>
+    <button class="mode-tab" data-mode="4">🏗 拼搭构成</button>
+    <button class="mode-tab" data-mode="5">🏢 怎样搭得高</button>
+  </div>
+  <div class="info-pills">
+    <div class="info-pill">⭐ <span class="val" id="scoreEl">0</span></div>
+    <div class="info-pill">📝 <span class="val" id="levelEl">1</span>/<span id="totalEl">6</span></div>
+  </div>
+</div>
+
+<div class="canvas-wrap" id="canvasWrap">
+  <div class="hint-tag" id="hintTag">🖱 拖拽旋转 | 滚轮缩放 | 双击重置</div>
+  <div class="prop-indicator" id="propIndicator"></div>
+  <button class="reveal-btn hidden" id="revealBtn" style="display:none">👁 显示隐藏</button>
+</div>
+
+<div class="qa-area" id="qaArea">
+  <div class="question-text" id="questionText">观察下面的立体图形吧！</div>
+  <div class="answers-row" id="answersRow"></div>
+</div>
+
+<div class="feedback-toast" id="feedbackToast"></div>
+<div class="particles-layer" id="particlesLayer"></div>
+
+<div class="modal-overlay hidden" id="completeModal">
+  <div class="modal-box">
+    <span style="font-size:3.5em;display:block;">🏆</span>
+    <h2 id="completeTitle"></h2>
+    <div class="stars-row" id="starsDisplay">⭐⭐⭐</div>
+    <p id="completeMsg"></p><p>总分：<strong style="color:#FFD700;font-size:1.2em" id="finalScoreEl">0</strong></p>
+    <button class="modal-btn" id="restartBtn2">再玩一次</button>
+    <button class="modal-btn secondary" id="switchBtn">换模块</button>
+  </div>
+</div>
+
+<script>
+window.__THREE_LOADED=false;
+var _cdnIdx=0;
+var _cdns=[
+  'https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js',
+  'https://unpkg.com/three@0.157.0/build/three.min.js',
+  'https://registry.npmmirror.com/three/0.157.0/files/build/three.min.js',
+  'https://cdn.bootcdn.net/ajax/libs/three.js/0.157.0/three.min.js',
+];
+function tryNextCDN(){
+  _cdnIdx++;
+  if(_cdnIdx>=_cdns.length){
+    document.getElementById('loadingError').style.display='block';
+    document.getElementById('loadingRetry').style.display='inline-block';
+    document.querySelector('.loading-spinner').style.display='none';
+    document.querySelector('.loading-text').textContent='3D引擎加载失败（已尝试'+_cdns.length+'个源）';
+    return;
+  }
+  document.querySelector('.loading-text').textContent='加载3D引擎...（尝试源' + (_cdnIdx+1) + '/' + _cdns.length + '）';
+  var s=document.createElement('script');s.src=_cdns[_cdnIdx];
+  s.onload=onThreeLoaded;s.onerror=tryNextCDN;
+  document.head.appendChild(s);
+}
+function onThreeLoaded(){
+  window.__THREE_LOADED=true;
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  if(window.__initGame)window.__initGame();
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js" onload="onThreeLoaded()" onerror="tryNextCDN()"></script>
+
+<script>
+(function(){
+function initWhenReady(){
+  if(window.__THREE_LOADED||typeof THREE!=='undefined'){
+    if(typeof THREE!=='undefined'){window.__THREE_LOADED=true;document.getElementById('loadingOverlay').classList.add('hidden')}
+    initGame();
+  }else{var c=0;var iv=setInterval(function(){c++;if(window.__THREE_LOADED||typeof THREE!=='undefined'){clearInterval(iv);if(typeof THREE!=='undefined'){window.__THREE_LOADED=true;document.getElementById('loadingOverlay').classList.add('hidden')}initGame()}else if(c>100)clearInterval(iv)},100)}
+}
+window.__initGame=initGame;
+if(typeof THREE!=='undefined'){window.__THREE_LOADED=true;document.getElementById('loadingOverlay').classList.add('hidden')}
+
+function initGame(){
+var T=window.THREE;
+
+// DOM refs
+var canvasWrap=document.getElementById('canvasWrap');
+var questionText=document.getElementById('questionText');
+var answersRow=document.getElementById('answersRow');
+var feedbackToast=document.getElementById('feedbackToast');
+var particlesLayer=document.getElementById('particlesLayer');
+var scoreEl=document.getElementById('scoreEl');
+var levelEl=document.getElementById('levelEl');
+var totalEl=document.getElementById('totalEl');
+var hintTag=document.getElementById('hintTag');
+var propIndicator=document.getElementById('propIndicator');
+var revealBtn=document.getElementById('revealBtn');
+var completeModal=document.getElementById('completeModal');
+var modeTabs=document.querySelectorAll('.mode-tab');
+
+// Scene
+var scene=new T.Scene();scene.background=new T.Color(0x1a1a3e);scene.fog=new T.Fog(0x1a1a3e,8,30);
+var camera=new T.PerspectiveCamera(42,2,0.5,40);camera.position.set(4,3,6);camera.lookAt(0,0.3,0);
+var renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+canvasWrap.appendChild(renderer.domElement);
+
+// Lights
+scene.add(new T.AmbientLight(0x8899cc,1.6));
+scene.add(new T.HemisphereLight(0xffffff,0x444466,0.9));
+var sun=new T.DirectionalLight(0xffffff,3);sun.position.set(8,12,5);sun.castShadow=true;
+sun.shadow.mapSize.width=1024;sun.shadow.mapSize.height=1024;sun.shadow.camera.near=0.5;sun.shadow.camera.far=50;
+sun.shadow.camera.left=-10;sun.shadow.camera.right=10;sun.shadow.camera.top=10;sun.shadow.camera.bottom=-10;sun.shadow.bias=-0.0001;
+scene.add(sun);scene.add(new T.DirectionalLight(0x7799dd,0.6).position.set(-3,2,-3));
+
+// Ground
+var gnd=new T.Mesh(new T.PlaneGeometry(20,20),new T.MeshStandardMaterial({color:0x2a2a4a,roughness:0.85}));
+gnd.rotation.x=-Math.PI/2;gnd.position.y=-3.5;gnd.receiveShadow=true;scene.add(gnd);
+var grid=new T.PolarGridHelper(8,32,20,64,0x444466,0x333355);grid.position.y=-3.48;scene.add(grid);
+var plat=new T.Mesh(new T.CylinderGeometry(1.2,1.3,0.15,48),new T.MeshStandardMaterial({color:0x3a3a5a,roughness:0.3,metalness:0.6}));
+plat.position.y=-3.35;plat.receiveShadow=true;plat.castShadow=true;scene.add(plat);
+
+// Main group
+var mainGroup=new T.Group();scene.add(mainGroup);
+var allCubes=[]; // track cubes for reveal
+
+// Shape colors
+var SHAPE_COLORS={cube:0xFF6B6B,cuboid:0x4ECDC4,sphere:0xFFD93D,cylinder:0x6C5CE7,cone:0xFF9800};
+
+// Materials
+function mat(c){return new T.MeshStandardMaterial({color:c,roughness:0.35,metalness:0.05})}
+function addEdge(mesh){var e=new T.EdgesGeometry(mesh.geometry,20);var l=new T.LineSegments(e,new T.LineBasicMaterial({color:0x000000,transparent:true,opacity:0.22}));mesh.add(l)}
+
+// Shape creators
+function mkCube(s){s=s||1;var g=new T.BoxGeometry(s,s,s);var m=mat(SHAPE_COLORS.cube);var mesh=new T.Mesh(g,m);mesh.castShadow=true;mesh.receiveShadow=true;addEdge(mesh);return mesh}
+function mkCuboid(w,h,d){var g=new T.BoxGeometry(w||1.4,h||0.8,d||1.0);var m=mat(SHAPE_COLORS.cuboid);var mesh=new T.Mesh(g,m);mesh.castShadow=true;mesh.receiveShadow=true;addEdge(mesh);return mesh}
+function mkSphere(r){var g=new T.SphereGeometry(r||0.6,40,30);var m=mat(SHAPE_COLORS.sphere);var mesh=new T.Mesh(g,m);mesh.castShadow=true;mesh.receiveShadow=true;return mesh}
+function mkCylinder(r,h){var g=new T.CylinderGeometry(r||0.5,r||0.5,h||1.2,48);var m=mat(SHAPE_COLORS.cylinder);var mesh=new T.Mesh(g,m);mesh.castShadow=true;mesh.receiveShadow=true;addEdge(mesh);return mesh}
+function mkCone(r,h){var g=new T.ConeGeometry(r||0.5,h||1.0,32);var m=mat(SHAPE_COLORS.cone);var mesh=new T.Mesh(g,m);mesh.castShadow=true;mesh.receiveShadow=true;addEdge(mesh);return mesh}
+
+function clearScene(){allCubes=[];reveals=[];while(mainGroup.children.length>0){var c=mainGroup.children[0];c.traverse(function(ch){if(ch.geometry&&ch!==c)ch.geometry.dispose();if(ch.material){if(Array.isArray(ch.material))ch.material.forEach(function(x){x.dispose()});else ch.material.dispose()}});if(c.geometry)c.geometry.dispose();mainGroup.remove(c)}}
+
+function disposeObj(obj){obj.traverse(function(c){if(c.geometry&&c!==obj)c.geometry.dispose();if(c.material){if(Array.isArray(c.material))c.material.forEach(function(x){x.dispose()});else c.material.dispose()}});if(obj.geometry)obj.geometry.dispose()}
+
+// State
+var state={mode:0,level:0,score:0,totalInMode:6,targetAnswer:null,isAnswering:true,autoRotate:false,propDemo:null};
+var reveals,revealOn;
+
+// ==================== MODULE DATA ====================
+function genLevel(mode,lv){
+  if(mode===0)return genRecognize(lv);
+  if(mode===1)return genProperty(lv);
+  if(mode===2)return genSequence(lv);
+  if(mode===3)return genCubeStack(lv);
+  if(mode===4)return genComposite(lv);
+  return genBuildTall(lv);
+}
+
+// M0: 认识图形
+var REAL_OBJECTS=[
+  {name:'足球',emoji:'⚽',shape:'球',shapeKey:'sphere'},
+  {name:'骰子',emoji:'🎲',shape:'正方体',shapeKey:'cube'},
+  {name:'纸箱',emoji:'📦',shape:'长方体',shapeKey:'cuboid'},
+  {name:'罐头',emoji:'🥫',shape:'圆柱',shapeKey:'cylinder'},
+  {name:'篮球',emoji:'🏀',shape:'球',shapeKey:'sphere'},
+  {name:'魔方',emoji:'🧊',shape:'正方体',shapeKey:'cube'},
+  {name:'蜡烛',emoji:'🕯',shape:'圆柱',shapeKey:'cylinder'},
+  {name:'砖块',emoji:'🧱',shape:'长方体',shapeKey:'cuboid'},
+  {name:'地球仪',emoji:'🌍',shape:'球',shapeKey:'sphere'},
+  {name:'水杯',emoji:'🥤',shape:'圆柱',shapeKey:'cylinder'},
+  {name:'书本',emoji:'📚',shape:'长方体',shapeKey:'cuboid'},
+  {name:'礼盒',emoji:'🎁',shape:'正方体',shapeKey:'cube'},
+];
+
+function genRecognize(lv){
+  var types=[
+    function(){ // 看图形选名称
+      var shapes=['cube','cuboid','sphere','cylinder'];
+      var sk=shapes[lv%4];var names={cube:'正方体',cuboid:'长方体',sphere:'球',cylinder:'圆柱'};
+      return{type:'name_shape',shape:sk,prompt:'这个立体图形叫什么？',answer:names[sk],options:shuffle(Object.values(names)),knowledge:'图形识别'};
+    },
+    function(){ // 看实物选图形
+      var obj=REAL_OBJECTS[Math.floor(Math.random()*REAL_OBJECTS.length)];
+      var distractors=shuffle(['正方体','长方体','球','圆柱'].filter(function(s){return s!==obj.shape})).slice(0,3);
+      return{type:'object_to_shape',shape:obj.shapeKey,prompt:obj.emoji+' <span class="hl">'+obj.name+'</span>是什么立体图形？',answer:obj.shape,options:shuffle([obj.shape].concat(distractors)),knowledge:'生活中识图'};
+    },
+    function(){ // 看名称选图形（展示多个图形，选对的）
+      var shapes=['cube','cuboid','sphere','cylinder'];var sk=shapes[lv%4];
+      var names={cube:'正方体',cuboid:'长方体',sphere:'球',cylinder:'圆柱'};
+      return{type:'shape_by_name',shape:sk,prompt:'哪个是<span class="hl">'+names[sk]+'</span>？',answer:names[sk],options:shuffle(Object.values(names)),knowledge:'按名识图'};
+    },
+    function(){ // 描述匹配
+      var descs=[{d:'圆圆的，能向任意方向滚动',shape:'球',sk:'sphere'},{d:'方方正正的，6个面一样大',shape:'正方体',sk:'cube'},{d:'长长方方的，对面一样大',shape:'长方体',sk:'cuboid'},{d:'上下一样粗，上下两个圆面',shape:'圆柱',sk:'cylinder'}];
+      var desc=descs[lv%4];
+      return{type:'desc_to_shape',shape:desc.sk,prompt:'<span class="hl">"'+desc.d+'"</span><br>这是什么立体图形？',answer:desc.shape,options:shuffle(['正方体','长方体','球','圆柱']),knowledge:'特征识图'};
+    },
+  ];
+  var q=types[lv%types.length]();
+  if(lv>=4){var q2=types[lv%types.length]();q2.knowledge='综合';return q2}
+  return q;
+}
+
+// M1: 图形性质
+var PROP_QUESTIONS=[
+  {shape:'sphere',prompt:'<span class="hl">球</span>能滚动吗？',answer:'能向任意方向滚动',options:['能向任意方向滚动','只能推动','能且只能前后滚','完全不能动'],prop:'roll_all'},
+  {shape:'cylinder',prompt:'<span class="hl">圆柱</span>站着（竖着放）会滚走吗？',answer:'不会滚走，很稳',options:['不会滚走，很稳','会滚走','会跳起来'],prop:'stand_still'},
+  {shape:'cylinder',prompt:'<span class="hl">圆柱</span>躺下（横着放）会怎样？',answer:'会滚动',options:['会滚动','一动不动','会飞起来'],prop:'lie_roll'},
+  {shape:'cube',prompt:'<span class="hl">正方体</span>能滚动吗？',answer:'不能滚，只能推动',options:['不能滚，只能推动','能到处滚','能前后滚'],prop:'slide_only'},
+  {shape:'cuboid',prompt:'<span class="hl">长方体</span>能滚动吗？',answer:'不能滚，只能推动',options:['不能滚，只能推动','能到处滚','能像球一样滚'],prop:'slide_only'},
+  {shape:'compare',prompt:'哪些图形<span class="hl">只能推动</span>不能滚动？',answer:'正方体和长方体',options:['正方体和长方体','球和圆柱','圆柱和正方体','全部都能滚'],prop:'compare_slide',multiShape:['cube','cuboid']},
+  {shape:'compare',prompt:'哪些图形<span class="hl">能滚动</span>？',answer:'球和圆柱（躺下时）',options:['球和圆柱（躺下时）','正方体和长方体','全部都能滚','只有球'],prop:'compare_roll',multiShape:['sphere','cylinder']},
+  {shape:'cylinder',prompt:'圆柱<span class="hl">为什么</span>站着不会滚，躺下会滚？',answer:'站着底面是平的，躺下侧面是弯的',options:['站着底面是平的，躺下侧面是弯的','因为重力的作用','因为站着更高'],prop:'why'},
+];
+
+function genProperty(lv){var q=PROP_QUESTIONS[lv%PROP_QUESTIONS.length];q.knowledge='图形性质';q.type='property';return q}
+
+// M2: 排列顺序
+function genSequence(lv){
+  var allShapes=['cube','cuboid','sphere','cylinder'];
+  var count=3+(lv%3);var arr=[];for(var i=0;i<count;i++)arr.push(allShapes[Math.floor(Math.random()*allShapes.length)]);
+  var names={cube:'正方体',cuboid:'长方体',sphere:'球',cylinder:'圆柱'};
+  var qTypes=[
+    function(){var idx=Math.floor(Math.random()*count);
+      return{prompt:'从左数第<span class="hl">'+(idx+1)+'</span>个是什么图形？',answer:names[arr[idx]],options:shuffle(Object.values(names)),type:'seq_nth',arr:arr,idx:idx};},
+    function(){var idx=Math.floor(Math.random()*(count-1))+1;
+      var b4=names[arr[idx-1]];return{prompt:'<span class="hl">'+names[arr[idx]]+'</span>的前面是什么图形？',answer:b4,options:shuffle(Object.values(names)),type:'seq_before',arr:arr,idx:idx};},
+    function(){var idx=Math.floor(Math.random()*(count-2))+1;
+      return{prompt:'<span class="hl">'+names[arr[idx-1]]+'</span>和<span class="hl2">'+names[arr[idx+1]]+'</span>之间是什么？',answer:names[arr[idx]],options:shuffle(Object.values(names)),type:'seq_between',arr:arr,idx:idx};},
+    function(){var tn=allShapes[Math.floor(Math.random()*allShapes.length)];var pos=[];for(var i=0;i<arr.length;i++)if(arr[i]===tn)pos.push(i+1);
+      return{prompt:arr.map(function(s,i){return names[s]}).join(' → ')+'<br>从左数，<span class="hl">'+names[tn]+'</span>在第几个位置？（有多个就答第一个）',answer:pos[0],options:pos.slice(0,4),type:'seq_find',arr:arr};},
+  ];
+  var q=qTypes[lv%qTypes.length]();q.knowledge='排列顺序';q.type='sequence';return q;
+}
+
+// M3: 正方体拼组（含隐藏）
+var STACK_CONFIGS=[
+  {name:'2个一排',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0}],total:2,hidden:[]},
+  {name:'2个叠高',positions:[{x:0,y:0,z:0},{x:0,y:1.05,z:0}],total:2,hidden:[]},
+  {name:'3个L形',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0},{x:0,y:0,z:1.1}],total:3,hidden:[]},
+  {name:'3个叠高',positions:[{x:0,y:0,z:0},{x:0,y:1.05,z:0},{x:0,y:2.1,z:0}],total:3,hidden:[]},
+  {name:'4个方块',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0},{x:0,y:0,z:1.1},{x:1.1,y:0,z:1.1}],total:4,hidden:[]},
+  {name:'4个塔+隐藏',positions:[{x:0,y:0,z:0},{x:0,y:1.05,z:0},{x:0,y:2.1,z:0},{x:1.1,y:0,z:0},{x:1.1,y:1.05,z:0}],total:5,hidden:[{x:1.1,y:0,z:0}]},
+  {name:'3个前排+后排',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0},{x:2.2,y:0,z:0},{x:0.55,y:0,z:1.1},{x:1.65,y:0,z:1.1}],total:5,hidden:[{x:0.55,y:0,z:1.1},{x:1.65,y:0,z:1.1}]},
+  {name:'阶梯形',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0},{x:2.2,y:0,z:0},{x:0,y:1.05,z:0},{x:1.1,y:1.05,z:0},{x:0,y:2.1,z:0}],total:6,hidden:[]},
+  {name:'暗藏玄机',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0},{x:0,y:0,z:1.1},{x:1.1,y:0,z:1.1},{x:0,y:1.05,z:0},{x:1.1,y:1.05,z:0},{x:0.55,y:1.05,z:0.55}],total:7,hidden:[{x:0.55,y:1.05,z:0.55}]},
+  {name:'大挑战',positions:[{x:0,y:0,z:0},{x:1.1,y:0,z:0},{x:2.2,y:0,z:0},{x:0,y:0,z:1.1},{x:1.1,y:0,z:1.1},{x:2.2,y:0,z:1.1},{x:0.55,y:1.05,z:0.55},{x:1.65,y:1.05,z:0.55},{x:1.1,y:2.1,z:0.55}],total:9,hidden:[{x:1.1,y:0,z:0.55},{x:0.55,y:1.05,z:0.55},{x:1.65,y:1.05,z:0.55}]},
+];
+
+function genCubeStack(lv){
+  var cfg=STACK_CONFIGS[lv%STACK_CONFIGS.length];
+  return{type:'cube_stack',config:cfg,prompt:'数一数：这个拼组用了<span class="hl">几个正方体</span>？<br>（注意<span class="hl2">隐藏的</span>也算哦！）',answer:cfg.total,options:genNearOptions(cfg.total,cfg.total-3,cfg.total+2,5),knowledge:'正方体拼组-含隐藏'};
+}
+function genNearOptions(correct,min,max,count){
+  var opts=[correct];var pool=[];for(var i=min;i<=max;i++)if(i!==correct&&i>0)pool.push(i);
+  shuffle(pool);for(var j=0;j<Math.min(count-1,pool.length);j++)opts.push(pool[j]);return shuffle(opts);
+}
+
+// M4: 拼搭构成
+var COMPOSITES=[
+  {name:'小塔',shapes:[{type:'cube',count:2,pos:[{x:-0.4,y:0,z:0},{x:-0.4,y:1.05,z:0}]},{type:'cone',count:1,pos:[{x:-0.4,y:2.1,z:0}]}],prompt:'这个拼搭用了哪些图形？',answer:'2个正方体和1个圆锥',options:['2个正方体和1个圆锥','1个正方体和2个圆柱','2个长方体和1个球'],knowledge:'拼搭构成'},
+  {name:'火箭',shapes:[{type:'cylinder',count:1,pos:[{x:0,y:0,z:0}]},{type:'cone',count:1,pos:[{x:0,y:1.2,z:0}]}],prompt:'这个拼搭用了什么图形？',answer:'1个圆柱和1个圆锥',options:['1个圆柱和1个圆锥','1个正方体和1个球','2个圆柱'],knowledge:'拼搭构成'},
+  {name:'柱子',shapes:[{type:'cube',count:1,pos:[{x:0,y:0,z:0}]},{type:'cylinder',count:1,pos:[{x:0,y:1.05,z:0}]},{type:'cube',count:1,pos:[{x:0,y:2.1,z:0}]}],prompt:'从上到下有哪些图形？',answer:'正方体→圆柱→正方体',options:['正方体→圆柱→正方体','圆柱→正方体→圆柱','正方体→正方体→圆柱'],knowledge:'拼搭构成'},
+  {name:'小房子',shapes:[{type:'cuboid',count:1,pos:[{x:0,y:0,z:0}]},{type:'cone',count:1,pos:[{x:0,y:0.8,z:0}]}],prompt:'这个像小房子的拼搭用了什么？',answer:'1个长方体和1个圆锥',options:['1个长方体和1个圆锥','1个正方体和1个球','1个圆柱和1个圆锥'],knowledge:'拼搭构成'},
+  {name:'复杂拼搭',shapes:[{type:'cube',count:3,pos:[{x:-0.55,y:0,z:0},{x:0.55,y:0,z:0},{x:0,y:1.05,z:0}]},{type:'cylinder',count:1,pos:[{x:0,y:2.1,z:0}]}],prompt:'这个复杂拼搭由什么组成？',answer:'3个正方体和1个圆柱',options:['3个正方体和1个圆柱','2个正方体和2个圆柱','4个正方体'],knowledge:'拼搭构成'},
+  {name:'多层结构',shapes:[{type:'cuboid',count:1,pos:[{x:0,y:-0.3,z:0}]},{type:'cube',count:2,pos:[{x:-0.55,y:0.55,z:0},{x:0.55,y:0.55,z:0}]},{type:'sphere',count:1,pos:[{x:0,y:1.6,z:0}]}],prompt:'这个拼搭用了<span class="hl">几种</span>不同的图形？<br>各几个？',answer:'3种（长方体1、正方体2、球1）',options:['3种（长方体1、正方体2、球1）','2种（正方体3、球1）','3种（长方体2、正方体1、球1）'],knowledge:'拼搭构成'},
+];
+
+function genComposite(lv){var q=COMPOSITES[lv%COMPOSITES.length];q.type='composite';return q}
+
+// M5: 搭得高
+var BUILD_TALL_QS=[
+  {prompt:'要把积木<span class="hl">搭得高</span>，下面应该放什么图形？',answer:'大长方体',options:['大长方体','小球','小圆柱'],knowledge:'稳定基础',scene:'compare'},
+  {prompt:'为什么<span class="hl">球</span>不能用来搭高？',answer:'球会滚动，不稳定',options:['球会滚动，不稳定','球太轻了','球不够高'],knowledge:'稳定性'},
+  {prompt:'<span class="hl">圆柱</span>怎么放才能搭得高？',answer:'竖着放（底面在下）',options:['竖着放（底面在下）','横着放','斜着放'],knowledge:'圆柱用法'},
+  {prompt:'搭高时，<span class="hl">大的重的</span>应该放哪里？',answer:'放在下面',options:['放在下面','放在上面','放中间'],knowledge:'重心'},
+  {prompt:'下面放<span class="hl">长方体</span>，上面放<span class="hl2">正方体</span>，能搭高吗？',answer:'能！下面是平的就可以',options:['能！下面是平的就可以','不能，会倒','不一定'],knowledge:'平面接触'},
+  {prompt:'用<span class="hl">正方体</span>搭一个尽可能高的塔，<br>关键是什么？',answer:'每一层都要对齐放平',options:['每一层都要对齐放平','越多越好','越快越好'],knowledge:'对齐'},
+];
+
+function genBuildTall(lv){var q=BUILD_TALL_QS[lv%BUILD_TALL_QS.length];q.type='build_tall';return q}
+
+// ==================== RENDER ====================
+function renderLevel(){
+  var lv=genLevel(state.mode,state.level);
+  state.targetAnswer=lv.answer;state.currentData=lv;state.isAnswering=true;state.autoRotate=false;
+  state.totalInMode=(state.mode===0||state.mode===1||state.mode===2)?8:(state.mode===3?10:6);
+  revealBtn.style.display='none';revealOn=false;propIndicator.classList.remove('show','roll','slide','both');
+  state.cameraGoal=new T.Vector3(4,3,6);state.camLookGoal=new T.Vector3(0,0.3,0);
+  mainGroup.rotation.set(0,0,0);mainGroup.position.set(0,0,0);
+  clearScene();allCubes=[];reveals=[];revealOn=false;
+  answersRow.innerHTML='';questionText.innerHTML='';
+
+  // Build scene
+  if(lv.type==='name_shape'||lv.type==='shape_by_name'||lv.type==='desc_to_shape'||lv.type==='object_to_shape'){
+    buildSingleShape(lv.shape);
+  }else if(lv.type==='property'){
+    buildPropScene(lv);
+  }else if(lv.type==='sequence'||lv.type==='seq_nth'||lv.type==='seq_before'||lv.type==='seq_between'||lv.type==='seq_find'){
+    buildSequenceScene(lv);
+  }else if(lv.type==='cube_stack'){
+    buildCubeStackScene(lv);
+  }else if(lv.type==='composite'){
+    buildCompositeScene(lv);
+  }else if(lv.type==='build_tall'){
+    buildTallScene(lv);
+  }
+
+  // Question
+  questionText.innerHTML=lv.prompt;
+
+  // Options
+  var opts=lv.options.slice(0,5);
+  opts.forEach(function(o){
+    var btn=document.createElement('button');btn.className='ans-btn';btn.textContent=o;
+    btn.addEventListener('click',function(){handleAnswer(o,btn)});
+    answersRow.appendChild(btn);
+  });
+
+  updateUI();
+}
+
+function buildSingleShape(sk){
+  var obj;
+  if(sk==='cube')obj=mkCube(1.3);
+  else if(sk==='cuboid')obj=mkCuboid(1.3,0.85,1.0);
+  else if(sk==='sphere')obj=mkSphere(0.65);
+  else if(sk==='cylinder')obj=mkCylinder(0.55,1.3);
+  else obj=mkCube(1.3);
+  mainGroup.add(obj);state.autoRotate=true;
+}
+
+function buildPropScene(lv){
+  if(lv.multiShape){
+    lv.multiShape.forEach(function(sk,i){var o=buildSimpleShape(sk);o.position.set((i-0.5)*1.6,0,0);mainGroup.add(o)});
+    state.autoRotate=true;
+  }else{
+    var obj=buildSimpleShape(lv.shape);mainGroup.add(obj);state.autoRotate=true;
+    // Animation for property demo
+    if(lv.prop==='roll_all'){state.propDemo='roll_all'}
+    else if(lv.prop==='lie_roll'){obj.rotation.z=Math.PI/2;state.propDemo='lie_roll'}
+    else if(lv.prop==='stand_still'){state.propDemo='stand_still'}
+    else if(lv.prop==='slide_only'){state.propDemo='slide_only'}
+  }
+}
+function buildSimpleShape(sk){
+  if(sk==='cube')return mkCube(1.1);
+  if(sk==='cuboid')return mkCuboid(1.2,0.8,0.9);
+  if(sk==='sphere')return mkSphere(0.6);
+  if(sk==='cylinder')return mkCylinder(0.5,1.2);
+  if(sk==='cone')return mkCone(0.5,1.0);
+  return mkCube(1);
+}
+
+function buildSequenceScene(lv){
+  var arr=lv.arr||lv.currentData.arr;
+  var spacing=1.5;var startX=-(arr.length-1)*spacing/2;
+  arr.forEach(function(sk,i){var o=buildSimpleShape(sk);o.position.set(startX+i*spacing,0,0);mainGroup.add(o)});
+  // Number labels (visual only - use position)
+  var labelMat=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.35});
+  arr.forEach(function(sk,i){
+    // Small sphere marker below
+    var dot=new T.Mesh(new T.SphereGeometry(0.1,8,8),new T.MeshBasicMaterial({color:0xFFD700}));
+    dot.position.set(startX+i*spacing,-1.1,0);mainGroup.add(dot);
+  });
+  state.autoRotate=false;
+}
+
+function buildCubeStackScene(lv){
+  var cfg=lv.config;reveals=[];allCubes=[];
+  cfg.positions.forEach(function(p){
+    var cube=mkCube(1);cube.position.set(p.x,p.y,p.z);cube.castShadow=true;cube.receiveShadow=true;
+    // Check if hidden (has another cube in front)
+    var isHidden=cfg.hidden&&cfg.hidden.some(function(h){return Math.abs(h.x-p.x)<0.2&&Math.abs(h.y-p.y)<0.2&&Math.abs(h.z-p.z)<0.2});
+    if(isHidden){cube.material.opacity=1;cube.material.transparent=true;reveals.push(cube)}
+    mainGroup.add(cube);allCubes.push(cube);
+  });
+  // Center
+  var cx=cfg.positions.reduce(function(s,p){return s+p.x},0)/cfg.positions.length;
+  var cz=cfg.positions.reduce(function(s,p){return s+p.z},0)/cfg.positions.length;
+  mainGroup.position.set(-cx,0,-cz);
+
+  if(reveals.length>0){revealBtn.style.display='block';revealBtn.textContent='👁 查看隐藏 ('+reveals.length+'个)'}
+  else revealBtn.style.display='none';
+  state.autoRotate=false;
+}
+
+function buildCompositeScene(lv){
+  lv.shapes.forEach(function(shapeGroup){
+    shapeGroup.pos.forEach(function(p){
+      var o=buildSimpleShape(shapeGroup.type);o.position.set(p.x,p.y,p.z);mainGroup.add(o);
+    });
+  });
+  state.autoRotate=true;
+}
+
+function buildTallScene(lv){
+  // Show example: big cuboid base + stacked cubes
+  var base=mkCuboid(1.8,0.6,1.2);base.position.y=-0.3;mainGroup.add(base);
+  var c1=mkCube(0.9);c1.position.y=0.45;mainGroup.add(c1);
+  var c2=mkCube(0.9);c2.position.y=1.35;mainGroup.add(c2);
+  var c3=mkCube(0.9);c3.position.y=2.25;mainGroup.add(c3);
+  state.autoRotate=true;
+}
+
+// ==================== ANSWER ====================
+function handleAnswer(ans,btnEl){
+  if(!state.isAnswering)return;state.isAnswering=false;
+  var correct=state.targetAnswer;var isCorrect=(String(ans)===String(correct));
+  var allBtns=answersRow.querySelectorAll('.ans-btn');
+  allBtns.forEach(function(b){b.disabled=true});
+  if(isCorrect){btnEl.classList.add('correct');state.score+=10;showFeedback(true);spawnParticles();setTimeout(function(){advanceLevel()},1200)}
+  else{btnEl.classList.add('wrong');allBtns.forEach(function(b){if(String(b.textContent)===String(correct))b.classList.add('correct')});showFeedback(false);setTimeout(function(){allBtns.forEach(function(b){b.disabled=false;b.className='ans-btn'});state.isAnswering=true},1300)}
+  updateUI();
+}
+
+function showFeedback(c){var t=feedbackToast;t.textContent=c?['太棒了!🌟','真厉害!👏','答对了!✨'][Math.floor(Math.random()*3)]:['再想想~💪','差一点!🤔','仔细观察!🔍'][Math.floor(Math.random()*3)];t.className='feedback-toast show'+(c?'':' wrong');setTimeout(function(){t.className='feedback-toast'},800)}
+function spawnParticles(){for(var i=0;i<16;i++){var p=document.createElement('span');p.className='star-particle';p.textContent=['⭐','🌟','✨','💫','🎉','👏'][Math.floor(Math.random()*6)];p.style.left=(25+Math.random()*50)+'%';p.style.top=(30+Math.random()*30)+'%';p.style.animationDelay=Math.random()*0.3+'s';particlesLayer.appendChild(p);setTimeout(function(){p.remove()},1400)}}
+
+// ==================== PROGRESS ====================
+function advanceLevel(){state.level++;if(state.level>=state.totalInMode)completeMode();else renderLevel()}
+function completeMode(){
+  state.isAnswering=false;state.autoRotate=false;state.propDemo=null;revealBtn.style.display='none';
+  var stars=state.score>=70?3:state.score>=40?2:1;var names=['认识图形','图形性质','排列顺序','正方体拼组','拼搭构成','搭得高'];
+  document.getElementById('completeTitle').textContent='模块完成！';
+  document.getElementById('starsDisplay').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('completeMsg').textContent='你完成了「'+names[state.mode]+'」！';
+  document.getElementById('finalScoreEl').textContent=state.score;
+  completeModal.classList.remove('hidden');
+  var sb=document.getElementById('switchBtn');sb.textContent=state.mode<5?'换模块 ➡️':'全部完成!🔄';
+}
+
+function switchMode(idx){
+  state.mode=idx;state.level=0;state.score=0;state.totalInMode=6;state.isAnswering=true;state.autoRotate=false;state.propDemo=null;revealBtn.style.display='none';
+  modeTabs.forEach(function(t,i){t.classList.toggle('active',i===idx)});
+  completeModal.classList.add('hidden');updateUI();renderLevel();
+}
+
+modeTabs.forEach(function(tab){tab.addEventListener('click',function(){var i=parseInt(tab.dataset.mode);if(i!==state.mode)switchMode(i)})});
+document.getElementById('restartBtn2').addEventListener('click',function(){switchMode(state.mode)});
+document.getElementById('switchBtn').addEventListener('click',function(){if(state.mode<5)switchMode(state.mode+1);else switchMode(0)});
+window.restartStage=function(){switchMode(state.mode)};
+
+// Reveal button
+revealBtn.addEventListener('click',function(){
+  revealOn=!revealOn;
+  reveals.forEach(function(c){c.material.opacity=revealOn?0.3:1;if(revealOn){c.material.emissive=new T.Color(0xFFD700);c.material.emissiveIntensity=0.5}else{c.material.emissive=new T.Color(0x000000);c.material.emissiveIntensity=0}});
+  revealBtn.textContent=revealOn?'👁 隐藏':'👁 查看隐藏 ('+reveals.length+'个)';
+  revealBtn.classList.toggle('active',revealOn);
+});
+
+function updateUI(){scoreEl.textContent=state.score;levelEl.textContent=state.level+1;totalEl.textContent=state.totalInMode}
+
+// ==================== MOUSE ====================
+var isDragging=false,prevM={x:0,y:0},dragSpeed=0.008;
+function getPos(e){if(e.touches&&e.touches.length>0)return{x:e.touches[0].clientX,y:e.touches[0].clientY};return{x:e.clientX,y:e.clientY}}
+canvasWrap.addEventListener('pointerdown',function(e){if(e.target.tagName==='BUTTON'||e.target.closest('button'))return;isDragging=true;var p=getPos(e);prevM.x=p.x;prevM.y=p.y;hintTag.style.opacity='0'});
+window.addEventListener('pointermove',function(e){if(!isDragging)return;var p=getPos(e);mainGroup.rotation.y+=(p.x-prevM.x)*dragSpeed;mainGroup.rotation.x+=(p.y-prevM.y)*dragSpeed;mainGroup.rotation.x=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,mainGroup.rotation.x));prevM.x=p.x;prevM.y=p.y});
+window.addEventListener('pointerup',function(){isDragging=false;setTimeout(function(){hintTag.style.opacity='1'},2000)});
+canvasWrap.addEventListener('wheel',function(e){e.preventDefault();var d=camera.position.length();var nd=Math.max(2.5,Math.min(12,d+e.deltaY*0.01));var dir=camera.position.clone().normalize();state.cameraGoal=dir.multiplyScalar(nd)},{passive:false});
+canvasWrap.addEventListener('dblclick',function(){state.cameraGoal=new T.Vector3(4,3,6);state.camLookGoal=new T.Vector3(0,0.3,0);mainGroup.rotation.set(0,0,0)});
+
+// ==================== ANIMATION ====================
+var clock=new T.Clock();state.cameraGoal=new T.Vector3(4,3,6);state.camLookGoal=new T.Vector3(0,0.3,0);
+function animate(){
+  requestAnimationFrame(animate);var dt=Math.min(clock.getDelta(),0.1);
+  if(state.autoRotate&&!isDragging)mainGroup.rotation.y+=0.35*dt;
+  // Property demos
+  if(state.propDemo==='roll_all'&&!isDragging){mainGroup.rotation.z+=1.5*dt;mainGroup.rotation.x+=0.8*dt}
+  else if(state.propDemo==='lie_roll'&&!isDragging){mainGroup.rotation.z+=2.0*dt}
+  else if(state.propDemo==='slide_only'&&!isDragging){mainGroup.position.x=Math.sin(Date.now()*0.002)*0.8}
+  camera.position.lerp(state.cameraGoal||new T.Vector3(4,3,6),3*dt);
+  if(state.camLookGoal)camera.lookAt(state.camLookGoal);else camera.lookAt(0,0.3,0);
+  renderer.render(scene,camera);
+}
+
+function resize(){var w=canvasWrap.clientWidth,h=canvasWrap.clientHeight;if(w===0||h===0)return;renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}
+window.addEventListener('resize',resize);
+
+// ==================== HELPERS ====================
+function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+// ==================== START ====================
+resize();animate();updateUI();renderLevel();
+} // end initGame
+
+if(typeof THREE!=='undefined'){window.__THREE_LOADED=true;document.getElementById('loadingOverlay').classList.add('hidden');initGame()}
+else initWhenReady();
+})();
+</script>
+</body>
+</html>

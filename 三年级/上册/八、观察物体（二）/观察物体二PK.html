@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>观察物体（二）PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px;gap:8px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:0.95em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.timer{font-size:1.3em;font-weight:bold;color:#FFD700;min-width:50px;text-align:center}
+.round-info{font-size:0.78em;color:#aaa}
+
+.module-tabs{display:flex;gap:4px;padding:4px 6px;justify-content:center;background:rgba(0,0,0,0.3);flex-wrap:wrap}
+.module-tab{padding:5px 10px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.68em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.3s}
+.module-tab.active{border-color:#FFD700;background:rgba(255,215,0,0.15);color:#FFD700;box-shadow:0 0 10px rgba(255,215,0,0.25)}
+.module-tab:hover{border-color:rgba(255,255,255,0.5)}
+.mode-desc{text-align:center;padding:2px 8px;font-size:0.68em;color:#aaa;background:rgba(0,0,0,0.2)}
+
+.arena{display:flex;flex:1;height:calc(100vh - 210px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 5px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:0.9em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:5px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.5em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.68em;color:#FFD700;min-height:15px}
+
+.question-box{background:rgba(255,255,255,0.1);border-radius:10px;padding:6px 5px;margin:2px 0;width:100%;text-align:center;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.82em;line-height:1.3;gap:4px;position:relative;overflow:hidden}
+
+.viz-canvas{display:block;margin:3px auto;border-radius:6px;background:rgba(0,0,0,0.25)}
+.view-label{font-size:0.65em;color:#FFD700;margin-top:1px}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;margin:3px 0}
+.p-opt{padding:7px 4px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.72em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.25;min-height:34px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.5);transform:scale(1.02)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 14px rgba(255,107,107,0.5)}
+.right .p-opt.correct{box-shadow:0 0 14px rgba(78,205,196,0.5)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.feedback{font-size:0.72em;font-weight:bold;min-height:16px;text-align:center;margin:2px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.6em;font-weight:bold;z-index:10;text-shadow:0 0 20px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:8px 16px;border-radius:16px;border:none;font-size:0.78em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1em;color:#ccc;margin-bottom:14px}
+.win-scores{display:flex;gap:28px;margin-bottom:14px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.3em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:4px 3px}
+  .question-box{font-size:0.72em;min-height:45px;padding:5px 3px}
+  .p-opt{font-size:0.68em;padding:5px 3px;min-height:30px}
+  .vs-badge{font-size:1.1em}
+  .player-score{font-size:1.1em}
+  .win-title{font-size:1.3em}
+  .options-grid{gap:3px}
+  .module-tab{padding:4px 7px;font-size:0.62em}
+  .top-bar h1{font-size:0.75em}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>观察物体（二） ⚔️ PK对战</h1>
+  <span class="round-info">第 <span id="rn">1</span>/<span id="tt">10</span> 轮</span>
+  <span class="timer">⏱ <span id="tm">25</span>s</span>
+</div>
+
+<div class="module-tabs">
+  <button class="module-tab active" id="tab0" onclick="switchModule(0)">一、生活物品观察</button>
+  <button class="module-tab" id="tab1" onclick="switchModule(1)">二、长方体/正方体</button>
+  <button class="module-tab" id="tab2" onclick="switchModule(2)">三、组合体与逆向</button>
+</div>
+<div class="mode-desc" id="modeDesc">模块一：从前面、右面、上面观察餐巾纸盒、字典、魔方等生活物品</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="question-box" id="q1">准备开始...</div>
+    <div class="options-grid" id="op1"></div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="question-box" id="q2">准备开始...</div>
+    <div class="options-grid" id="op2"></div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.1em;padding:12px 28px">🔄 再来一局</button>
+</div>
+
+<script>
+// ==================== 3D RENDERING ENGINE ====================
+var COL_TOP='#FF9800', COL_LEFT='#FF6B6B', COL_RIGHT='#4ECDC4';
+var COL_EDGE='rgba(255,255,255,0.5)';
+
+function drawCubeFace(ctx,points,color){
+  ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+  for(var i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
+  ctx.closePath();ctx.fillStyle=color;ctx.fill();
+  ctx.strokeStyle=COL_EDGE;ctx.lineWidth=0.8;ctx.stroke();
+}
+
+function drawIsoCube(ctx,sx,sy,size){
+  var s=size;
+  var top=[[sx,sy],[sx+s,sy+s*0.5],[sx,sy+s],[sx-s,sy+s*0.5]];
+  drawCubeFace(ctx,top,COL_TOP);
+  var left=[[sx-s,sy+s*0.5],[sx,sy+s],[sx,sy+s*1.6],[sx-s,sy+s*1.1]];
+  drawCubeFace(ctx,left,COL_LEFT);
+  var right=[[sx,sy+s],[sx+s,sy+s*0.5],[sx+s,sy+s*1.1],[sx,sy+s*1.6]];
+  drawCubeFace(ctx,right,COL_RIGHT);
+}
+
+function isoPos(x,y,z,ox,oy,size){
+  return {sx:ox+(x-y)*size, sy:oy+(x+y)*size*0.5-z*size*0.6};
+}
+
+function sortBlocks(blocks){
+  return blocks.slice().sort(function(a,b){
+    if(a.z!==b.z)return a.z-b.z;
+    if((a.x+a.y)!==(b.x+b.y))return(a.x+a.y)-(b.x+b.y);
+    return a.y-a.x;
+  });
+}
+
+function draw3DInternal(ctx,blocks,size,W,H,objName){
+  if(!blocks||blocks.length===0)return;
+  var minX=blocks[0].x,maxX=blocks[0].x,minY=blocks[0].y,maxY=blocks[0].y,maxZ=blocks[0].z;
+  for(var i=0;i<blocks.length;i++){
+    var b=blocks[i];if(b.x<minX)minX=b.x;if(b.x>maxX)maxX=b.x;
+    if(b.y<minY)minY=b.y;if(b.y>maxY)maxY=b.y;if(b.z>maxZ)maxZ=b.z;
+  }
+  var s=size;
+  var ox=W/2,oy=H*0.48+maxZ*s*0.25;
+  var sorted=sortBlocks(blocks);
+  for(var i=0;i<sorted.length;i++){
+    var b=sorted[i],pos=isoPos(b.x-minX,b.y-minY,b.z,ox,oy,s);
+    drawIsoCube(ctx,pos.sx,pos.sy,s);
+  }
+  // Object name label
+  if(objName){
+    ctx.fillStyle='#fff';ctx.font='bold 11px "Microsoft YaHei"';ctx.textAlign='center';
+    ctx.fillText(objName,W/2,H-6);
+  }
+}
+
+function getProjection(blocks,view){
+  var xs=[],ys=[],zs=[];
+  for(var i=0;i<blocks.length;i++){xs.push(blocks[i].x);ys.push(blocks[i].y);zs.push(blocks[i].z);}
+  var minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys);
+  var maxZ=Math.max.apply(null,zs);
+
+  if(view==='front'){
+    var w=maxX-minX+1,h=maxZ+1;
+    var grid=[];for(var r=0;r<h;r++){grid[r]=[];for(var c=0;c<w;c++)grid[r][c]=0;}
+    for(var i=0;i<blocks.length;i++){var b=blocks[i];grid[maxZ-b.z][b.x-minX]=1;}
+    return {grid:grid,w:w,h:h,label:'前面'};
+  } else if(view==='right'){
+    var w=maxY-minY+1,h=maxZ+1;
+    var grid=[];for(var r=0;r<h;r++){grid[r]=[];for(var c=0;c<w;c++)grid[r][c]=0;}
+    for(var i=0;i<blocks.length;i++){var b=blocks[i];grid[maxZ-b.z][b.y-minY]=1;}
+    return {grid:grid,w:w,h:h,label:'右面'};
+  } else if(view==='top'){
+    var w=maxX-minX+1,h=maxY-minY+1;
+    var grid=[];for(var r=0;r<h;r++){grid[r]=[];for(var c=0;c<w;c++)grid[r][c]=0;}
+    for(var i=0;i<blocks.length;i++){var b=blocks[i];grid[b.y-minY][b.x-minX]=1;}
+    return {grid:grid,w:w,h:h,label:'上面'};
+  }
+}
+
+// ==================== COMBINED CANVAS: 3D + 2D view ====================
+function draw3DAndView(canvasId,blocks,view,size3d,cellSize,objName){
+  var c=document.getElementById(canvasId);if(!c)return;
+  var ctx=c.getContext('2d'),W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);
+
+  var midH=H*0.55;
+  draw3DInternal(ctx,blocks,size3d||16,W,midH,objName);
+
+  ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(10,midH+4);ctx.lineTo(W-10,midH+4);ctx.stroke();
+
+  if(view){
+    var proj=getProjection(blocks,view);
+    var cs=cellSize||(view==='top'?14:17);
+    var gw=proj.w,gh=proj.h;
+    var ox=(W-gw*cs)/2,oy=midH+8+(H-midH-16-gh*cs)/2;
+    for(var r=0;r<gh;r++){
+      for(var col=0;col<gw;col++){
+        var x=ox+col*cs,y=oy+r*cs;
+        if(proj.grid[r][col]){
+          ctx.fillStyle='rgba(255,152,0,0.75)';ctx.fillRect(x+1,y+1,cs-2,cs-2);
+          ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=1;ctx.strokeRect(x+1,y+1,cs-2,cs-2);
+        } else {
+          ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;ctx.setLineDash([2,2]);
+          ctx.strokeRect(x+1,y+1,cs-2,cs-2);ctx.setLineDash([]);
+        }
+      }
+    }
+    ctx.fillStyle='#FFD700';ctx.font='bold 9px "Microsoft YaHei"';ctx.textAlign='center';
+    ctx.fillText('从'+proj.label+'看到的形状（2D视图）',W/2,H-4);
+  }
+}
+
+// Generate blocks for a W×D×H box (used for real objects)
+function makeBox(w,d,h){
+  var blocks=[];
+  for(var x=0;x<w;x++)for(var y=0;y<d;y++)for(var z=0;z<h;z++)blocks.push({x:x,y:y,z:z});
+  return blocks;
+}
+
+// ==================== REAL-WORLD OBJECTS ====================
+var objects={
+  // name, w,d,h proportions, name
+  tissueBox:    {blocks:makeBox(5,3,2), name:'餐巾纸盒'},
+  dictionary:   {blocks:makeBox(5,3,1), name:'新华字典'},
+  rubikCube:    {blocks:makeBox(2,2,2), name:'魔方'},
+  toothpaste:   {blocks:makeBox(7,2,2), name:'牙膏盒'},
+  pencilCase:   {blocks:makeBox(6,3,1), name:'文具盒'},
+  shoeBox:      {blocks:makeBox(5,3,2), name:'鞋盒'},
+  phone:        {blocks:makeBox(7,3,0.5), name:'手机'},
+  soapBox:      {blocks:makeBox(4,2,1.5), name:'肥皂盒'},
+  chalkBox:     {blocks:makeBox(2,2,2.5), name:'粉笔盒'},
+  eraser:       {blocks:makeBox(4,2,1), name:'橡皮'},
+  teaBox:       {blocks:makeBox(2,2,3), name:'茶叶罐'},
+  cookieBox:    {blocks:makeBox(4,3,1.5), name:'饼干盒'}
+};
+
+// For objects that need 1-unit height (flat): scale z appropriately
+// phone: flat, use blocks at z=0 only but draw thin
+function makeFlatBox(w,d){
+  return makeBox(w,d,1);
+}
+
+// ==================== RENDER HELPERS ====================
+function renderObjCanvas(id, obj, view, size3d, cellSize){
+  var cid='cv_'+id+'_'+Math.random().toString(36).substr(2,6);
+  setTimeout(function(){draw3DAndView(cid,obj.blocks,view,size3d||15,cellSize||16,obj.name);},50);
+  return '<canvas class="viz-canvas" id="'+cid+'" width="200" height="165"></canvas>';
+}
+
+function render3DCanvas(id, blocks, size){
+  var cid='cv_'+id+'_'+Math.random().toString(36).substr(2,6);
+  setTimeout(function(){
+    var c=document.getElementById(cid);if(!c)return;
+    draw3DInternal(c.getContext('2d'),blocks,size||16,c.width,c.height);
+  },50);
+  return '<canvas class="viz-canvas" id="'+cid+'" width="190" height="130"></canvas>';
+}
+
+function render3DAndViewCanvas(id, blocks, view, size3d, cellSize){
+  var cid='cv_'+id+'_'+Math.random().toString(36).substr(2,6);
+  setTimeout(function(){draw3DAndView(cid,blocks,view,size3d||14,cellSize||16);},50);
+  return '<canvas class="viz-canvas" id="'+cid+'" width="190" height="160"></canvas>';
+}
+
+function multiViewCanvas(id, blocks, views){
+  var cid='cv_'+id+'_'+Math.random().toString(36).substr(2,6);
+  setTimeout(function(){
+    var c=document.getElementById(cid);if(!c)return;
+    var ctx=c.getContext('2d'),W=c.width,H=c.height;
+    ctx.clearRect(0,0,W,H);
+    var cs=13,gap=3,nv=views.length;
+    var totalW=nv*(cs*4)+gap*(nv-1),startX=(W-totalW)/2,startY=4;
+    for(var v=0;v<nv;v++){
+      var vx=startX+v*(cs*4+gap);
+      var proj=getProjection(blocks,views[v]);
+      var gw=proj.w,gh=proj.h;
+      var ox=vx+(cs*4-gw*cs)/2,oy=startY+(H-10-gh*cs)/2;
+      for(var r=0;r<gh;r++){
+        for(var c2=0;c2<gw;c2++){
+          var x=ox+c2*cs,y=oy+r*cs;
+          if(proj.grid[r][c2]){
+            ctx.fillStyle='rgba(255,152,0,0.75)';ctx.fillRect(x+1,y+1,cs-2,cs-2);
+            ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=0.8;ctx.strokeRect(x+1,y+1,cs-2,cs-2);
+          } else {
+            ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;ctx.setLineDash([2,2]);
+            ctx.strokeRect(x+1,y+1,cs-2,cs-2);ctx.setLineDash([]);
+          }
+        }
+      }
+      ctx.fillStyle='#FFD700';ctx.font='bold 8px "Microsoft YaHei"';ctx.textAlign='center';
+      var vn={front:'前面',right:'右面',top:'上面',back:'后面'};
+      ctx.fillText(vn[views[v]]||views[v],vx+cs*2,startY+gh*cs+14);
+    }
+  },50);
+  return '<canvas class="viz-canvas" id="'+cid+'" width="190" height="100"></canvas>';
+}
+
+// ==================== QUESTION BANKS ====================
+
+// Module 1: 生活物品观察 (Real-life objects)
+var M1=[
+  // === 餐巾纸盒 ===
+  {q:"观察这个餐巾纸盒。从前面看是什么形状？",
+   obj:'tissueBox', view:'front',
+   o:["长方形（横着）","正方形","长方形（竖着）","圆形"], a:0,
+   tip:"餐巾纸盒从前面看：宽度＞高度→横着的长方形"},
+
+  {q:"餐巾纸盒。从右面看和从前面看，看到的形状一样吗？",
+   obj:'tissueBox',
+   o:["一样，都是横着的长方形","不一样，前面宽右面窄","不一样，前面是正方形右面是长方形","完全一样"], a:1,
+   tip:"前面：宽大→横长方形。右面：深度小→窄长方形。宽窄不同！"},
+
+  {q:"餐巾纸盒。从上面看是什么形状？",
+   obj:'tissueBox', view:'top',
+   o:["长方形（和前面一样）","长方形（和右面不一样）","正方形","圆形"], a:1,
+   tip:"上面看：长×宽的长方形，比右面(深×宽)更扁长"},
+
+  // === 新华字典 ===
+  {q:"观察这本新华字典。从前面看是什么形状？",
+   obj:'dictionary', view:'front',
+   o:["长方形","正方形","很扁的长方形","圆形"], a:0,
+   tip:"字典从前面看是长方形（宽度＞高度）"},
+
+  {q:"新华字典。从右面看是什么形状？",
+   obj:'dictionary', view:'right',
+   o:["和前面一样的宽长方形","窄一些的长方形","正方形","很扁的长方形"], a:1,
+   tip:"从右面看：书的厚度较小→比前面窄的长方形"},
+
+  {q:"新华字典。从上面看是什么形状？",
+   obj:'dictionary', view:'top',
+   o:["最大的长方形（书封面大小）","小长方形","正方形","和前面一样"], a:0,
+   tip:"从上面俯视→看到书的封面→是最大的那个面（长×宽）"},
+
+  // === 魔方 ===
+  {q:"观察魔方。从前面看是什么形状？",
+   obj:'rubikCube', view:'front',
+   o:["正方形","长方形","三角形","圆形"], a:0,
+   tip:"魔方是正方体，每个面都是正方形"},
+
+  {q:"魔方从前面、右面、上面看，三个方向看到的形状相同吗？",
+   obj:'rubikCube',
+   o:["完全相同，都是正方形","不同，分别是不同形状","前面是正方形其他不是","只有前面和上面相同"], a:0,
+   tip:"正方体的6个面都是完全相同的正方形！三个方向看都一样"},
+
+  // === 牙膏盒 ===
+  {q:"观察牙膏盒。从前面看是什么形状？",
+   obj:'toothpaste', view:'front',
+   o:["长长窄窄的长方形","正方形","很宽的长方形","圆形"], a:0,
+   tip:"牙膏盒又长又窄→从前面看是细长的长方形"},
+
+  {q:"牙膏盒。从右面看和从前面看有什么不同？",
+   obj:'toothpaste',
+   o:["一样","前面细长，右面方正一些","前面方形，右面长方形","完全不一样"], a:1,
+   tip:"前面：长×高（细长）。右面：宽×高（接近正方形）。从不同方向看形状比例不同"},
+
+  // === 文具盒 ===
+  {q:"观察文具盒（扁平长方形）。从上面看是什么形状？",
+   obj:'pencilCase', view:'top',
+   o:["长长的长方形","正方形","小长方形","圆形"], a:0,
+   tip:"文具盒扁平→从上面看到最大面积的长方形"},
+
+  {q:"文具盒。从前面看是什么形状？",
+   obj:'pencilCase', view:'front',
+   o:["和上面看一样大","窄长条（扁扁的）","正方形","圆形"], a:1,
+   tip:"文具盒很扁→从前面看高度很小→是扁长条形状"},
+
+  // === 综合对比 ===
+  {q:"餐巾纸盒和字典，从上面看有什么相同和不同？",
+   o:["都是长方形，餐巾纸盒更大","都是正方形","餐巾纸盒是正方形字典是长方形","完全不同"], a:0,
+   tip:"两者上面看都是长方形（长×宽），餐巾纸盒的长宽都更大"},
+
+  {q:"下面哪个物品从三个方向看都是正方形？",
+   o:["魔方","字典","牙膏盒","文具盒"], a:0,
+   tip:"只有正方体（魔方）从任何方向看都是正方形。其他物品各面大小不同"}
+];
+
+// Module 2: 长方体和正方体 (blocks/cube arrangements)
+var shapes={
+  single:[{x:0,y:0,z:0}],
+  row2:[{x:0,y:0,z:0},{x:1,y:0,z:0}],
+  row3:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0}],
+  row4:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:3,y:0,z:0}],
+  plate2x2:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0}],
+  plate3x2:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:2,y:1,z:0}],
+  plate3x3:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:2,y:1,z:0},{x:0,y:2,z:0},{x:1,y:2,z:0},{x:2,y:2,z:0}],
+  cube2x2x2:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:0,y:0,z:1},{x:1,y:0,z:1},{x:0,y:1,z:1},{x:1,y:1,z:1}],
+  box3x2x1:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:2,y:1,z:0}],
+  box3x2x2:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:2,y:1,z:0},{x:0,y:0,z:1},{x:1,y:0,z:1},{x:2,y:0,z:1},{x:0,y:1,z:1},{x:1,y:1,z:1},{x:2,y:1,z:1}],
+  Lshape2:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:0,y:1,z:0}],
+  Lshape3:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:0,y:1,z:0}],
+  corner2h:[{x:0,y:0,z:0},{x:0,y:0,z:1},{x:1,y:0,z:1}],
+  Tshape:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:1,y:1,z:0}],
+  stairs3:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:2,y:0,z:0},{x:1,y:0,z:1},{x:2,y:0,z:1},{x:2,y:0,z:2}],
+  cross3:[{x:1,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:2,y:1,z:0},{x:1,y:2,z:0}],
+  tower2:[{x:0,y:0,z:0},{x:0,y:0,z:1}],
+  tower3:[{x:0,y:0,z:0},{x:0,y:0,z:1},{x:0,y:0,z:2}],
+  tower2on2x2:[{x:0,y:0,z:0},{x:1,y:0,z:0},{x:0,y:1,z:0},{x:1,y:1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:2}]
+};
+
+var M2=[
+  {q:"用8个同样大的正方体摆成大正方体（2×2×2）。从前面看是什么形状？",
+   blocks:shapes.cube2x2x2, view:'front',
+   o:["2×2的田字格","4个正方形横排","4个正方形竖排","单个正方形"], a:0,
+   tip:"前面：宽2高2→2×2田字格"},
+
+  {q:"大正方体（2×2×2）。从三个方向看都一样吗？",
+   blocks:shapes.cube2x2x2,
+   o:["一样，都是2×2田字格","不一样","只有前面和上面一样","前面和右面不同"], a:0,
+   tip:"正方体从任何方向看都是相同的正方形"},
+
+  {q:"6个正方体摆成3×2×1的长方体。从前面看是什么？",
+   blocks:shapes.box3x2x1, view:'front',
+   o:["3个正方形横排","2个正方形横排","3×2矩形","2个正方形竖排"], a:0,
+   tip:"前面：宽3高1→3个正方形横排"},
+
+  {q:"3×2×1的长方体。从右面看是什么？",
+   blocks:shapes.box3x2x1, view:'right',
+   o:["2个正方形横排","2个正方形竖排","3个正方形","1个正方形"], a:0,
+   tip:"右面：深2高1→2个正方形横排"},
+
+  {q:"12个正方体摆成3×2×2的长方体。从前面看是什么？",
+   blocks:shapes.box3x2x2, view:'front',
+   o:["3×2矩形（宽3高2）","2×2田字格","3个横排","6个横排"], a:0,
+   tip:"前面：宽3高2→6个正方形排列成3列2行"},
+
+  {q:"3×2×2的长方体。从右面看是什么？",
+   blocks:shapes.box3x2x2, view:'right',
+   o:["2×2田字格","3×2矩形","4个横排","2个竖排"], a:0,
+   tip:"右面：深2高2→2×2正方形"},
+
+  {q:"4个正方体排成一行。从前面和从右面看一样吗？",
+   blocks:shapes.row4, view:'front',
+   o:["不一样，前面4个横排右面1个","一样，都是4个","不一样，前面1个右面4个","一样，都是1个"], a:0,
+   tip:"前面：4个横排。右面：只能看到最右边1个"},
+
+  {q:"9个正方体摆成3×3平台（1层）。从上面看是什么？",
+   blocks:shapes.plate3x3, view:'top',
+   o:["3×3九宫格","3个横排","9个竖排","1个正方形"], a:0,
+   tip:"上面俯视→3行3列九宫格"},
+
+  {q:"3×3平台。从前面看是什么？",
+   blocks:shapes.plate3x3, view:'front',
+   o:["3个正方形横排","3×3正方形","1个正方形","9个正方形"], a:0,
+   tip:"只有1层高→前面看到高度1宽度3→3个横排"},
+
+  {q:"2×2×2正方体，从前面最多看到几个正方体的面？",
+   blocks:shapes.cube2x2x2, view:'front',
+   o:["4个","6个","8个","2个"], a:0,
+   tip:"前面看到2×2=4个。后面的被挡住了"},
+
+  {q:"3×2×2的长方体，从上面能看到几个正方体？",
+   blocks:shapes.box3x2x2, view:'top',
+   o:["6个","8个","12个","3个"], a:0,
+   tip:"上面俯视→3×2=6个正方体的顶面"},
+
+  {q:"一个物体从三个方向看都是2×2田字格。这是什么？",
+   blocks:shapes.cube2x2x2,
+   o:["2×2×2正方体","2×2×1平台","4个排成一行","2个叠起来"], a:0,
+   tip:"三方向都是2×2→长宽高都是2→正方体"}
+];
+
+// Module 3: 组合体与逆向
+var M3=[
+  {q:"阶梯形状（3层）。从前面看是什么？",
+   blocks:shapes.stairs3, view:'front',
+   o:["阶梯状（3层递增）","3个横排","3个竖排","L形"], a:0,
+   tip:"前面看到高度递增的阶梯轮廓"},
+
+  {q:"阶梯形状。从右面看是什么？",
+   blocks:shapes.stairs3, view:'right',
+   o:["阶梯状","2个竖排","3个横排","L形"], a:0,
+   tip:"右面也看到3层递增的阶梯"},
+
+  {q:"阶梯形状。从上面看是什么？",
+   blocks:shapes.stairs3, view:'top',
+   o:["阶梯状轮廓","3个横排","正方形","L形"], a:0,
+   tip:"上面看到逐步凸出的阶梯轮廓"},
+
+  {q:"T字形（5个正方体）。从前面看是什么？",
+   blocks:shapes.Tshape, view:'front',
+   o:["T字形","一排3个","一列3个","十字形"], a:0,
+   tip:"只有1层→前面看是T字形轮廓"},
+
+  {q:"T字形。从右面看是什么？",
+   blocks:shapes.Tshape, view:'right',
+   o:["2个正方形横排","3个横排","1个正方形","T形"], a:0,
+   tip:"右面看到竖杆的深度方向2个→2个横排"},
+
+  {q:"十字形（5个正方体）。从上面看是什么？",
+   blocks:shapes.cross3, view:'top',
+   o:["十字形","正方形","L形","T形"], a:0,
+   tip:"只有1层→上面看是完整十字形"},
+
+  {q:"组合体从前面看是3个横排、从上面看是L形。可能是什么？",
+   visual:function(){return multiViewCanvas('rev1',shapes.Lshape3,['front','top']);},
+   o:["L形(长3+拐角)","3×2平台","3个叠起来","十字形"], a:0,
+   tip:"前面3横排→宽3。上面L形→拐角形状→L形(长3+拐角)"},
+
+  {q:"一个组合体从前面看是2×2田字格，右面也是2×2田字格，上面也是2×2。这是什么？",
+   blocks:shapes.cube2x2x2,
+   o:["2×2×2正方体","2×2平台","2个叠起来","不确定"], a:0,
+   tip:"三方向都是2×2→正方体"},
+
+  {q:"两个叠起来+旁边一个（品字形）。从前面看是什么？",
+   blocks:shapes.corner2h, view:'front',
+   o:["下面1个上面1个(竖排2个)","2个横排","品字形","L形"], a:0,
+   tip:"从前面看：底层一个+上层一个→2个竖排。拐弯的方块被挡住了"},
+
+  {q:"2×2平台上叠2个（塔在角落）。从前面看是什么？",
+   blocks:shapes.tower2on2x2,
+   o:["品字形","4个横排","2×2田字格","不确定"], a:0,
+   tip:"前面：底层2个+上层1个（塔在角落后）→品字形"},
+
+  {q:"L形组合体（3个正方体）。从后面看和从前面看一样吗？",
+   blocks:shapes.Lshape2,
+   o:["不一样，左右镜像","完全一样","不一样，上下颠倒","无法判断"], a:1,
+   tip:"从后面看左右方向相反→L形的方向镜像翻转"},
+
+  {q:"3个正方体摆成L形。从上面看是什么？",
+   blocks:shapes.Lshape2, view:'top',
+   o:["L形","2个横排","3个竖排","正方形"], a:0,
+   tip:"从上面俯视→拐角排列→L形"}
+];
+
+// ==================== GAME STATE ====================
+var allQ=[],sc=[0,0],cr=0,tr=10,tm=25,ti=null,go=false,ans=[false,false];
+var curModule=0;
+var moduleNames=['生活物品观察','长方体/正方体','组合体与逆向'];
+var sk='pk_observe_3d_v3';
+var musicOn=true,actx=null;
+
+var moduleDescs=[
+  '模块一：从前面、右面、上面观察餐巾纸盒、字典、魔方、牙膏盒等生活物品',
+  '模块二：从三个方向观察正方体摆成的长方体和正方体',
+  '模块三：观察复杂组合体，根据视图判断形状，逆向推理'
+];
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function switchModule(m){
+  curModule=m;
+  for(var i=0;i<3;i++)document.getElementById('tab'+i).classList.toggle('active',i===m);
+  document.getElementById('modeDesc').textContent=moduleDescs[m];
+  buildQuestionSet();restartGame();
+}
+
+function buildQuestionSet(){
+  var pools=[M1,M2,M3];
+  allQ=sf(pools[curModule].slice());
+  tr=Math.min(allQ.length,10);
+  document.getElementById('tt').textContent=tr;
+  document.getElementById('rn').textContent='1';
+}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.07,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.1,'square',0.06);setTimeout(function(){playTone(659,0.1,'square',0.06);},70);setTimeout(function(){playTone(784,0.15,'square',0.06);},140);}
+function sfxWrong(){playTone(200,0.2,'sawtooth',0.05);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.15,'square',0.06);},i*100);}}
+function sfxTick(){playTone(800,0.03,'sine',0.03);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.07,'sine',0.04);}}
+buildQuestionSet();
+
+// ==================== GAME LOGIC ====================
+function startGame(){
+  initAudio();document.getElementById('btnStart').style.display='none';
+  go=true;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  buildQuestionSet();nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];document.getElementById('rn').textContent=cr+1;
+  var q=allQ[cr];renderPlayer(1,q);renderPlayer(2,q);
+  tm=25;document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){tm--;document.getElementById('tm').textContent=tm;if(tm<=5)sfxTick();if(tm<=0){clearInterval(ti);timeUp();}},1000);
+}
+
+function renderPlayer(pn,q){
+  var vis='';
+  if(q.obj){
+    var obj=objects[q.obj];
+    if(obj)vis=renderObjCanvas('p'+pn,obj,q.view,15,16);
+  } else if(q.blocks){
+    if(q.view)vis=render3DAndViewCanvas('p'+pn,q.blocks,q.view,14,16);
+    else vis=render3DCanvas('p'+pn,q.blocks,16);
+  }
+  if(q.visual){try{vis+='<div>'+q.visual()+'</div>';}catch(e){}}
+  var fullQ='<div style="font-weight:bold;margin-bottom:2px;color:#FFD700">第'+(cr+1)+'题 ['+moduleNames[curModule]+']</div>'+
+    '<div>'+q.q+'</div>'+vis;
+  document.getElementById('q'+pn).innerHTML=fullQ;
+
+  var opts=q.o,ansIdx=q.a,ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'],h='';
+  for(var i=0;i<4;i++){var oi=ix[i];h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';}
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';document.getElementById('st'+pn).textContent='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';sfxCorrect();
+  } else {
+    btn.classList.add('wrong');var q=allQ[cr];
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了'+(q.tip?'<br><span style="font-size:0.68em;color:#FFD700">💡 '+q.tip+'</span>':'');
+    document.getElementById('st'+pn).textContent='';sfxWrong();
+    for(var i=0;i<bs.length;i++){var lb=['A','B','C','D'];if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');}
+  }
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},2000);}
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');bs.forEach(function(b){b.disabled=true;});
+      var q=allQ[cr];
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！'+(q.tip?'<br><span style="font-size:0.68em;color:#FFD700">💡 '+q.tip+'</span>':'');
+      for(var i=0;i<bs.length;i++){var lb=['A','B','C','D'];if(bs[i].textContent.indexOf(lb[q.a]+'.')>=0)bs[i].classList.add('correct');}
+    }
+  }
+  cr++;setTimeout(function(){nextRound();},2000);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];document.getElementById('ws2').textContent=sc[1];
+  var mn=' ['+moduleNames[curModule]+']';
+  if(sc[0]>sc[1]){document.getElementById('winTitle').innerHTML='🔴 红方获胜！';document.getElementById('winTitle').style.color='#FF6B6B';document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方'+mn;sfxWin();}
+  else if(sc[1]>sc[0]){document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';document.getElementById('winTitle').style.color='#4ECDC4';document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方'+mn;sfxWin();}
+  else {document.getElementById('winTitle').innerHTML='🤝 平局！';document.getElementById('winTitle').style.color='#FFD700';document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分'+mn;playTone(523,0.2,'sine',0.06);}
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk)||'0'),mx=Math.max(sc[0],sc[1]);if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<50;i++){var d=document.createElement('div');d.className='confetti';d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';d.style.width=(Math.random()*8+5)+'px';d.style.height=(Math.random()*8+5)+'px';d.style.background=colors[Math.floor(Math.random()*colors.length)];d.style.animationDuration=(Math.random()*2+2)+'s';d.style.animationDelay=Math.random()*1.5+'s';d.style.borderRadius=Math.random()>0.5?'50%':'0';document.body.appendChild(d);setTimeout(function(){d.remove();},3500);}
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';document.getElementById('st2').textContent='';
+  document.getElementById('rn').textContent='1';document.getElementById('tm').textContent='25';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('q1').innerHTML='准备开始...';document.getElementById('q2').innerHTML='准备开始...';
+  document.getElementById('op1').innerHTML='';document.getElementById('op2').innerHTML='';
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});buildQuestionSet();
+}
+</script>
+</body>
+</html>

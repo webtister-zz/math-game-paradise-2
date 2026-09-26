@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>间隔排列PK - PK对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:6px;gap:10px;background:rgba(0,0,0,0.4);flex-wrap:wrap}
+.top-bar h1{font-size:1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.timer{font-size:1.3em;font-weight:bold;color:#FFD700;min-width:50px;text-align:center}
+.round-info{font-size:0.78em;color:#aaa}
+
+.module-tabs{display:flex;gap:5px;padding:5px 6px;justify-content:center;background:rgba(0,0,0,0.3);flex-wrap:wrap}
+.module-tab{padding:6px 12px;border-radius:12px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#ccc;font-size:0.72em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.3s}
+.module-tab.active{border-color:#FFD700;background:rgba(255,215,0,0.15);color:#FFD700;box-shadow:0 0 10px rgba(255,215,0,0.25)}
+.module-tab:hover{border-color:rgba(255,255,255,0.5)}
+.mode-desc{text-align:center;padding:2px 8px;font-size:0.7em;color:#aaa;background:rgba(0,0,0,0.2)}
+
+.arena{display:flex;flex:1;height:calc(100vh - 210px)}
+.player{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 5px;position:relative;overflow-y:auto;transition:all 0.3s}
+.player.left{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.3));border-right:3px solid #FF6B6B}
+.player.right{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.3));border-left:3px solid #4ECDC4}
+.player-name{font-size:0.95em;font-weight:bold;margin-bottom:2px;display:flex;align-items:center;gap:5px}
+.left .player-name{color:#FF6B6B}
+.right .player-name{color:#4ECDC4}
+.player-score{font-size:1.6em;font-weight:bold;margin:2px 0}
+.left .player-score{color:#FF6B6B}
+.right .player-score{color:#4ECDC4}
+.streak{font-size:0.7em;color:#FFD700;min-height:16px}
+
+.question-box{background:rgba(255,255,255,0.1);border-radius:10px;padding:8px 6px;margin:3px 0;width:100%;text-align:center;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.85em;line-height:1.3;gap:5px;position:relative;overflow:hidden}
+
+.pattern-row{display:flex;align-items:center;justify-content:center;gap:3px;flex-wrap:wrap;padding:4px 0;margin:4px 0}
+.pattern-row .shape{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.8em;font-weight:bold;border:2px solid rgba(255,255,255,0.3)}
+.shape.sq{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.shape.tr{background:linear-gradient(135deg,#4ECDC4,#2db5a8);color:#fff}
+.shape.cr{background:linear-gradient(135deg,#FF9800,#f57c00);color:#fff}
+.shape.st{background:linear-gradient(135deg,#9C27B0,#7B1FA2);color:#fff}
+.shape.end-hl{transform:scale(1.15);border-color:#FFD700;box-shadow:0 0 10px rgba(255,215,0,0.5)}
+
+.pattern-label{font-size:0.68em;color:#aaa;margin-top:2px}
+
+.circle-arrange{position:relative;width:140px;height:140px;margin:4px auto}
+.circle-arrange .c-shape{position:absolute;width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:bold;border:2px solid rgba(255,255,255,0.3);transform:translate(-50%,-50%)}
+
+.compare-box{display:flex;gap:8px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin:4px 0}
+.compare-item{background:rgba(255,255,255,0.06);border-radius:8px;padding:6px;text-align:center;border:1px solid rgba(255,255,255,0.12);min-width:70px}
+.compare-item .label{font-size:0.65em;color:#aaa;margin-top:3px}
+
+.enum-grid{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:4px 0}
+.enum-case{background:rgba(255,255,255,0.06);border-radius:8px;padding:5px 7px;text-align:center;border:1px solid rgba(255,255,255,0.15);min-width:55px}
+.enum-case .case-label{font-size:0.63em;color:#FFD700;margin-top:2px}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;margin:3px 0}
+.p-opt{padding:8px 4px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:0.75em;font-weight:bold;cursor:pointer;transition:all 0.2s;font-family:inherit;text-align:center;line-height:1.25;min-height:36px;display:flex;align-items:center;justify-content:center}
+.p-opt:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.5);transform:scale(1.02)}
+.p-opt:active{transform:scale(0.94)}
+.p-opt.correct{background:#10B981!important;border-color:#10B981!important;animation:pop 0.4s}
+.p-opt.wrong{background:#EF4444!important;border-color:#EF4444!important;animation:shake 0.4s}
+.p-opt:disabled{pointer-events:none;opacity:0.5}
+.left .p-opt.correct{box-shadow:0 0 16px rgba(255,107,107,0.5)}
+.right .p-opt.correct{box-shadow:0 0 16px rgba(78,205,196,0.5)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.feedback{font-size:0.75em;font-weight:bold;min-height:18px;text-align:center;margin:2px 0}
+
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.8em;font-weight:bold;z-index:10;text-shadow:0 0 20px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 1.5s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.1)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px;background:rgba(0,0,0,0.5);flex-wrap:wrap}
+.ctrl-btn{padding:8px 16px;border-radius:16px;border:none;font-size:0.8em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.3)}
+
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2em;font-weight:bold;margin-bottom:8px;animation:bounceIn 0.6s}
+.win-subtitle{font-size:1em;color:#ccc;margin-bottom:14px}
+.win-scores{display:flex;gap:32px;margin-bottom:14px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.5em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:600px){
+  .arena{flex-direction:column;height:auto}
+  .player.left{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player.right{border-left:none;border-top:3px solid #4ECDC4}
+  .player{padding:5px 4px}
+  .question-box{font-size:0.75em;min-height:50px;padding:6px 4px}
+  .p-opt{font-size:0.7em;padding:6px 3px;min-height:32px}
+  .vs-badge{font-size:1.2em}
+  .player-score{font-size:1.2em}
+  .win-title{font-size:1.4em}
+  .options-grid{gap:3px}
+  .module-tab{padding:4px 8px;font-size:0.65em}
+  .top-bar h1{font-size:0.8em}
+  .pattern-row .shape{width:22px;height:22px;font-size:0.65em}
+  .circle-arrange{width:110px;height:110px}
+  .circle-arrange .c-shape{width:20px;height:20px;font-size:0.6em}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>间隔排列 ⚔️ PK对战</h1>
+  <span class="round-info">第 <span id="rn">1</span>/<span id="tt">10</span> 轮</span>
+  <span class="timer">⏱ <span id="tm">25</span>s</span>
+</div>
+
+<div class="module-tabs">
+  <button class="module-tab active" id="tab0" onclick="switchModule(0)">一、求物体数量</button>
+  <button class="module-tab" id="tab1" onclick="switchModule(1)">二、画图枚举</button>
+  <button class="module-tab" id="tab2" onclick="switchModule(2)">三、围成圈的关系</button>
+</div>
+<div class="mode-desc" id="modeDesc">模块一：根据一一间隔排列，已知一种物体数量求另一种物体数量</div>
+
+<div class="arena">
+  <div class="player left" id="p1">
+    <div class="player-name">🔴 红方玩家</div>
+    <div class="player-score" id="s1">0</div>
+    <div class="streak" id="st1"></div>
+    <div class="question-box" id="q1">准备开始...</div>
+    <div class="options-grid" id="op1"></div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="vs-badge">⚡VS⚡</div>
+  <div class="player right" id="p2">
+    <div class="player-name">🔵 蓝方玩家</div>
+    <div class="player-score" id="s2">0</div>
+    <div class="streak" id="st2"></div>
+    <div class="question-box" id="q2">准备开始...</div>
+    <div class="options-grid" id="op2"></div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+  <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+  <button class="ctrl-btn restart" onclick="restartGame()">🔄 重新开始</button>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <button class="ctrl-btn restart" onclick="restartGame()" style="font-size:1.1em;padding:12px 28px">🔄 再来一局</button>
+</div>
+
+<script>
+// ==================== VISUAL HELPERS ====================
+
+// Symbols map
+var sym={sq:'□',tr:'△',cr:'○',st:'☆'};
+
+// Draw a pattern row. endHL: 'first','last','both','none'
+function patternRow(types, endHL){
+  var h='<div class="pattern-row">';
+  for(var i=0;i<types.length;i++){
+    var isHL=false;
+    if(endHL==='both')isHL=(i===0||i===types.length-1);
+    else if(endHL==='first')isHL=(i===0);
+    else if(endHL==='last')isHL=(i===types.length-1);
+    var cls=isHL?'shape '+types[i]+' end-hl':'shape '+types[i];
+    h+='<span class="'+cls+'">'+sym[types[i]]+'</span>';
+  }
+  h+='</div>';
+  return h;
+}
+
+function patternWithEnds(types){
+  var h=patternRow(types,'both');
+  var a=sym[types[0]],b=sym[types[types.length-1]];
+  if(a===b){
+    h+='<div class="pattern-label">两端都是<b style="color:#FFD700">'+a+'</b>（相同）→ '+a+'比另一种多1</div>';
+  } else {
+    h+='<div class="pattern-label">两端不同（<b style="color:#FFD700">'+a+'</b>和<b style="color:#FFD700">'+b+'</b>）→ 数量相等</div>';
+  }
+  return h;
+}
+
+// Compare multiple patterns side by side
+function patternCompare(rows){
+  var h='<div class="compare-box">';
+  for(var r=0;r<rows.length;r++){
+    var row=rows[r];
+    h+='<div class="compare-item">';
+    h+=patternRow(row.types,row.endHL||'none');
+    if(row.label)h+='<div class="label">'+row.label+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// Circle arrangement
+function circleArrange(n, type1, type2){
+  var total=n*2, radius=52, cx=70, cy=70;
+  var h='<div class="circle-arrange">';
+  for(var i=0;i<total;i++){
+    var angle=(i/total)*2*Math.PI-Math.PI/2;
+    var x=cx+radius*Math.cos(angle), y=cy+radius*Math.sin(angle);
+    var t=i%2===0?type1:type2;
+    h+='<span class="c-shape shape '+t+'" style="left:'+x+'px;top:'+y+'px">'+sym[t]+'</span>';
+  }
+  h+='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.6em;color:#FFD700;text-align:center;line-height:1.3">'+
+    sym[type1]+'='+n+'<br>'+sym[type2]+'='+n+'<br>相等</div>';
+  h+='</div>';
+  return h;
+}
+
+// Enumeration display for module 2
+function enumDisplay(cases){
+  var h='<div class="enum-grid">';
+  for(var c=0;c<cases.length;c++){
+    var cs=cases[c];
+    h+='<div class="enum-case">';
+    h+=patternRow(cs.types,'none');
+    if(cs.label)h+='<div class="case-label">'+cs.label+'</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// ==================== QUESTION BANKS ====================
+
+// Module 1: 根据一一间隔排列求物体数量
+var M1=[
+  // === 两端相同 ===
+  {q:"□和△一一间隔排列，两端都是□。□有10个，△有几个？",
+   visual:function(){return patternWithEnds(['sq','tr','sq','tr','sq','tr','sq']);},
+   o:["9个","10个","11个","8个"], a:0,
+   tip:"两端相同 → 两端物体比另一种多1。10个□ → △=10-1=9"},
+
+  {q:"观察排列：□△□△□△□△□，□和△各几个？",
+   visual:function(){return patternWithEnds(['sq','tr','sq','tr','sq','tr','sq','tr','sq']);},
+   o:["□5△4","□4△4","□4△5","□5△5"], a:0,
+   tip:"两端都是□（相同）→□多1。数一数：□=5, △=4"},
+
+  {q:"△和□一一间隔，两端都是△，△有8个。□有几个？",
+   visual:function(){return patternWithEnds(['tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr']);},
+   o:["8个","9个","7个","6个"], a:2,
+   tip:"两端都是△（相同）→△多1。△=8 → □=8-1=7"},
+
+  {q:"○和☆一一间隔排列，两端都是○。○有15个，☆有几个？",
+   o:["15个","16个","14个","13个"], a:2,
+   tip:"两端相同→两端物体多1。○=15 → ☆=15-1=14"},
+
+  {q:"小明把□和△一一间隔排成一排，□有12个，两端都是□。△有几个？",
+   o:["12个","11个","13个","10个"], a:1,
+   tip:"两端都是□ → □=△+1 → △=12-1=11"},
+
+  // === 两端不同 ===
+  {q:"□和△一一间隔排列，一端□一端△。□有10个，△有几个？",
+   visual:function(){return patternRow(['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr'],'both');},
+   o:["9个","11个","10个","不确定"], a:2,
+   tip:"两端不同 → 两种物体数量相等。□=10 → △=10"},
+
+  {q:"观察：△□△□△□△□△□，两端是什么？数量关系？",
+   visual:function(){return patternRow(['tr','sq','tr','sq','tr','sq','tr','sq','tr','sq'],'both');},
+   o:["两端相同，△=□+1","两端不同，△=□","两端相同，△=□","两端不同，△=□+1"], a:1,
+   tip:"一端△一端□，两端不同 → 数量相等。△=5, □=5"},
+
+  {q:"□和△一一间隔，一端□一端△。△有20个，□有几个？",
+   o:["21个","19个","20个","18个"], a:2,
+   tip:"两端不同 → 数量相等。△=20 → □=20"},
+
+  // === 两端都是"另一种" ===
+  {q:"□和△一一间隔排列，两端都是△。□有10个，△有几个？",
+   visual:function(){return patternWithEnds(['tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr']);},
+   o:["9个","10个","11个","12个"], a:2,
+   tip:"两端都是△（相同）→△多1。□有10个 → △=10+1=11"},
+
+  // === 综合 ===
+  {q:"一一间隔排列的规律是什么？",
+   visual:function(){return patternCompare([
+     {types:['sq','tr','sq','tr','sq'],endHL:'both',label:'两端相同(□)\n□多1'},
+     {types:['sq','tr','sq','tr','sq','tr'],endHL:'both',label:'两端不同\n数量相等'},
+     {types:['tr','sq','tr','sq','tr'],endHL:'both',label:'两端相同(△)\n△多1'}
+   ]);},
+   o:["两种物体永远相等","两端相同→两端多1；两端不同→相等","两端物体永远多1","没有规律"], a:1,
+   tip:"核心：两端相同→哪种在两端哪种就多1；两端不同→数量相等"},
+
+  {q:"学校路边种树，每隔3米一棵，两端都种。共种了15棵，有多少个间隔？",
+   o:["15个","16个","14个","13个"], a:2,
+   tip:"树=间隔+1（两端都种）。间隔=15-1=14。树和间隔也是间隔排列！"},
+
+  {q:"一一间隔排列，哪种在两端，哪种数量就多1。这句话对吗？",
+   o:["对","错，两端相同时才对","错，两端不同时才对","完全错误"], a:1,
+   tip:"只有两端相同时，两端的物体才多1。两端不同时数量相等"}
+];
+
+// ==================== MODULE 2: 画图枚举 ====================
+// Core concept: With N of one type, the other type can be N-1, N, or N+1
+
+var M2=[
+  // === 核心枚举题 ===
+  {q:"一个隔一个画□和△，□有4个。<br>△可能有几个？比一比，谁能列出所有情况！",
+   visual:function(){return enumDisplay([
+     {types:['sq','tr','sq','tr','sq','tr','sq'],label:'情况①\n两端□→△=3'},
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr'],label:'情况②\n两端不同→△=4'},
+     {types:['tr','sq','tr','sq','tr','sq','tr','sq'],label:'情况③\n两端不同→△=4'},
+     {types:['tr','sq','tr','sq','tr','sq','tr','sq','tr'],label:'情况④\n两端△→△=5'}
+   ]);},
+   o:["3个或4个","3个、4个或5个","只有4个","4个或5个"], a:1,
+   tip:"4种排列：①两端□→△=3；②③两端不同→△=4；④两端△→△=5。完整答案：3、4或5"},
+
+  {q:"□有4个。哪种排列下△最多？哪种最少？",
+   visual:function(){return enumDisplay([
+     {types:['sq','tr','sq','tr','sq','tr','sq'],label:'最少：△=3'},
+     {types:['tr','sq','tr','sq','tr','sq','tr','sq','tr'],label:'最多：△=5'}
+   ]);},
+   o:["最多5最少3","最多4最少3","最多5最少4","都是4"], a:0,
+   tip:"两端△→△=□+1=5（最多）。两端□→△=□-1=3（最少）。差2个！"},
+
+  // === △有5个，□可能几个 ===
+  {q:"△有5个，和□一一间隔排列。□可能有几个？<br>列出所有情况！",
+   visual:function(){return enumDisplay([
+     {types:['tr','sq','tr','sq','tr','sq','tr','sq','tr'],label:'两端△→□=4'},
+     {types:['tr','sq','tr','sq','tr','sq','tr','sq','tr','sq'],label:'两端不同→□=5'},
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr'],label:'两端不同→□=5'},
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq'],label:'两端□→□=6'}
+   ]);},
+   o:["4个或5个","4个、5个或6个","只有5个","5个或6个"], a:1,
+   tip:"4种排列：两端△→□=4；两端不同→□=5；两端□→□=6。完整答案：4、5或6"},
+
+  // === □有3个 ===
+  {q:"□有3个，△可能有几个？请列出所有可能。",
+   visual:function(){return enumDisplay([
+     {types:['sq','tr','sq','tr','sq'],label:'两端□→△=2'},
+     {types:['sq','tr','sq','tr','sq','tr'],label:'两端不同→△=3'},
+     {types:['tr','sq','tr','sq','tr','sq'],label:'两端不同→△=3'},
+     {types:['tr','sq','tr','sq','tr','sq','tr'],label:'两端△→△=4'}
+   ]);},
+   o:["2个或3个","2个、3个或4个","只有3个","3个或4个"], a:1,
+   tip:"4种排列：两端□→△=2；两端不同→△=3；两端△→△=4"},
+
+  // === 通用规律 ===
+  {q:"一一间隔排列中，已知□有n个。△可能有几个？（用n表示）",
+   visual:function(){return enumDisplay([
+     {types:['sq','tr','sq','tr','sq'],label:'两端□：△=n-1'},
+     {types:['sq','tr','sq','tr','sq','tr'],label:'两端不同：△=n'},
+     {types:['tr','sq','tr','sq','tr'],label:'两端△：△=n+1'}
+   ]);},
+   o:["n-1或n","n或n+1","n-1、n或n+1","n-2、n-1或n"], a:2,
+   tip:"完整范围：n-1, n, n+1。3种可能！最少=n-1，最多=n+1"},
+
+  // === 应用 ===
+  {q:"小红画了6个☆和○一一间隔排列。○最少有几个？最多呢？",
+   o:["最少5最多7","最少5最多6","最少6最多7","最少4最多8"], a:0,
+   tip:"○最少=☆-1=5（两端☆）；○最多=☆+1=7（两端○）。范围5~7"},
+
+  {q:"一一间隔排列，一种物体有7个。另一种物体不可能是几个？",
+   o:["6个","7个","8个","9个"], a:3,
+   tip:"另一种只能是6（两端第一种）、7（两端不同）或8（两端另一种）。9不可能！"},
+
+  {q:"□有10个，和△一一间隔。下面哪个数量不可能是△的个数？",
+   o:["9个","10个","11个","12个"], a:3,
+   tip:"△只能是9（两端□）、10（两端不同）或11（两端△）。12不可能"},
+
+  {q:"小明摆了7个□和6个△一一间隔。两端是什么图形？",
+   visual:function(){return patternWithEnds(['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq']);},
+   o:["两端都是□","两端都是△","一端□一端△","无法判断"], a:0,
+   tip:"□=7, △=6 → □比△多1 → 两端相同且两端是□"},
+
+  {q:"小红摆了5个□和6个△一一间隔。两端是什么图形？",
+   visual:function(){return patternWithEnds(['tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr']);},
+   o:["两端都是□","两端都是△","一端□一端△","无法判断"], a:1,
+   tip:"△=6, □=5 → △比□多1 → 两端相同且两端是△"},
+
+  {q:"□和△一一间隔，数量相等（各8个）。两端怎样？",
+   o:["两端都是□","两端都是△","两端不同","无法判断"], a:2,
+   tip:"数量相等 → 两端一定不同（一端□一端△）。不可能两端相同"},
+
+  {q:"一一间隔排列共13个图形，□和△各有几个？",
+   o:["□=6△=7或□=7△=6","一定□=7△=6","一定□=6△=7","无法确定"], a:0,
+   tip:"13个→奇数→两端相同。多的7个，少的6个。谁在两端谁就7个"}
+];
+
+// ==================== MODULE 3: 围成圈 ====================
+var M3=[
+  {q:"□和△围成一圈，一一间隔排列。□有8个，△有几个？",
+   visual:function(){return circleArrange(8,'sq','tr');},
+   o:["7个","8个","9个","6个"], a:1,
+   tip:"围成圈 → 首尾相连，无端点 → 两种物体数量相等。□=8 → △=8"},
+
+  {q:"排成一行 vs 围成圈，规律有什么不同？",
+   visual:function(){return patternCompare([
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq'],endHL:'both',label:'排一行（两端□）\n□=9,△=8'},
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr'],endHL:'none',label:'围成圈\n□=8,△=8'}
+   ]);},
+   o:["排一行总是相等","围成圈总是相等","规律完全相同","排一行两端物体少1"], a:1,
+   tip:"围成圈：首尾相连没有端点 → 数量永远相等。排一行：规律取决于两端"},
+
+  {q:"○和☆围成一圈交替排列，共30个。各几个？",
+   visual:function(){return circleArrange(5,'cr','st');},
+   o:["○15☆15","○16☆14","○14☆16","无法确定"], a:0,
+   tip:"围成圈 → 数量相等。30÷2=15，各15个"},
+
+  {q:"12个小朋友围成一圈做游戏，男女一一间隔。男生几人？",
+   o:["5人","6人","7人","不确定"], a:1,
+   tip:"围成圈 → 男女相等。12÷2=6人"},
+
+  {q:"8面红旗和8面黄旗一一间隔围成圈。排成一行（两端红旗）各几面？",
+   visual:function(){return patternCompare([
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr'],endHL:'none',label:'围成圈\n红8黄8'},
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq'],endHL:'both',label:'排一行(两端红)\n红9黄8'}
+   ]);},
+   o:["围成圈各8，排一行红9黄8","两者都是各8","围成圈红多1","排一行黄多1"], a:0,
+   tip:"围成圈必然相等(各8)。排一行两端红旗→红9黄8"},
+
+  {q:"□和△一一间隔围成圈，□有15个。△有几个？",
+   o:["14个","15个","16个","17个"], a:1,
+   tip:"围成圈 → 数量相等。△=□=15"},
+
+  {q:"为什么围成圈时两种物体数量一定相等？",
+   visual:function(){return circleArrange(6,'sq','tr');},
+   o:["首尾相连无端点，交替必然一一对应","因为数量多","因为好看","不一定相等"], a:0,
+   tip:"没有起点终点，每个□后必跟一个△，每个△后必跟一个□ → 一一对应，数量相等"},
+
+  {q:"20颗珠子串成手链，红蓝珠子一一间隔。红珠子几颗？",
+   o:["9颗","10颗","11颗","8颗"], a:1,
+   tip:"手链是圈 → 数量相等。20÷2=10颗"},
+
+  {q:"一串项链□和○交替串成共24颗，□有几颗？",
+   o:["11颗","12颗","13颗","10颗"], a:1,
+   tip:"项链是圈 → 各一半。24÷2=12颗□"},
+
+  {q:"对比：8个□和△一一间隔。<br>排一行(两端□) vs 围成圈，△各几个？",
+   visual:function(){return patternCompare([
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq'],endHL:'both',label:'排一行两端□\n△=7'},
+     {types:['sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr','sq','tr'],endHL:'none',label:'围成圈\n△=8'}
+   ]);},
+   o:["排一行7个，围成圈8个","都是8个","排一行8个，围成圈7个","都是7个"], a:0,
+   tip:"排一行两端□ → □=8, △=7。围成圈 → 各8个。规律不同！"},
+
+  {q:"一一间隔围成圈，总共一定是偶数个。这句话对吗？",
+   visual:function(){return circleArrange(4,'cr','st');},
+   o:["对，两种物体各半","错，可以是奇数","对，但不确定","有时对有时错"], a:0,
+   tip:"围成圈两种物体数量相等，总数=2×每种数量，一定是偶数"},
+
+  {q:"操场边10棵树围成一圈，树之间放一盆花。花有几盆？",
+   o:["9盆","10盆","11盆","8盆"], a:1,
+   tip:"围成圈，树和花一一间隔 → 数量相等。10棵树 → 10盆花"}
+];
+
+// ==================== GAME STATE ====================
+var allQ=[], sc=[0,0], cr=0, tr=10, tm=25, ti=null, go=false, ans=[false,false];
+var curModule=0;
+var moduleNames=['求物体数量','画图枚举','围成圈的关系'];
+var sk='pk_interval_v2';
+var musicOn=true, actx=null;
+
+var moduleDescs=[
+  '模块一：已知一种物体数量，根据一一间隔排列求另一种物体数量（三种情况：两端相同/两端不同）',
+  '模块二：画图枚举所有可能 — □有4个，△可能是3、4或5个',
+  '模块三：围成圈 — 首尾相连无端点，两种物体数量必然相等'
+];
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function switchModule(m){
+  curModule=m;
+  for(var i=0;i<3;i++)document.getElementById('tab'+i).classList.toggle('active',i===m);
+  document.getElementById('modeDesc').textContent=moduleDescs[m];
+  buildQuestionSet();
+  restartGame();
+}
+
+function buildQuestionSet(){
+  var pools=[M1,M2,M3];
+  allQ=sf(pools[curModule].slice());
+  tr=Math.min(allQ.length,10);
+  document.getElementById('tt').textContent=tr;
+  document.getElementById('rn').textContent='1';
+}
+
+function initAudio(){if(!actx){actx=new(window.AudioContext||window.webkitAudioContext)();}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.1,'square',0.06);setTimeout(function(){playTone(659,0.1,'square',0.06);},70);setTimeout(function(){playTone(784,0.15,'square',0.06);},140);}
+function sfxWrong(){playTone(200,0.22,'sawtooth',0.05);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.15,'square',0.06);},i*100);}}
+function sfxTick(){playTone(800,0.03,'sine',0.03);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.07,'sine',0.04);}}
+
+buildQuestionSet();
+
+// ==================== GAME LOGIC ====================
+function startGame(){
+  initAudio();document.getElementById('btnStart').style.display='none';
+  go=true;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('winOverlay').classList.remove('show');
+  buildQuestionSet();nextRound();
+}
+
+function nextRound(){
+  if(cr>=tr){endGame();return;}
+  ans=[false,false];
+  document.getElementById('rn').textContent=cr+1;
+  var q=allQ[cr];
+  renderPlayer(1,q);renderPlayer(2,q);
+  tm=25;document.getElementById('tm').textContent=tm;
+  clearInterval(ti);
+  ti=setInterval(function(){
+    tm--;document.getElementById('tm').textContent=tm;
+    if(tm<=5)sfxTick();
+    if(tm<=0){clearInterval(ti);timeUp();}
+  },1000);
+}
+
+function renderPlayer(pn,q){
+  var vis='';
+  if(q.visual){try{vis='<div style="margin:2px 0">'+q.visual()+'</div>';}catch(e){vis='';}}
+  var fullQ='<div style="font-weight:bold;margin-bottom:2px;color:#FFD700">第'+(cr+1)+'题 ['+moduleNames[curModule]+']</div>'+
+    '<div>'+q.q+'</div>'+vis;
+  document.getElementById('q'+pn).innerHTML=fullQ;
+
+  var opts=q.o,ansIdx=q.a;
+  var ix=[0,1,2,3];
+  for(var i=ix.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=ix[i];ix[i]=ix[j];ix[j]=t;}
+  var lb=['A','B','C','D'],h='';
+  for(var i=0;i<4;i++){
+    var oi=ix[i];
+    h+='<button class="p-opt" onclick="answer('+pn+','+oi+','+ansIdx+',this)" id="ob'+pn+'_'+i+'">'+lb[i]+'. '+opts[oi]+'</button>';
+  }
+  document.getElementById('op'+pn).innerHTML=h;
+  document.getElementById('fb'+pn).textContent='';
+  document.getElementById('st'+pn).textContent='';
+}
+
+function answer(pn,oi,ai,btn){
+  if(!go||ans[pn-1])return;
+  ans[pn-1]=true;
+  var bs=document.querySelectorAll('#op'+pn+' .p-opt');
+  bs.forEach(function(b){b.disabled=true;});
+  if(oi===ai){
+    btn.classList.add('correct');sc[pn-1]+=10;
+    document.getElementById('s'+pn).textContent=sc[pn-1];
+    document.getElementById('fb'+pn).innerHTML='✅ 正确！+10';
+    document.getElementById('st'+pn).textContent='🔥 连击！';sfxCorrect();
+  } else {
+    btn.classList.add('wrong');
+    var q=allQ[cr];
+    document.getElementById('fb'+pn).innerHTML='❌ 答错了'+(q.tip?'<br><span style="font-size:0.7em;color:#FFD700">💡 '+q.tip+'</span>':'');
+    document.getElementById('st'+pn).textContent='';sfxWrong();
+    for(var i=0;i<bs.length;i++){
+      var lb=['A','B','C','D'];
+      if(bs[i].textContent.indexOf(lb[ai]+'.')>=0)bs[i].classList.add('correct');
+    }
+  }
+  if(ans[0]&&ans[1]){clearInterval(ti);cr++;setTimeout(function(){nextRound();},2000);}
+}
+
+function timeUp(){
+  for(var p=1;p<=2;p++){
+    if(!ans[p-1]){
+      var bs=document.querySelectorAll('#op'+p+' .p-opt');
+      bs.forEach(function(b){b.disabled=true;});
+      var q=allQ[cr];
+      document.getElementById('fb'+p).innerHTML='⏰ 时间到！'+(q.tip?'<br><span style="font-size:0.7em;color:#FFD700">💡 '+q.tip+'</span>':'');
+      for(var i=0;i<bs.length;i++){
+        var lb=['A','B','C','D'];
+        if(bs[i].textContent.indexOf(lb[q.a]+'.')>=0)bs[i].classList.add('correct');
+      }
+    }
+  }
+  cr++;setTimeout(function(){nextRound();},2000);
+}
+
+function endGame(){
+  go=false;clearInterval(ti);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent=sc[0];
+  document.getElementById('ws2').textContent=sc[1];
+  var mn=' ['+moduleNames[curModule]+']';
+  if(sc[0]>sc[1]){
+    document.getElementById('winTitle').innerHTML='🔴 红方获胜！';
+    document.getElementById('winTitle').style.color='#FF6B6B';
+    document.getElementById('winSub').textContent='红方 '+sc[0]+' : '+sc[1]+' 蓝方'+mn;sfxWin();
+  } else if(sc[1]>sc[0]){
+    document.getElementById('winTitle').innerHTML='🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color='#4ECDC4';
+    document.getElementById('winSub').textContent='蓝方 '+sc[1]+' : '+sc[0]+' 红方'+mn;sfxWin();
+  } else {
+    document.getElementById('winTitle').innerHTML='🤝 平局！';
+    document.getElementById('winTitle').style.color='#FFD700';
+    document.getElementById('winSub').textContent='双方都是 '+sc[0]+' 分'+mn;
+    playTone(523,0.2,'sine',0.06);
+  }
+  spawnConfetti();
+  var best=parseInt(localStorage.getItem(sk)||'0'),mx=Math.max(sc[0],sc[1]);
+  if(mx>best){localStorage.setItem(sk,mx);}
+}
+
+function spawnConfetti(){
+  var colors=['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<50;i++){
+    var d=document.createElement('div');d.className='confetti';
+    d.style.left=Math.random()*100+'%';d.style.top=-(Math.random()*50+10)+'px';
+    d.style.width=(Math.random()*8+5)+'px';d.style.height=(Math.random()*8+5)+'px';
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(Math.random()*2+2)+'s';d.style.animationDelay=Math.random()*1.5+'s';
+    d.style.borderRadius=Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);setTimeout(function(){d.remove();},3500);
+  }
+}
+
+function restartGame(){
+  clearInterval(ti);go=false;sc=[0,0];cr=0;ans=[false,false];
+  document.getElementById('s1').textContent='0';document.getElementById('s2').textContent='0';
+  document.getElementById('fb1').textContent='';document.getElementById('fb2').textContent='';
+  document.getElementById('st1').textContent='';document.getElementById('st2').textContent='';
+  document.getElementById('rn').textContent='1';document.getElementById('tm').textContent='25';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display='inline-block';
+  document.getElementById('q1').innerHTML='准备开始...';document.getElementById('q2').innerHTML='准备开始...';
+  document.getElementById('op1').innerHTML='';document.getElementById('op2').innerHTML='';
+  var cf=document.querySelectorAll('.confetti');cf.forEach(function(c){c.remove();});
+  buildQuestionSet();
+}
+</script>
+</body>
+</html>

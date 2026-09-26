@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>认识人民币 - 一年级数学游戏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:linear-gradient(180deg,#fff8e1 0%,#fff3e0 50%,#fce4ec 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+.top-bar{width:100%;max-width:600px;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.mode-tabs{display:flex;gap:6px}
+.mode-tab{padding:8px 16px;border-radius:22px;border:2.5px solid rgba(0,0,0,0.12);background:#fff;color:#555;font-size:0.85em;font-weight:bold;cursor:pointer;transition:all 0.25s;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.mode-tab.active.s0{background:linear-gradient(135deg,#FF9800,#F57C00);color:#fff;border-color:transparent}
+.mode-tab.active.s1{background:linear-gradient(135deg,#4CAF50,#388E3C);color:#fff;border-color:transparent}
+.info-pills{display:flex;gap:8px}
+.info-pill{background:#fff;padding:5px 12px;border-radius:16px;font-size:0.82em;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.05);display:flex;align-items:center;gap:3px}
+.info-pill .val{color:#FF9800;font-size:1.05em}
+.progress-wrap{width:100%;max-width:600px;padding:0 14px 2px}
+.progress-bar{height:6px;background:rgba(0,0,0,0.06);border-radius:10px;overflow:hidden}
+.progress-fill{height:100%;border-radius:10px;transition:width 0.4s;background:linear-gradient(90deg,#FF9800,#ffb74d)}
+.game-area{width:100%;max-width:600px;flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 14px 14px;gap:10px;overflow-y:auto}
+
+/* 仿真纸币 - 精细绘制 */
+.banknote-card{width:100%;max-width:360px;position:relative;border-radius:8px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.15);cursor:pointer;transition:all 0.25s;aspect-ratio:16/7;display:flex;align-items:center;justify-content:center}
+.banknote-card:active{transform:scale(0.96)}
+.banknote-inner{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center}
+.banknote-portrait{position:absolute;left:8%;width:22%;height:62%;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:2.5em;border:1px solid rgba(255,255,255,0.5)}
+.banknote-chinese{position:absolute;right:8%;font-size:2em;font-weight:bold;writing-mode:vertical-rl;letter-spacing:4px}
+.banknote-number{position:absolute;left:32%;font-size:3em;font-weight:900;opacity:0.3}
+.banknote-bank{position:absolute;top:6%;width:100%;text-align:center;font-size:0.55em;letter-spacing:3px;opacity:0.7}
+.banknote-corner-tl{position:absolute;top:5%;left:5%;font-size:0.55em;font-weight:bold;opacity:0.6}
+.banknote-corner-br{position:absolute;bottom:5%;right:5%;font-size:0.55em;font-weight:bold;opacity:0.6}
+.banknote-year{position:absolute;bottom:5%;left:50%;transform:translateX(-50%);font-size:0.45em;opacity:0.5}
+.banknote-frame{position:absolute;top:3px;left:3px;right:3px;bottom:3px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;pointer-events:none}
+
+.n100{background:linear-gradient(150deg,#e8b4b8 0%,#d4989e 20%,#e0a8ae 50%,#cc8a92 80%,#e8b4b8 100%);color:#5e1515;border:3px solid #b06068}
+.n100 .banknote-portrait{background:rgba(94,21,21,0.15)}
+.n50{background:linear-gradient(150deg,#b8d4c8 0%,#96bca8 20%,#a8c8b8 50%,#82ac96 80%,#b8d4c8 100%);color:#1a4030;border:3px solid #5a8a70}
+.n50 .banknote-portrait{background:rgba(26,64,48,0.15)}
+.n20{background:linear-gradient(150deg,#f0d4b8 0%,#e8c49e 20%,#ecccae 50%,#dcb48a 80%,#f0d4b8 100%);color:#6b3000;border:3px solid #c08a50}
+.n20 .banknote-portrait{background:rgba(107,48,0,0.15)}
+.n10{background:linear-gradient(150deg,#c4dcef 0%,#a8c8e0 20%,#b8d2e8 50%,#96b8d6 80%,#c4dcef 100%);color:#0d2f5e;border:3px solid #5a8ab5}
+.n10 .banknote-portrait{background:rgba(13,47,94,0.15)}
+.n5{background:linear-gradient(150deg,#dcc8e8 0%,#c9a8d9 20%,#d4b8e0 50%,#b894c9 80%,#dcc8e8 100%);color:#4a1a6b;border:3px solid #8b5ea8}
+.n5 .banknote-portrait{background:rgba(74,26,107,0.15)}
+.n1{background:linear-gradient(150deg,#d4e9c7 0%,#b8d9a6 20%,#c5dfb4 50%,#a3c98f 80%,#d4e9c7 100%);color:#2e5a1e;border:3px solid #6b9e5a}
+.n1 .banknote-portrait{background:rgba(46,90,30,0.15)}
+
+/* 仿真硬币 */
+.coin-display{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin:8px 0}
+.coin-card{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:all 0.2s;padding:4px}
+.coin-card:active{transform:scale(0.9)}
+.coin-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.3em;box-shadow:0 4px 14px rgba(0,0,0,0.2),inset 0 2px 6px rgba(255,255,255,0.5);position:relative}
+.coin-circle::after{content:'';position:absolute;top:4px;left:4px;right:4px;bottom:4px;border-radius:50%;border:2px dashed rgba(0,0,0,0.12);pointer-events:none}
+.coin-inner-ring{position:absolute;top:8px;left:8px;right:8px;bottom:8px;border-radius:50%;border:2.5px solid rgba(0,0,0,0.18);pointer-events:none}
+.c1yuan{background:linear-gradient(135deg,#e8e8e8 0%,#f5f5f5 30%,#d5d5d5 50%,#ececec 70%,#d8d8d8 100%);color:#333;border:4px solid #aaa}
+.c5jiao{background:linear-gradient(135deg,#e8c840 0%,#f0d870 30%,#dab830 50%,#eed860 70%,#e0c440 100%);color:#5a4200;border:4px solid #b89828}
+.c1jiao{background:linear-gradient(135deg,#d8d8d8 0%,#eaeaea 30%,#c8c8c8 50%,#e2e2e2 70%,#d0d0d0 100%);color:#555;border:4px solid #aaa}
+.coin-label{font-size:0.8em;color:#666;font-weight:bold}
+
+/* 购物区 */
+.shop-header{text-align:center;padding:8px 0}
+.shop-header .item-emoji{font-size:3em;display:block}
+.shop-header .item-name{font-size:1.1em;font-weight:bold;color:#333}
+.shop-header .item-price{font-size:1.8em;font-weight:bold;color:#FF9800;margin-top:4px}
+.payment-zone{border:3px dashed #4CAF50;border-radius:20px;padding:16px;min-height:90px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;background:rgba(76,175,80,0.04);margin:8px 0;transition:all 0.3s}
+.payment-zone.active{border-color:#FF9800;background:rgba(255,152,0,0.08);box-shadow:0 0 20px rgba(255,152,0,0.15)}
+.payment-zone .zone-label{color:#aaa;font-size:0.85em;pointer-events:none}
+.payment-total{text-align:center;font-size:1.2em;font-weight:bold;color:#333;margin:6px 0}
+.payment-total .paid{color:#4CAF50;font-size:1.3em}
+.payment-total .need{color:#FF9800;font-size:1.1em}
+
+/* 可选币种区 */
+.money-select-area{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:8px 0}
+.draggable-money{touch-action:none;cursor:grab;transition:transform 0.15s,box-shadow 0.15s;position:relative;z-index:1}
+.draggable-money:active{cursor:grabbing;z-index:50}
+.draggable-money.dragging{transform:scale(1.15);z-index:100;opacity:0.85;box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.draggable-money.in-payment{opacity:0.5;pointer-events:none}
+.mini-note{width:80px;height:38px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.9em;position:relative;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.mini-note .mini-val{font-weight:900}
+.mini-coin{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.7em;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.payment-item{display:flex;align-items:center;gap:4px;animation:popIn 0.3s ease}
+@keyframes popIn{0%{transform:scale(0)}100%{transform:scale(1)}}
+.payment-item .remove-btn{width:18px;height:18px;border-radius:50%;background:#ff5252;color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+
+/* 问答区 */
+.qa-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.ans-btn{padding:10px 18px;border-radius:22px;border:2.5px solid #e0e0e0;background:#fff;font-size:0.95em;font-weight:bold;color:#333;cursor:pointer;transition:all 0.2s;font-family:inherit;min-width:55px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.ans-btn:active{transform:scale(0.94)}
+.ans-btn.correct{background:#4CAF50!important;color:#fff!important;border-color:#4CAF50!important;pointer-events:none;animation:popFlash 0.5s ease}
+.ans-btn.wrong{background:#f44336!important;color:#fff!important;border-color:#f44336!important;pointer-events:none;animation:shake 0.5s ease}
+@keyframes popFlash{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.feedback-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:2.5em;font-weight:bold;pointer-events:none;z-index:200;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.feedback-toast.show{transform:translate(-50%,-50%) scale(1)}
+.particles-layer{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99}
+.star-particle{position:absolute;font-size:22px;animation:starUp 1.2s ease-out forwards}
+@keyframes starUp{0%{transform:translateY(0)scale(0);opacity:1}50%{transform:translateY(-70px)scale(1.3);opacity:0.8}100%{transform:translateY(-140px)scale(0.4);opacity:0}}
+
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:300}
+.modal-overlay.hidden{display:none}
+.modal-box{background:#fff;border-radius:24px;padding:30px 24px;text-align:center;max-width:380px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.3);animation:modalIn 0.4s ease}
+@keyframes modalIn{0%{transform:scale(0.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.modal-box h2{font-size:1.5em;margin-bottom:8px;color:#333}
+.modal-box p{color:#666;line-height:1.6;margin-bottom:14px}
+.modal-btn{padding:12px 32px;border-radius:22px;border:none;background:linear-gradient(135deg,#FF9800,#F57C00);color:#fff;font-size:1.05em;font-weight:bold;cursor:pointer;font-family:inherit;margin:4px;transition:transform 0.2s}
+.modal-btn:active{transform:scale(0.95)}
+.modal-btn.secondary{background:#f5f5f5;color:#666}
+
+@media(max-width:420px){
+  .banknote-card{max-width:300px}
+  .banknote-chinese{font-size:1.5em;right:6%}
+  .banknote-number{font-size:2.2em;left:30%}
+  .banknote-portrait{font-size:1.8em;left:6%}
+  .coin-circle{width:52px;height:52px;font-size:1.1em}
+  .mini-note{width:68px;height:32px;font-size:0.75em}
+  .mini-coin{width:32px;height:32px;font-size:0.6em}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-tab active s0" data-mode="0">🪙 认识人民币</button>
+    <button class="mode-tab s1" data-mode="1">🛒 模拟购物</button>
+  </div>
+  <div class="info-pills">
+    <div class="info-pill">⭐ <span class="val" id="scoreEl">0</span></div>
+    <div class="info-pill">📝 <span class="val" id="levelEl">1</span>/<span id="totalEl">8</span></div>
+  </div>
+</div>
+<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div></div>
+<div class="game-area" id="gameArea"></div>
+<div class="feedback-toast" id="feedbackToast"></div>
+<div class="particles-layer" id="particlesLayer"></div>
+<div class="modal-overlay hidden" id="completeModal">
+  <div class="modal-box">
+    <span style="font-size:3em">🏆</span>
+    <h2 id="completeTitle"></h2>
+    <p id="completeMsg"></p>
+    <p>总分：<strong style="color:#FF9800;font-size:1.3em" id="finalScoreEl">0</strong></p>
+    <button class="modal-btn" id="restartBtn">再玩一次</button>
+    <button class="modal-btn secondary" id="switchBtn">换模块</button>
+  </div>
+</div>
+
+<script>
+(function(){
+var s={mode:0,level:0,score:0,total:8,answer:null,answering:true};
+var area=document.getElementById('gameArea');
+var sel=document.getElementById('scoreEl'),lel=document.getElementById('levelEl'),tel=document.getElementById('totalEl');
+var pbar=document.getElementById('progressFill'),toast=document.getElementById('feedbackToast');
+var ptcl=document.getElementById('particlesLayer'),modal=document.getElementById('completeModal');
+tabs=document.querySelectorAll('.mode-tab');
+
+// ==================== 货币数据 ====================
+var NOTES=[
+  {v:100,u:'元',l:'100元',c:'n100',t:'note',emoji:'🏛️',chn:'壹佰圆',portrait:'👤'},
+  {v:50,u:'元',l:'50元',c:'n50',t:'note',emoji:'🏯',chn:'伍拾圆',portrait:'👤'},
+  {v:20,u:'元',l:'20元',c:'n20',t:'note',emoji:'🏔️',chn:'贰拾圆',portrait:'👤'},
+  {v:10,u:'元',l:'10元',c:'n10',t:'note',emoji:'🛶',chn:'拾圆',portrait:'👤'},
+  {v:5,u:'元',l:'5元',c:'n5',t:'note',emoji:'⛰️',chn:'伍圆',portrait:'👤'},
+  {v:1,u:'元',l:'1元',c:'c1yuan',t:'coin',emoji:'🌺',chn:'壹圆'},
+  {v:5,u:'角',l:'5角',c:'c5jiao',t:'coin',emoji:'🌸',chn:'伍角'},
+  {v:1,u:'角',l:'1角',c:'c1jiao',t:'coin',emoji:'🌿',chn:'壹角'}
+];
+var COINS=NOTES.filter(function(n){return n.t==='coin'});
+
+// ==================== 购物物品 ====================
+var SHOP=[
+  {n:'铅笔',e:'✏️',p:1,u:'元'},{n:'橡皮',e:'🧹',p:1,u:'元'},{n:'本子',e:'📒',p:3,u:'元'},
+  {n:'尺子',e:'📏',p:2,u:'元'},{n:'糖果',e:'🍬',p:1,u:'元'},{n:'贴纸',e:'⭐',p:2,u:'元'},
+  {n:'面包',e:'🍞',p:6,u:'元'},{n:'牛奶',e:'🥛',p:5,u:'元'},{n:'苹果',e:'🍎',p:3,u:'元'},
+  {n:'饼干',e:'🍪',p:4,u:'元'},{n:'果汁',e:'🧃',p:4,u:'元'},{n:'蜡笔',e:'🖍',p:8,u:'元'},
+  {n:'笔记本',e:'📓',p:6,u:'元'},{n:'水杯',e:'🥤',p:7,u:'元'},{n:'书包',e:'🎒',p:25,u:'元'}
+];
+
+// ==================== 银行钞票渲染 ====================
+function noteHTML(n){return '<div class="banknote-card '+n.c+'" onclick="event.stopPropagation()"><div class="banknote-frame"></div><div class="banknote-bank">中国人民银行</div><div class="banknote-corner-tl">'+n.l+'</div><div class="banknote-portrait">'+n.emoji+'</div><div class="banknote-number">'+n.v+'</div><div class="banknote-chinese">'+n.chn+'</div><div class="banknote-corner-br">'+n.v+n.u+'</div><div class="banknote-year">2020年</div></div>';}
+function coinHTML(n){return '<div class="coin-circle '+n.c+'"><div class="coin-inner-ring"></div>'+n.emoji+'</div>';}
+function miniNoteHTML(n,id){return '<div class="draggable-money" data-id="'+id+'" data-v="'+n.v+'" data-u="'+n.u+'" data-l="'+n.l+'" data-c="'+n.c+'" data-t="note"><div class="mini-note '+n.c+'"><span class="mini-val">'+n.l+'</span></div></div>';}
+function miniCoinHTML(n,id){return '<div class="draggable-money" data-id="'+id+'" data-v="'+n.v+'" data-u="'+n.u+'" data-l="'+n.l+'" data-c="'+n.c+'" data-t="coin"><div class="mini-coin '+n.c+'">'+n.emoji+'</div></div>';}
+
+// ==================== 渲染 ====================
+function render(){
+  if(s.mode===0)renderRecognize();
+  else renderShopping();
+}
+
+// ========== 模式0: 认识人民币 ==========
+function renderRecognize(){
+  s.total=8;s.answering=true;
+  var types=['note100','note50','note20','note10','note5','coin1','coin5j','coin1j'];
+  var type=types[s.level];
+  var note;
+  if(type.startsWith('note')){var v=parseInt(type.slice(4));note=NOTES.find(function(n){return n.v===v&&n.t==='note'});}
+  else{var c=type;note=NOTES.find(function(n){return n.c===c});}
+
+  var h='';
+  if(note.t==='note'){
+    h+='<div style="text-align:center;font-size:1.1em;color:#333;font-weight:bold;margin-bottom:6px">下面这张纸币是<span style="color:#FF9800;font-size:1.2em">多少元</span>？</div>';
+    h+=noteHTML(note);
+  }else{
+    h+='<div style="text-align:center;font-size:1.1em;color:#333;font-weight:bold;margin-bottom:6px">这枚硬币是<span style="color:#FF9800;font-size:1.2em">多少钱</span>？</div>';
+    h+='<div style="display:flex;justify-content:center;margin:8px 0">'+coinHTML(note)+'</div>';
+    h+='<div class="coin-label">硬币</div>';
+  }
+  h+='<div class="qa-row" id="ansRow"></div>';
+
+  area.innerHTML=h;
+
+  var opts=shuffle([note.l,'1元','5元','10元','20元','50元','1角','5角'].filter(function(x,i){return i<4}));
+  if(opts.indexOf(note.l)<0){opts.pop();opts.push(note.l);opts=shuffle(opts);}
+  s.answer=note.l;
+  renderAnswers(opts);
+}
+
+// ========== 模式1: 模拟购物 ==========
+var _payItems=[],_dragEl=null,_dragOffX=0,_dragOffY=0,_locked=false;
+
+function makeExactSet(price){
+  // 生成刚好够价格的币种组合(含几个干扰项)
+  var need=price;var exact=[];
+  var sorted=NOTES.slice().sort(function(a,b){return b.v-a.v});
+  sorted.forEach(function(n){
+    while(need>=n.v){exact.push(n);need-=n.v}
+  });
+  // 添加2-3个干扰币种
+  var distractors=[];
+  var pool=NOTES.filter(function(n){return n.v<price||n.v===price});
+  for(var i=0;i<3;i++){var dn=pool[Math.floor(Math.random()*pool.length)];distractors.push(dn)}
+  var all=exact.concat(distractors);
+  return shuffle(all);
+}
+
+function renderShopping(){
+  s.total=8;s.answering=true;_locked=false;
+  var item=SHOP[Math.floor(Math.random()*SHOP.length)];
+  var price=item.p;
+  s.answer=String(price)+'元';
+  _payItems=[];
+
+  var avail=makeExactSet(price);
+
+  var h='';
+  h+='<div class="shop-header"><span class="item-emoji">'+item.e+'</span><span class="item-name">'+item.n+'</span><div class="item-price">￥'+price+'.00</div></div>';
+  h+='<div style="text-align:center;color:#666;font-size:0.85em;margin-bottom:2px">👇 把下面<span style="color:#FF9800;font-weight:bold">刚好'+price+'元</span>的钱拖到付款区</div>';
+  h+='<div class="payment-zone" id="payZone"><span class="zone-label">💰 拖到这里付款</span></div>';
+  h+='<div class="payment-total">已付：<span class="paid" id="paidAmt">0元</span> / 需付：<span class="need">'+price+'元</span></div>';
+  h+='<div class="money-select-area" id="moneySelect"></div>';
+  area.innerHTML=h;
+
+  var ms=document.getElementById('moneySelect');
+  avail.forEach(function(n,i){
+    var d=document.createElement('div');
+    d.innerHTML=n.t==='note'?miniNoteHTML(n,i):miniCoinHTML(n,i);
+    d.firstChild.addEventListener('pointerdown',function(e){if(!_locked)startDrag(e,n,i)});
+    ms.appendChild(d.firstChild);
+  });
+  updatePayment();
+}
+
+function startDrag(e,n,idx){
+  if(_locked)return;
+  e.preventDefault();e.stopPropagation();
+  var el=e.currentTarget;
+  _dragEl={el:el,n:n,idx:idx};
+  el.classList.add('dragging');
+  _dragOffX=e.clientX-el.getBoundingClientRect().left;
+  _dragOffY=e.clientY-el.getBoundingClientRect().top;
+  el.style.position='fixed';el.style.left=(e.clientX-_dragOffX)+'px';el.style.top=(e.clientY-_dragOffY)+'px';el.style.zIndex='100';
+}
+
+document.addEventListener('pointermove',function(e){
+  if(!_dragEl||_locked)return;
+  _dragEl.el.style.left=(e.clientX-_dragOffX)+'px';
+  _dragEl.el.style.top=(e.clientY-_dragOffY)+'px';
+  var pz=document.getElementById('payZone');
+  if(pz){var r=pz.getBoundingClientRect();pz.classList.toggle('active',e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom)}
+});
+
+document.addEventListener('pointerup',function(e){
+  if(!_dragEl||_locked)return;
+  var pz=document.getElementById('payZone');
+  var dropped=false;
+  if(pz){var r=pz.getBoundingClientRect();if(e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom){_payItems.push(_dragEl.n);dropped=true}}
+  _dragEl.el.classList.remove('dragging');
+  _dragEl.el.style.position='';_dragEl.el.style.left='';_dragEl.el.style.top='';_dragEl.el.style.zIndex='';
+  if(dropped){_dragEl.el.remove()}
+  _dragEl=null;
+  if(pz)pz.classList.remove('active');
+  updatePayment();
+});
+
+function updatePayment(){
+  var total=_payItems.reduce(function(s,x){return s+x.v*(x.u==='角'?0.1:1)},0);
+  var paidEl=document.getElementById('paidAmt');
+  var need=parseFloat(s.answer);
+  if(paidEl)paidEl.textContent=total+'元';
+  var pz=document.getElementById('payZone');
+  if(pz){
+    if(_payItems.length>0){
+      pz.innerHTML=_payItems.map(function(x,i){
+        var itemHTML=x.t==='note'?'<div class="mini-note '+x.c+'">'+x.l+'</div><span style="font-size:0.65em">'+x.l+'</span>':'<div class="mini-coin '+x.c+'">'+x.emoji+'</div><span style="font-size:0.65em">'+x.l+'</span>';
+        return '<div class="payment-item" style="flex-direction:column;align-items:center;gap:2px">'+itemHTML+(total===need?'':'<button class="remove-btn" onclick="removePay('+i+')">✕</button>')+'</div>';
+      }).join('');
+      if(total===need){
+        pz.style.borderColor='#4CAF50';pz.style.background='rgba(76,175,80,0.1)';
+        _locked=true;s.score+=10;showFeedback(true);spawnParticles();
+        s.answering=false;setTimeout(function(){advance()},1500);
+      }
+    }else{pz.innerHTML='<span class="zone-label">💰 拖到这里付款</span>';pz.style.borderColor='#4CAF50';pz.style.background='rgba(76,175,80,0.04)'}
+  }
+}
+
+function removePay(i){if(!_locked){_payItems.splice(i,1);updatePayment()}}
+window.removePay=removePay;
+
+// ==================== 通用 ====================
+function renderAnswers(opts){
+  var row=document.getElementById('ansRow')||document.createElement('div');
+  row.innerHTML='';
+  row.className='qa-row';
+  opts.forEach(function(o){
+    var b=document.createElement('button');b.className='ans-btn';b.textContent=o;
+    b.addEventListener('click',function(){handleAnswer(o,b)});
+    row.appendChild(b);
+  });
+  if(!document.getElementById('ansRow'))area.appendChild(row);
+}
+
+function handleAnswer(a,btn){
+  if(!s.answering)return;s.answering=false;
+  var all=document.querySelectorAll('.ans-btn');all.forEach(function(b){b.disabled=true});
+  if(String(a)===String(s.answer)){btn.classList.add('correct');s.score+=10;showFeedback(true);spawnParticles();setTimeout(function(){advance()},1200)}
+  else{btn.classList.add('wrong');all.forEach(function(b){if(String(b.textContent)===String(s.answer))b.classList.add('correct')});showFeedback(false);setTimeout(function(){all.forEach(function(b){b.disabled=false;b.className='ans-btn'});s.answering=true},1300)}
+  updateUI();
+}
+
+function showFeedback(c){toast.textContent=c?['太棒了!','真厉害!','答对了!✨'][Math.floor(Math.random()*3)]:['再想想~','差一点!🤔'][Math.floor(Math.random()*2)];toast.className='feedback-toast show';setTimeout(function(){toast.className='feedback-toast'},800)}
+function spawnParticles(){for(var i=0;i<12;i++){var p=document.createElement('span');p.className='star-particle';p.textContent=['⭐','🌟','✨','💫','💰'][Math.floor(Math.random()*5)];p.style.left=(20+Math.random()*60)+'%';p.style.top=(25+Math.random()*40)+'%';p.style.animationDelay=Math.random()*0.3+'s';ptcl.appendChild(p);setTimeout(function(){p.remove()},1400)}}
+function advance(){s.level++;if(s.level>=s.total)complete();else render()}
+function updateUI(){sel.textContent=s.score;lel.textContent=s.level+1;tel.textContent=s.total;pbar.style.width=(s.level/s.total*100)+'%'}
+function complete(){
+  s.answering=false;
+  var stars=s.score>=70?3:s.score>=40?2:1;
+  document.getElementById('completeTitle').textContent='模块完成!';
+  document.getElementById('completeMsg').textContent='你完成了「'+['认识人民币','模拟购物'][s.mode]+'」！';
+  document.getElementById('finalScoreEl').textContent=s.score;
+  modal.classList.remove('hidden');
+  document.getElementById('switchBtn').textContent=s.mode<1?'换模块':'全部完成!';
+}
+
+function switchMode(m){
+  s.mode=m;s.level=0;s.score=0;s.total=8;s.answering=true;
+  tabs.forEach(function(t,i){t.className='mode-tab'+(i===m?' active s'+i:'');});
+  pbar.style.width='0%';modal.classList.add('hidden');updateUI();render();
+}
+
+tabs.forEach(function(t){t.addEventListener('click',function(){var m=parseInt(t.dataset.mode);if(m!==s.mode)switchMode(m)})});
+document.getElementById('restartBtn').addEventListener('click',function(){switchMode(s.mode)});
+document.getElementById('switchBtn').addEventListener('click',function(){if(s.mode<1)switchMode(s.mode+1);else switchMode(0)});
+window.confirmPay=confirmPay;
+window.switchMode=switchMode;
+
+function shuffle(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t}return r}
+
+// ==================== 启动 ====================
+updateUI();render();
+})();
+</script>
+</body>
+</html>
