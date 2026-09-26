@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数学游戏乐园2</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#302b63">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#0f0c29,#302b63,#24243e);background-attachment:fixed;min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none;color:#fff}
@@ -222,6 +226,13 @@ function rsa(){if(confirm('确定要重置所有PK记录吗？')){var ks=[];for(
 document.addEventListener('keydown',function(e){if(e.key==='Escape')cg();});
 document.getElementById('gm').addEventListener('click',function(e){if(e.target===this)cg();});
 init();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
 </script>
 </body>
 </html>
