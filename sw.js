@@ -1,4 +1,4 @@
-const CACHE = 'math-game-paradise-2-v1';
+const CACHE = 'math-game-paradise-new-v1';
 const ASSETS = [
   './',
   './index.html',

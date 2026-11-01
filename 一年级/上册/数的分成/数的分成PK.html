@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数的分成PK - 树状图分成对战</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,#0f0c29,#302b63,#24243e);min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff;touch-action:manipulation}
+
+/* === 关卡选择画面 === */
+.level-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;background:linear-gradient(180deg,#0f0c29,#302b63,#24243e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;overflow-y:auto}
+.level-screen.hidden{display:none}
+.level-screen h2{font-size:1.9em;background:linear-gradient(135deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.level-screen .subtitle{color:rgba(255,255,255,0.55);font-size:0.9em;text-align:center;line-height:1.6}
+.level-screen .hint{color:rgba(255,255,255,0.4);font-size:0.8em;text-align:center}
+.levels-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;max-width:640px;width:100%}
+.lvl-btn{aspect-ratio:1;border-radius:20px;border:2px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.07);color:#fff;font-size:1.5em;font-weight:bold;cursor:pointer;transition:all 0.25s;font-family:inherit;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px}
+.lvl-btn .ln{font-size:1.5em;line-height:1}
+.lvl-btn .ls{font-size:0.5em;color:#FFD700;letter-spacing:1px;min-height:0.8em}
+.lvl-btn:hover:not(.locked){transform:translateY(-4px);box-shadow:0 10px 26px rgba(0,0,0,0.4)}
+.lvl-btn.done{background:linear-gradient(135deg,#FFD93D,#f0c800);border-color:#FFD93D;color:#333}
+.lvl-btn.done .ls{color:#8d6e00}
+.lvl-btn.cur{background:linear-gradient(135deg,#4ECDC4,#44b8b0);border-color:#4ECDC4;color:#fff;box-shadow:0 8px 24px rgba(78,205,196,0.4)}
+.lvl-btn.locked{background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.25);cursor:not-allowed;border-color:rgba(255,255,255,0.07)}
+.lvl-btn.locked .lk{font-size:1.1em}
+.home-btn-top{padding:10px 28px;border-radius:22px;border:2px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.6);font-size:0.9em;cursor:pointer;font-family:inherit;transition:all 0.25s;margin-top:6px}
+.home-btn-top:hover{border-color:#FFD700;color:#FFD700}
+
+/* === 游戏画面 === */
+.game-screen{width:100%;height:100vh;display:flex;flex-direction:column}
+.game-screen.hidden{display:none}
+.top-bar{display:flex;align-items:center;justify-content:center;padding:8px 12px;gap:10px;background:rgba(0,0,0,0.5);flex-shrink:0;flex-wrap:wrap;z-index:10}
+.top-bar h1{font-size:1.1em;background:linear-gradient(90deg,#FFD700,#FF6B6B,#4ECDC4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.lvl-badge{padding:4px 12px;border-radius:12px;font-size:0.8em;font-weight:bold;white-space:nowrap;background:rgba(78,205,196,0.3);color:#4ECDC4}
+.timer{font-size:1.5em;font-weight:bold;color:#FFD700;min-width:55px;text-align:center}
+.round-info{font-size:0.82em;color:#aaa;white-space:nowrap}
+
+.tree-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 10px 2px;z-index:10;background:rgba(255,255,255,0.04)}
+.tree-wrap{width:100%;max-width:360px}
+.tree-wrap svg{width:100%;height:auto;display:block}
+.qtext{font-size:1.25em;font-weight:bold;color:#fff;margin:2px 0 4px;text-align:center}
+.qtext .ans-part{color:#FFD700;border-bottom:2px dashed #FFD700;padding:0 6px;min-width:1.2em;display:inline-block}
+
+.arena{flex:1;display:flex;position:relative;min-height:0;overflow:hidden}
+.player-zone{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:6px}
+.player-zone.red{background:linear-gradient(180deg,rgba(255,107,107,0.12),rgba(0,0,0,0.2));border-right:3px solid #FF6B6B}
+.player-zone.blue{background:linear-gradient(180deg,rgba(78,205,196,0.12),rgba(0,0,0,0.2));border-left:3px solid #4ECDC4}
+.pz-header{display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0;padding:2px 0}
+.pz-name{font-size:1em;font-weight:bold;padding:3px 12px;border-radius:10px;background:rgba(0,0,0,0.5)}
+.red .pz-name{color:#FF6B6B}
+.blue .pz-name{color:#4ECDC4}
+.pz-score{font-size:1.6em;font-weight:bold;padding:2px 10px;border-radius:10px;background:rgba(0,0,0,0.5)}
+.red .pz-score{color:#FF6B6B}
+.blue .pz-score{color:#4ECDC4}
+.pz-feedback{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:1.4em;font-weight:bold;z-index:6;pointer-events:none;transition:all 0.3s;opacity:0}
+.pz-feedback.show{opacity:1;animation:fbPop 0.8s ease-out forwards}
+@keyframes fbPop{0%{transform:translate(-50%,-50%)scale(0.5);opacity:0}30%{transform:translate(-50%,-50%)scale(1.3);opacity:1}100%{transform:translate(-50%,-50%)scale(1);opacity:0}}
+
+.pad{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-content:center;padding:4px;max-width:280px;margin:0 auto;width:100%}
+.pkey{border:none;border-radius:16px;background:rgba(255,255,255,0.1);color:#fff;font-size:1.4em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.12s;border:2px solid rgba(255,255,255,0.15);min-height:46px;touch-action:manipulation}
+.pkey:hover{background:rgba(255,255,255,0.22);border-color:#FFD700}
+.pkey:active{transform:scale(0.92);background:rgba(255,215,0,0.4)}
+.pkey.wrong{background:#EF4444!important;border-color:#fff!important;animation:shakeBubble 0.4s ease-out}
+.pkey.ok{background:#10B981!important;border-color:#fff!important}
+@keyframes shakeBubble{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.vs-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;font-weight:bold;z-index:10;text-shadow:0 0 30px rgba(255,215,0,0.8);pointer-events:none;animation:vsPulse 2s infinite}
+@keyframes vsPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%)scale(1)}50%{opacity:1;transform:translate(-50%,-50%)scale(1.15)}}
+
+.bottom-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px;background:rgba(0,0,0,0.5);flex-shrink:0;flex-wrap:wrap;z-index:10}
+.ctrl-btn{padding:9px 18px;border-radius:20px;border:none;font-size:0.86em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.ctrl-btn.start{background:linear-gradient(135deg,#FFD700,#FF9800);color:#333}
+.ctrl-btn.home{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn.restart{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff}
+.ctrl-btn.music{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+.ctrl-btn:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+/* === 结束弹窗 === */
+.win-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column}
+.win-overlay.show{display:flex}
+.win-title{font-size:2em;font-weight:bold;margin-bottom:6px;animation:bounceIn 0.6s;text-align:center}
+.win-subtitle{font-size:1.05em;color:#ccc;margin-bottom:14px;text-align:center}
+.win-stars{font-size:2.2em;margin-bottom:12px;letter-spacing:6px}
+.win-scores{display:flex;gap:36px;margin-bottom:18px}
+.win-player{text-align:center}
+.win-player .wscore{font-size:2.6em;font-weight:bold}
+.win-player.left-w .wscore{color:#FF6B6B}
+.win-player.right-w .wscore{color:#4ECDC4}
+@keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.win-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.confetti{position:fixed;pointer-events:none;z-index:101;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(-100px)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(720deg);opacity:0}}
+
+@media(max-width:700px){
+  .levels-grid{grid-template-columns:repeat(5,1fr)}
+  .arena{flex-direction:column}
+  .player-zone.red{border-right:none;border-bottom:3px solid #FF6B6B}
+  .player-zone.blue{border-left:none;border-top:3px solid #4ECDC4}
+  .vs-badge{font-size:1.4em}
+  .tree-wrap{max-width:220px}
+  .qtext{font-size:1.05em}
+  .level-screen h2{font-size:1.4em}
+  .win-title{font-size:1.5em}
+  .pkey{min-height:38px;font-size:1.2em}
+  .pad{max-width:240px}
+}
+</style>
+</head>
+<body>
+
+<!-- 关卡选择画面 -->
+<div class="level-screen" id="levelScreen">
+  <h2>🌳 数的分成PK</h2>
+  <div class="subtitle">把数字分成两半，从 1 一路闯到 10！<br>左右两位小伙伴，谁先填对另一半谁得分！</div>
+  <div class="hint">🔒 完成当前关卡才能解锁下一关</div>
+  <div class="levels-grid" id="levelsGrid"></div>
+  <button class="home-btn-top" onclick="goHome()">🏠 返回主页</button>
+</div>
+
+<!-- 游戏画面 -->
+<div class="game-screen hidden" id="gameScreen">
+  <div class="top-bar">
+    <h1>🌳 数的分成PK</h1>
+    <span class="lvl-badge" id="lvlBadge">第 1 关</span>
+    <span class="round-info">第 <span id="rn">1</span>/<span id="tr">2</span> 题</span>
+    <span class="timer">⏱ <span id="tm">20</span>s</span>
+  </div>
+  <div class="tree-area">
+    <div class="qtext" id="qtext"></div>
+    <div class="tree-wrap" id="treeWrap"></div>
+  </div>
+  <div class="arena">
+    <div class="player-zone red" id="zone1">
+      <div class="pz-header"><span class="pz-name">🔴 红方</span><span class="pz-score" id="s1">0</span></div>
+      <div class="pz-feedback" id="fb1"></div>
+      <div class="pad" id="pad1"></div>
+    </div>
+    <div class="vs-badge">⚡VS⚡</div>
+    <div class="player-zone blue" id="zone2">
+      <div class="pz-header"><span class="pz-name">🔵 蓝方</span><span class="pz-score" id="s2">0</span></div>
+      <div class="pz-feedback" id="fb2"></div>
+      <div class="pad" id="pad2"></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="ctrl-btn start" id="btnStart" onclick="startGame()">⚔️ 开始对战</button>
+    <button class="ctrl-btn home" onclick="backToLevels()">📋 选择关卡</button>
+    <button class="ctrl-btn music" id="btnMusic" onclick="toggleMusic()">🔊 音乐</button>
+    <button class="ctrl-btn restart" onclick="restartLevel()">🔄 重新开始</button>
+  </div>
+</div>
+
+<!-- 结束弹窗 -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-title" id="winTitle"></div>
+  <div class="win-stars" id="winStars"></div>
+  <div class="win-subtitle" id="winSub"></div>
+  <div class="win-scores">
+    <div class="win-player left-w"><div style="color:#FF6B6B">🔴 红方</div><div class="wscore" id="ws1">0</div></div>
+    <div class="win-player right-w"><div style="color:#4ECDC4">🔵 蓝方</div><div class="wscore" id="ws2">0</div></div>
+  </div>
+  <div class="win-btns">
+    <button class="ctrl-btn restart" onclick="nextLevel()" id="btnNext" style="font-size:1.1em;padding:12px 24px">➡️ 下一关</button>
+    <button class="ctrl-btn restart" onclick="restartLevel()" style="font-size:1.1em;padding:12px 24px">🔄 再来一局</button>
+    <button class="ctrl-btn home" onclick="backToLevels()" style="font-size:1.1em;padding:12px 24px">📋 选择关卡</button>
+  </div>
+</div>
+
+<script>
+// ============ 题库：1~10 的分成 ============
+// 1 比较特殊（只能分成 0 和 1）；2~10 按标准「分成」用正整数对
+var LEVELS = {
+  1: [[0,1],[1,0]],
+  2: [[1,1]],
+  3: [[1,2],[2,1]],
+  4: [[1,3],[2,2],[3,1]],
+  5: [[1,4],[2,3],[3,2],[4,1]],
+  6: [[1,5],[2,4],[3,3],[4,2],[5,1]],
+  7: [[1,6],[2,5],[3,4],[4,3],[5,2],[6,1]],
+  8: [[1,7],[2,6],[3,5],[4,4],[5,3],[6,2],[7,1]],
+  9: [[1,8],[2,7],[3,6],[4,5],[5,4],[6,3],[7,2],[8,1]],
+  10:[[1,9],[2,8],[3,7],[4,6],[5,5],[6,4],[7,3],[8,2],[9,1]]
+};
+var MAX_LEVEL = 10;
+
+var curLvl = 1, fQ = [], sc = [0,0], cr = 0, tr = 0, tm = 20;
+var ti = null, go = false, answered = false, curLeftIsGiven = true;
+var sk = 'fc_'+window.location.pathname.replace(/[\/\.\s]/g,'_').replace(/^_+|_+$/g,'');
+var musicOn = true, actx = null;
+
+function sf(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}
+
+function getUnlock(){return parseInt(localStorage.getItem(sk+'_unlock')||'0');}
+function setUnlock(n){localStorage.setItem(sk+'_unlock', String(Math.max(getUnlock(), n)));}
+function getStars(){try{return JSON.parse(localStorage.getItem(sk+'_stars')||'{}');}catch(e){return {};}}
+function setStars(lvl, s){var o=getStars();o[lvl]=s;localStorage.setItem(sk+'_stars', JSON.stringify(o));}
+
+// ============ 音效 ============
+function initAudio(){if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function playTone(f,d,ty,vol){if(!musicOn||!actx)return;try{var o=actx.createOscillator();var g=actx.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,actx.currentTime);g.gain.setValueAtTime(vol||0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function sfxCorrect(){playTone(523,0.12,'square',0.08);setTimeout(function(){playTone(659,0.12,'square',0.08);},80);setTimeout(function(){playTone(784,0.18,'square',0.08);},160);}
+function sfxWrong(){playTone(200,0.25,'sawtooth',0.06);}
+function sfxWin(){for(var i=0;i<5;i++){setTimeout(function(){playTone(523+Math.random()*500,0.18,'square',0.07);},i*130);}}
+function sfxTick(){playTone(800,0.04,'sine',0.04);}
+function toggleMusic(){initAudio();musicOn=!musicOn;document.getElementById('btnMusic').textContent=musicOn?'🔊 音乐':'🔇 静音';if(musicOn){playTone(440,0.1,'sine',0.05);}}
+
+function goHome(){window.location.href='../../index.html';}
+
+// ============ 关卡选择 ============
+function buildLevels(){
+  var unlock = getUnlock();
+  var stars = getStars();
+  var h = '';
+  for(var i=1;i<=MAX_LEVEL;i++){
+    var unlocked = (i <= unlock+1);
+    var cls = 'lvl-btn';
+    var inner = '';
+    if(!unlocked){
+      cls += ' locked';
+      inner = '<span class="lk">🔒</span><span class="ln">'+i+'</span>';
+    } else if(i <= unlock){
+      cls += ' done';
+      var st = stars[i]||0;
+      var sh = '';
+      for(var s=0;s<3;s++) sh += (s<st?'★':'☆');
+      inner = '<span class="ln">'+i+'</span><span class="ls">'+sh+'</span>';
+    } else {
+      cls += ' cur';
+      inner = '<span class="ln">'+i+'</span><span class="ls">▶</span>';
+    }
+    h += '<button class="'+cls+'" '+(unlocked?'onclick="selectLevel('+i+')"':'')+'>'+inner+'</button>';
+  }
+  document.getElementById('levelsGrid').innerHTML = h;
+}
+
+function selectLevel(n){
+  curLvl = n;
+  document.getElementById('levelScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  document.getElementById('lvlBadge').textContent = '第 '+n+' 关';
+  document.getElementById('btnStart').style.display = 'inline-block';
+  document.getElementById('winOverlay').classList.remove('show');
+  buildPad(1); buildPad(2);
+  restartLevel();
+}
+
+function backToLevels(){
+  clearInterval(ti); go=false;
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('levelScreen').classList.remove('hidden');
+  document.getElementById('winOverlay').classList.remove('show');
+  buildLevels();
+}
+
+// ============ 数字键盘 ============
+function buildPad(pn){
+  var pad = document.getElementById('pad'+pn);
+  var keys = [1,2,3,4,5,6,7,8,9,0];
+  var h = '';
+  keys.forEach(function(k){
+    h += '<button class="pkey" data-p="'+pn+'" data-v="'+k+'" onclick="onPad('+pn+','+k+')">'+k+'</button>';
+  });
+  pad.innerHTML = h;
+}
+
+// ============ 生成题目 ============
+function buildQuestions(n){
+  var pairs = LEVELS[n];
+  var qs = [];
+  pairs.forEach(function(p){
+    // 随机决定给出哪一边
+    if(Math.random()<0.5){
+      qs.push({total:n, given:p[0], answer:p[1]});
+    } else {
+      qs.push({total:n, given:p[1], answer:p[0]});
+    }
+  });
+  return sf(qs);
+}
+
+// ============ 树状图 ============
+function treeNode(total, leftVal, rightVal, leftBlank, rightBlank){
+  var leftFill = leftBlank ? 'none' : 'rgba(78,205,196,0.35)';
+  var rightFill = rightBlank ? 'none' : 'rgba(78,205,196,0.35)';
+  var leftStroke = leftBlank ? '#FFD700' : '#4ECDC4';
+  var rightStroke = rightBlank ? '#FFD700' : '#4ECDC4';
+  var leftDash = leftBlank ? 'stroke-dasharray="6 4"' : '';
+  var rightDash = rightBlank ? 'stroke-dasharray="6 4"' : '';
+  var leftColor = leftBlank ? '#FFD700' : '#fff';
+  var rightColor = rightBlank ? '#FFD700' : '#fff';
+  var leftDisp = leftBlank ? '?' : leftVal;
+  var rightDisp = rightBlank ? '?' : rightVal;
+  return '<svg viewBox="0 0 260 176" xmlns="http://www.w3.org/2000/svg">'+
+    '<line x1="130" y1="58" x2="62" y2="120" stroke="#FFD700" stroke-width="4" stroke-linecap="round"/>'+
+    '<line x1="130" y1="58" x2="198" y2="120" stroke="#FFD700" stroke-width="4" stroke-linecap="round"/>'+
+    '<circle cx="130" cy="30" r="27" fill="#FF6B6B" stroke="#fff" stroke-width="3"/>'+
+    '<text x="130" y="40" text-anchor="middle" font-size="30" font-weight="bold" fill="#fff">'+total+'</text>'+
+    '<rect x="26" y="126" width="72" height="48" rx="15" fill="'+leftFill+'" stroke="'+leftStroke+'" stroke-width="3" '+leftDash+'/>'+
+    '<text x="62" y="158" text-anchor="middle" font-size="30" font-weight="bold" fill="'+leftColor+'">'+leftDisp+'</text>'+
+    '<rect x="162" y="126" width="72" height="48" rx="15" fill="'+rightFill+'" stroke="'+rightStroke+'" stroke-width="3" '+rightDash+'/>'+
+    '<text x="198" y="158" text-anchor="middle" font-size="30" font-weight="bold" fill="'+rightColor+'">'+rightDisp+'</text>'+
+  '</svg>';
+}
+
+function renderQuestion(q){
+  curLeftIsGiven = Math.random() < 0.5;
+  var lv = curLeftIsGiven ? q.given : q.answer;
+  var rv = curLeftIsGiven ? q.answer : q.given;
+  var lb = !curLeftIsGiven;
+  var rb = curLeftIsGiven;
+  document.getElementById('treeWrap').innerHTML = treeNode(q.total, lv, rv, lb, rb);
+  var givenPart = '<b style="color:#4ECDC4">'+q.given+'</b>';
+  var askPart = '<span class="ans-part">?</span>';
+  if(curLeftIsGiven){
+    document.getElementById('qtext').innerHTML = q.total+' 可以分成 '+givenPart+' 和 '+askPart;
+  } else {
+    document.getElementById('qtext').innerHTML = q.total+' 可以分成 '+askPart+' 和 '+givenPart;
+  }
+}
+
+function revealAnswer(q){
+  var lv = curLeftIsGiven ? q.given : q.answer;
+  var rv = curLeftIsGiven ? q.answer : q.given;
+  document.getElementById('treeWrap').innerHTML = treeNode(q.total, lv, rv, false, false);
+  var givenPart = '<b style="color:#4ECDC4">'+q.given+'</b>';
+  var ansPart = '<b style="color:#10B981">'+q.answer+'</b>';
+  if(curLeftIsGiven){
+    document.getElementById('qtext').innerHTML = q.total+' 可以分成 '+givenPart+' 和 '+ansPart;
+  } else {
+    document.getElementById('qtext').innerHTML = q.total+' 可以分成 '+ansPart+' 和 '+givenPart;
+  }
+}
+
+// ============ 游戏逻辑 ============
+function startGame(){
+  initAudio();
+  document.getElementById('btnStart').style.display = 'none';
+  go = true; sc = [0,0]; cr = 0; answered = false;
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('winOverlay').classList.remove('show');
+  fQ = buildQuestions(curLvl);
+  tr = fQ.length;
+  document.getElementById('tr').textContent = tr;
+  resetPads();
+  nextRound();
+}
+
+function nextRound(){
+  if(cr >= tr){ endLevel(); return; }
+  answered = false;
+  document.getElementById('rn').textContent = cr+1;
+  var q = fQ[cr];
+  renderQuestion(q);
+  resetPads();
+  tm = 20; document.getElementById('tm').textContent = tm;
+  clearInterval(ti);
+  ti = setInterval(function(){
+    tm--; document.getElementById('tm').textContent = tm;
+    if(tm<=5) sfxTick();
+    if(tm<=0){ clearInterval(ti); timeUp(); }
+  },1000);
+}
+
+function onPad(pn, val){
+  if(!go || answered) return;
+  var q = fQ[cr];
+  var key = document.querySelector('.pkey[data-p="'+pn+'"][data-v="'+val+'"]');
+  if(val === q.answer){
+    answered = true;
+    sc[pn-1] += 10;
+    document.getElementById('s'+pn).textContent = sc[pn-1];
+    showFeedback(pn, '✅ +10', '#10B981');
+    if(key) key.classList.add('ok');
+    sfxCorrect();
+    revealAnswer(q);
+    clearInterval(ti);
+    cr++;
+    setTimeout(function(){ nextRound(); }, 1000);
+  } else {
+    sc[pn-1] = Math.max(0, sc[pn-1]-2);
+    document.getElementById('s'+pn).textContent = sc[pn-1];
+    showFeedback(pn, '-2', '#EF4444');
+    if(key){ key.classList.add('wrong'); setTimeout(function(){ key.classList.remove('wrong'); },400); }
+    sfxWrong();
+  }
+}
+
+function resetPads(){
+  var keys = document.querySelectorAll('.pkey');
+  keys.forEach(function(k){ k.classList.remove('ok','wrong'); });
+}
+
+function showFeedback(pn, text, color){
+  var fb = document.getElementById('fb'+pn);
+  fb.textContent = text; fb.style.color = color;
+  fb.classList.remove('show');
+  void fb.offsetWidth;
+  fb.classList.add('show');
+}
+
+function timeUp(){
+  if(answered) return;
+  answered = true;
+  var q = fQ[cr];
+  revealAnswer(q);
+  for(var p=1;p<=2;p++) showFeedback(p, '⏰ 时间到', '#FF9800');
+  cr++;
+  setTimeout(function(){ nextRound(); }, 1200);
+}
+
+function endLevel(){
+  go = false; clearInterval(ti);
+  var mx = Math.max(sc[0], sc[1]);
+  var maxScore = tr * 10;
+  var stars = mx >= maxScore*0.8 ? 3 : (mx >= maxScore*0.5 ? 2 : 1);
+  if(mx <= 0) stars = 1;
+  setUnlock(curLvl);
+  setStars(curLvl, stars);
+  document.getElementById('winOverlay').classList.add('show');
+  document.getElementById('ws1').textContent = sc[0];
+  document.getElementById('ws2').textContent = sc[1];
+  var starStr = '';
+  for(var i=0;i<3;i++) starStr += (i<stars?'⭐':'☆');
+  document.getElementById('winStars').textContent = starStr;
+  if(sc[0] > sc[1]){
+    document.getElementById('winTitle').innerHTML = '🔴 红方获胜！';
+    document.getElementById('winTitle').style.color = '#FF6B6B';
+  } else if(sc[1] > sc[0]){
+    document.getElementById('winTitle').innerHTML = '🔵 蓝方获胜！';
+    document.getElementById('winTitle').style.color = '#4ECDC4';
+  } else {
+    document.getElementById('winTitle').innerHTML = '🤝 平局！';
+    document.getElementById('winTitle').style.color = '#FFD700';
+  }
+  document.getElementById('winSub').textContent = '第 '+curLvl+' 关「'+curLvl+'的分成」完成！';
+  if(curLvl < MAX_LEVEL){
+    document.getElementById('btnNext').style.display = 'inline-block';
+    document.getElementById('btnNext').textContent = '➡️ 挑战第 '+(curLvl+1)+' 关';
+  } else {
+    document.getElementById('btnNext').style.display = 'inline-block';
+    document.getElementById('btnNext').textContent = '🏆 全部通关！';
+  }
+  sfxWin();
+  spawnConfetti();
+}
+
+function nextLevel(){
+  if(curLvl < MAX_LEVEL){
+    selectLevel(curLvl+1);
+  } else {
+    backToLevels();
+  }
+}
+
+function restartLevel(){
+  clearInterval(ti); go = false; sc = [0,0]; cr = 0; answered = false;
+  document.getElementById('s1').textContent = '0';
+  document.getElementById('s2').textContent = '0';
+  document.getElementById('rn').textContent = '1';
+  document.getElementById('tm').textContent = '20';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnStart').style.display = 'inline-block';
+  document.getElementById('qtext').innerHTML = '准备开始...';
+  document.getElementById('treeWrap').innerHTML = '';
+  resetPads();
+  var cf = document.querySelectorAll('.confetti'); cf.forEach(function(c){ c.remove(); });
+}
+
+function spawnConfetti(){
+  var colors = ['#FF6B6B','#4ECDC4','#FFD700','#FF9800','#6C5CE7','#66BB6A','#EC407A','#42A5F5'];
+  for(var i=0;i<50;i++){
+    var d = document.createElement('div'); d.className = 'confetti';
+    d.style.left = Math.random()*100+'%'; d.style.top = -(Math.random()*50+10)+'px';
+    d.style.width = (Math.random()*10+6)+'px'; d.style.height = (Math.random()*10+6)+'px';
+    d.style.background = colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration = (Math.random()*2+2)+'s'; d.style.animationDelay = Math.random()*1.2+'s';
+    d.style.borderRadius = Math.random()>0.5?'50%':'0';
+    document.body.appendChild(d);
+    setTimeout(function(){ d.remove(); },3500);
+  }
+}
+
+buildLevels();
+</script>
+</body>
+</html>

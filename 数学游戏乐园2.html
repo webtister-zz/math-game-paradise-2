@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>数学游戏乐园2</title>
+<title>数学游戏乐园新</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#302b63">
 <link rel="icon" href="icons/icon-192.png">
@@ -85,6 +85,18 @@ body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,
 .star-badge .e{color:#FFD700}
 .star-badge .em{color:rgba(255,255,255,0.3)}
 .footer{text-align:center;padding:20px;color:rgba(255,255,255,0.35);font-size:0.8em}
+.ad-slot{max-width:1040px;margin:14px auto;padding:12px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.18);border-radius:14px;text-align:center;color:rgba(255,255,255,0.28);font-size:0.72em;min-height:60px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.ad-slot .ad-tag{opacity:0.7}
+.sponsor-btn{padding:8px 20px;border-radius:20px;border:1px solid rgba(255,107,107,0.5);background:transparent;color:#FF6B6B;font-size:0.85em;cursor:pointer;font-family:inherit;margin-top:12px;transition:all 0.25s}
+.sponsor-btn:hover{background:rgba(255,107,107,0.2)}
+.sponsor-modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:600;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;padding:20px}
+.sponsor-modal.open{display:flex}
+.sp-box{background:#1a1a2e;border-radius:22px;padding:28px 24px;text-align:center;max-width:340px;width:100%;border:1px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+.sp-title{font-size:1.3em;font-weight:bold;margin-bottom:6px;background:linear-gradient(135deg,#FF6B6B,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sp-qr{width:200px;height:200px;margin:14px auto;border-radius:14px;background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:0.8em;line-height:1.5;padding:12px;overflow:hidden}
+.sp-qr img{width:100%;height:100%;object-fit:contain}
+.sp-tip{color:rgba(255,255,255,0.5);font-size:0.82em;line-height:1.6;margin-bottom:16px}
+.sp-close{padding:9px 30px;border-radius:20px;border:none;background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;font-family:inherit}
 .rs{padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.5);font-size:0.75em;cursor:pointer;font-family:inherit}
 .rs:hover{border-color:#ff5252;color:#ff5252}
 @media(max-width:600px){.hero h1{font-size:1.5em}.tab{padding:10px 18px;font-size:0.95em}.semtab{padding:8px 18px;font-size:0.88em}.grid{grid-template-columns:1fr}.card{padding:12px}}
@@ -97,8 +109,12 @@ body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,
 <div class="main">
 <div class="hero">
 <span class="icon">⚔️</span>
-<h1>数学游戏乐园2</h1>
+<h1>数学游戏乐园新</h1>
 <p>苏教版 · 一二三年级 · 双人对战 · 谁是数学王者？</p>
+<div class="visitor" style="margin-top:8px;font-size:0.82em;color:rgba(255,255,255,0.6)">
+<span id="busuanzi_container_site_pv" style="display:none">👀 总访问 <span id="busuanzi_value_site_pv"></span> 次</span>
+<span id="busuanzi_container_site_uv" style="display:none"> · 🧑 访客 <span id="busuanzi_value_site_uv"></span> 人</span>
+</div>
 </div>
 <div class="tabs" id="gtabs"></div>
 <div class="semtabs" id="stabs"></div>
@@ -107,13 +123,27 @@ body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,
 <div class="sp">🎮 已完成：<span class="v" id="cc">0</span> 局</div>
 <button class="rs" onclick="rsa()">重置记录</button>
 </div>
+<!-- ===== 广告位：把广告联盟(Google AdSense/百度联盟等)代码粘贴到下方 div 内 ===== -->
+<div class="ad-slot"><span class="ad-tag">📢 广告位 · 粘贴广告代码到这里</span></div>
 <div id="ca"></div>
-<div class="footer">⚡ 叫上小伙伴，一起来对战吧！⚡</div>
+<div class="ad-slot"><span class="ad-tag">📢 广告位 · 粘贴广告代码到这里</span></div>
+<div class="footer">⚡ 叫上小伙伴，一起来对战吧！⚡<br><button class="sponsor-btn" onclick="openSponsor()">❤️ 支持我们</button></div>
 </div>
 <div class="modal" id="gm">
 <div class="mw">
 <div class="mh"><span class="mt" id="mt">加载中...</span><button class="cb" onclick="cg()">✕</button></div>
 <iframe id="gf" src="" allow="accelerometer;autoplay;clipboard-write;gyroscope"></iframe>
+</div>
+</div>
+<div class="sponsor-modal" id="spm">
+<div class="sp-box">
+<div class="sp-title">❤️ 支持数学游戏乐园新</div>
+<div class="sp-qr" id="spQR"><!-- 把收款码图片放到项目里(如 icons/pay.png)，再替换为：
+<img src="icons/pay.png" alt="赞赏二维码"> -->
+收款码位置
+</div>
+<div class="sp-tip">如果觉得这些游戏对你有帮助，<br>欢迎打赏支持作者持续更新～</div>
+<button class="sp-close" onclick="closeSponsor()">关闭</button>
 </div>
 </div>
 <script>
@@ -122,6 +152,7 @@ var DATA=[
  {name:"上册",units:[
   {i:"🔢",nn:"数学准备课",d:"数一数 比一比 认识数字1~5",g:[["数字PK战","一年级/上册/一 、二、 四 、五单元/数字PK战.html"]]},
   {i:"➕",nn:"1~5的加减法",d:"加减法预习练习",g:[["加减PK","一年级/上册/一、 二 、四、单元 加一下预习/加减PK.html"]]},
+  {i:"🌳",nn:"数的分成",d:"1~10的分成 树状图填另一半",g:[["数的分成PK","一年级/上册/数的分成/数的分成PK.html"]]},
   {i:"🧭",nn:"生活中的位置",d:"认识上下前后左右",g:[["位置PK","一年级/上册/一后、生活中的位置/位置PK.html"],["认识位置","一年级/上册/一后、生活中的位置/认识位置.html"]]},
   {i:"📦",nn:"图形的初步认识",d:"认识立体图形",g:[["图形PK","一年级/上册/三、图形的初步认识 立体图形的初步认识/图形PK.html"],["立体图形","一年级/上册/三、图形的初步认识 立体图形的初步认识/立体图形.html"]]},
   {i:"🕐",nn:"认识钟表",d:"认识整时和半时",g:[["钟表PK","一年级/上册/钟表PK.html"]]}
@@ -223,8 +254,11 @@ function og(f,t){
 }
 function cg(){var m=document.getElementById('gm');m.classList.remove('open');document.body.style.overflow='';setTimeout(function(){document.getElementById('gf').src='';},350);}
 function rsa(){if(confirm('确定要重置所有PK记录吗？')){var ks=[];for(var k in localStorage)if(k.indexOf('pk_')===0)ks.push(k);ks.forEach(function(k){localStorage.removeItem(k);});rc();ru();}}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')cg();});
+function openSponsor(){document.getElementById('spm').classList.add('open');}
+function closeSponsor(){document.getElementById('spm').classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){cg();closeSponsor();}});
 document.getElementById('gm').addEventListener('click',function(e){if(e.target===this)cg();});
+document.getElementById('spm').addEventListener('click',function(e){if(e.target===this)closeSponsor();});
 init();
 </script>
 <script>
@@ -234,5 +268,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 </body>
 </html>
