@@ -99,7 +99,10 @@ body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,
 .sponsor-modal.open{display:flex}
 .sp-box{background:#1a1a2e;border-radius:22px;padding:28px 24px;text-align:center;max-width:340px;width:100%;border:1px solid rgba(255,255,255,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.6)}
 .sp-title{font-size:1.3em;font-weight:bold;margin-bottom:6px;background:linear-gradient(135deg,#FF6B6B,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.sp-qr{width:200px;height:200px;margin:14px auto;border-radius:14px;background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:0.8em;line-height:1.5;padding:12px;overflow:hidden}
+.sp-qr{width:130px;height:130px;border-radius:14px;background:#fff;border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:0.8em;line-height:1.5;padding:6px;overflow:hidden}
+.sp-qrs{display:flex;gap:16px;justify-content:center;margin:14px 0}
+.sp-qr-item{display:flex;flex-direction:column;align-items:center;gap:6px}
+.sp-qr-label{font-size:0.85em;color:rgba(255,255,255,0.82)}
 .sp-qr img{width:100%;height:100%;object-fit:contain}
 .sp-tip{color:rgba(255,255,255,0.5);font-size:0.82em;line-height:1.6;margin-bottom:16px}
 .sp-close{padding:9px 30px;border-radius:20px;border:none;background:linear-gradient(135deg,#FF6B6B,#ee5a5a);color:#fff;font-size:0.95em;font-weight:bold;cursor:pointer;font-family:inherit}
@@ -144,9 +147,8 @@ body{font-family:'Microsoft YaHei',sans-serif;background:linear-gradient(180deg,
 <div class="sponsor-modal" id="spm">
 <div class="sp-box">
 <div class="sp-title">📱 关注我们</div>
-<div class="sp-qr" id="spQR"><img src="icons/qrcode.jpg" alt="公众号二维码">
-</div>
-<div class="sp-tip">长按识别二维码，<br>关注公众号获取更多数学游戏</div>
+<div class="sp-qrs"><div class="sp-qr-item"><div class="sp-qr"><img src="icons/qrcode.jpg" alt="公众号二维码"></div><div class="sp-qr-label">关注公众号</div></div><div class="sp-qr-item"><div class="sp-qr"><img src="icons/pay.jpg" alt="赞赏收款码"></div><div class="sp-qr-label">赞赏支持</div></div></div>
+<div class="sp-tip">长按识别二维码，<br>关注公众号 · 赞赏支持</div>
 <button class="sp-close" onclick="closeSponsor()">关闭</button>
 </div>
 </div>
