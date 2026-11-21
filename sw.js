@@ -1,4 +1,4 @@
-const CACHE = 'math-game-paradise-new-v1';
+const CACHE = 'math-game-paradise-new-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,20 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+
+  // 页面导航：网络优先，保证部署后立即看到最新内容；离线时回退缓存
+  if (req.mode === 'navigate') {
+    e.respondWith(
+      fetch(req).then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, clone));
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // 其他静态资源：缓存优先，后台更新
   e.respondWith(
     caches.match(req).then((cached) => {
       const fetched = fetch(req).then((res) => {
